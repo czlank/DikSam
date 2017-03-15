@@ -1,12 +1,12 @@
 %{
 #undef  YY_INPUT
-#define YY_INPUT(buf, result, max_size) (result = DiskSam_yyinput(buf, max_size))
+#define YY_INPUT(buf, result, max_size) (result = DikSam_yyinput(buf, max_size))
 
 #include <stdio.h>
 #include <string.h>
 
 #include "DBG.h"
-#include "DiskSamc.h"
+#include "DikSamc.h"
 #include "y.tab.h"
 
 static int file_input(char *buf, int max_size)
@@ -66,7 +66,7 @@ static int string_input(char *buf, int max_size)
     return len;
 }
 
-static int DiskSam_yyinput(char *buf, int max_size)
+static int DikSam_yyinput(char *buf, int max_size)
 {
     int result;
     

@@ -1,5 +1,5 @@
-#ifndef PRIVATE_DISKSAMC_H_INCLUDED
-#define PRIVATE_DISKSAMC_H_INCLUDED
+#ifndef PRIVATE_DIKSAMC_H_INCLUDED
+#define PRIVATE_DIKSAMC_H_INCLUDED
 
 #include <stdio.h>
 #include <setjmp.h>
@@ -10,4 +10,4 @@
 #include "DVM_code.h"
 #include "share.h"
 
-#endif  /* PRIVATE_DISKSAMC_H_INCLUDED */
+#endif  /* PRIVATE_DIKSAMC_H_INCLUDED */

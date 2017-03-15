@@ -14,14 +14,14 @@ $(TARGET) : $(OBJS)
 	ld -r -o $@ $(OBJS)
 
 ######## flex ########
-lex.yy.c : DiskSam.l DiskSam.y y.tab.h
-	flex DiskSam.l
+lex.yy.c : DikSam.l DikSam.y y.tab.h
+	flex DikSam.l
 
 ######## bison ########
-y.tab.h : DiskSam.y
-	bison --yacc -dv DiskSam.y
+y.tab.h : DikSam.y
+	bison --yacc -dv DikSam.y
 y.tab.c : mycrowbar.y
-	bison --yacc -dv DiskSam.y
+	bison --yacc -dv DikSam.y
 
 ######## y.tab.o/lex.yy.o ########
 y.tab.o : y.tab.c

@@ -1,4 +1,4 @@
-TARGET = DiskSam
+TARGET = DikSam
 
 CC = gcc
 

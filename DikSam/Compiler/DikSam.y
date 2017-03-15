@@ -1,6 +1,6 @@
 %{
 #include <stdio.h>
-#include "DiskSamc.h"
+#include "DikSamc.h"
 
 #define YYDEBUG     1
 %}
