@@ -1,0 +1,6 @@
+#ifndef PRIVATE_SHARE_H_INCLUDED
+#define PRIVATE_SHARE_H_INCLUDED
+
+#include "DVM_code.h"
+
+#endif  /* PRIVATE_SHARE_H_INCLUDED */

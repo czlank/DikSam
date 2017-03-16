@@ -104,7 +104,7 @@ int yywrap(void)
 %%
 <INITIAL>"if"           return IF;
 <INITIAL>"else"         return ELSE;
-<INITIAL>"elsif"        return ELSIF;
+<INITIAL>"els if"       return ELSIF;
 <INITIAL>"while"        return WHILE;
 <INITIAL>"for"          return FOR;
 <INITIAL>"foreach"      return FOREACH;
