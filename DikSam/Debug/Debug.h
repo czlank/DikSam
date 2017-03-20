@@ -1,13 +1,57 @@
-#ifndef	DEBUG_H
-#define	DEBUG_H
+#pragma once
 
-#include "MEM.h"
-#include "DBG.h"
+#include "Exception.h"
 
-struct DBG_Controller_tag
+#include <string>
+#include <sstream>
+
+#ifdef DBG_NO_DEBUG
+#define DBG_panic(arg)      ((void)0)
+#else
+#define DBG_panic(arg)  (m_Debug.get()->Set(__FILE__, __LINE__), m_Debug.get()->Panic arg)
+#endif // DBG_NO_DEBUG
+
+
+class Debug
 {
-	FILE	*debug_write_fp;
-	int		 current_debug_level;
-};
+public:
+    Debug();
+    ~Debug();
 
-#endif	/* DEBUG_H */
+    void Set(const char* lpcstrFileName, int iLine);
+
+    template<typename T, typename ... Args> void Panic(T val, Args && ... args)
+    {
+        if (0 == m_PanicLevel)
+        {
+            std::stringstream ss;
+            m_strPanic = "Panic!! file..";
+            
+            m_strPanic += m_FileName + " line..";
+            ss << m_Line;
+            m_strPanic += ss.str() + " ";
+        }
+
+        m_PanicLevel++;
+
+        std::stringstream ss;
+        ss << val;
+        m_strPanic += ss.str();
+
+        Panic(std::forward<Args&&>(args)...);
+    }
+
+    void Panic()
+    {
+        m_PanicLevel = 0;
+        throw PanicException(m_strPanic.c_str());
+    }
+
+private:
+    int             m_Line;
+    std::string     m_FileName;
+    std::string     m_AssertExpression;
+
+    int             m_PanicLevel;
+    std::string     m_strPanic;
+};
