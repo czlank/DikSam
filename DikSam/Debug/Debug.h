@@ -2,9 +2,6 @@
 
 #include "Exception.h"
 
-#include <string>
-#include <sstream>
-
 class Debug
 {
 public:
@@ -12,8 +9,8 @@ public:
     ~Debug();
 
     void SetLevel(int iLevel) { m_PanicLevel = iLevel; }
-    void Set(const char* lpcstrFileName, int iLine);
-    void SetExpression(const char* expression) { m_AssertExpression = expression; }
+    void Set(const char *lpcstrFileName, int iLine);
+    void SetExpression(const char *expression) { m_AssertExpression = expression; }
 
     template <typename T, typename ... Args> void Assert(T val, Args && ... args)
     {

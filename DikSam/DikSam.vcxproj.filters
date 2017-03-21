@@ -14,8 +14,14 @@
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
     <Filter Include="Debug">
-      <UniqueIdentifier>{e3fcbf42-e7d9-4749-96f1-9377c490cfd1}</UniqueIdentifier>
+      <UniqueIdentifier>{6939c397-c842-42c9-b030-7ab10f4c61ad}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Memory">
+      <UniqueIdentifier>{e8996a2c-74cc-47ed-9c82-ca261154b059}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -30,6 +36,9 @@
     <ClInclude Include="Debug\Debug.h">
       <Filter>Debug</Filter>
     </ClInclude>
+    <ClInclude Include="Memory\Memory.h">
+      <Filter>Memory</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -43,6 +52,9 @@
     </ClCompile>
     <ClCompile Include="Debug\Debug.cpp">
       <Filter>Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="Memory\Memory.cpp">
+      <Filter>Memory</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

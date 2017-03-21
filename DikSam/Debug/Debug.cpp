@@ -1,8 +1,5 @@
 #include "stdafx.h"
-
 #include "Debug.h"
-
-#include <assert.h>
 
 Debug::Debug()
     : m_Line(0)
@@ -16,7 +13,7 @@ Debug::~Debug()
 
 }
 
-void Debug::Set(const char* lpcstrFileName, int iLine)
+void Debug::Set(const char *lpcstrFileName, int iLine)
 {
     assert(lpcstrFileName);
     assert(iLine >= 0);

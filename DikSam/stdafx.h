@@ -14,3 +14,15 @@
 
 
 // TODO:  在此处引用程序需要的其他头文件
+#include <cassert>
+#include <string>
+#include <sstream>
+#include <memory>
+#include <exception>
+#include <iostream>
+
+#ifdef _DEBUG
+#pragma message("正在编译调试版本...")
+#else
+#pragma message("正式编译发布版本...")
+#endif // _DEBUG
