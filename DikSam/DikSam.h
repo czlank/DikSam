@@ -48,9 +48,17 @@ class DikSam
     } while (0)
 
 #define MEM_free(ptr)           (m_Memory.get()->Free(ptr))
+
+#ifdef _DEBUG
 #define MEM_dump_blocks(out)    (m_Memory.get()->DumpBlocks(out))
 #define MEM_check_block(p)      (m_Memory.get()->CheckBlock(p))
 #define MEM_check_all_blocks()  (m_Memory.get()->CheckAllBlocks())
+#else
+#define MEM_dump_blocks(out)    ((void)0)
+#define MEM_check_block(p)      ((void)0)
+#define MEM_check_all_blocks()  ((void)0)
+#endif // _DEBUG
+
 
 public:
     DikSam(int iThreadIndex);
