@@ -263,8 +263,13 @@ void Memory::UnChainBlock(Header *pHeader)
 
 void Memory::SetHeader(Header *pHeader, int iSize, const char *lpcstrFileName, int iLine)
 {
+    std::string strFileName(lpcstrFileName);
+    size_t npos = strFileName.find_last_of('\\');
+    assert(npos != std::string::npos);
+    strFileName = strFileName.substr(npos + 1, strFileName.length() - (npos + 1));
+
     pHeader->m_stHeader.m_iSize = iSize;
-    pHeader->m_stHeader.m_lpcstrFileName = lpcstrFileName;
+    pHeader->m_stHeader.m_lpcstrFileName = strFileName.c_str();
     pHeader->m_stHeader.m_iLine = iLine;
 
     memset(pHeader->m_stHeader.m_czMark, MARK, (char*)&pHeader[1] - (char*)pHeader->m_stHeader.m_czMark);
@@ -301,10 +306,15 @@ void Memory::CheckMark(Header *pHeader)
 
 void Memory::ErrorHandler(std::ostream& out, const char *lpcstrFileName, int iLine, const char *lpcstrMsg)
 {
-    out << "MEM:" << lpcstrMsg << " failed in " << lpcstrFileName << " at " << iLine;
+    std::string strFileName(lpcstrFileName);
+    size_t npos = strFileName.find_last_of('\\');
+    assert(npos != std::string::npos);
+    strFileName = strFileName.substr(npos + 1, strFileName.length() - (npos + 1));
+
+    out << "MEM:" << lpcstrMsg << " failed in " << strFileName << " at " << iLine;
 
     std::stringstream ss;
-    ss << "MEM:" << lpcstrMsg << " failed in " << lpcstrFileName << " at " << iLine;
+    ss << "MEM:" << lpcstrMsg << " failed in " << strFileName << " at " << iLine;
 
     if (MEM_FAIL_AND_EXIT == m_FailMode)
     {

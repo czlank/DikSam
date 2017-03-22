@@ -89,6 +89,7 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Compiler\Util.h" />
     <ClInclude Include="Debug\Debug.h" />
     <ClInclude Include="DikSam.h" />
     <ClInclude Include="Memory\Memory.h" />
@@ -97,6 +98,7 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Compiler\Util.cpp" />
     <ClCompile Include="Debug\Debug.cpp" />
     <ClCompile Include="DikSam.cpp" />
     <ClCompile Include="dllmain.cpp">

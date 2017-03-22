@@ -9,18 +9,24 @@ public:
     ~Debug();
 
     void SetLevel(int iLevel) { m_PanicLevel = iLevel; }
-    void Set(const char *lpcstrFileName, int iLine);
-    void SetExpression(const char *expression) { m_AssertExpression = expression; }
 
-    template <typename T, typename ... Args> void Assert(T val, Args && ... args)
+    template <typename T, typename ... Args> void Assert(const char *lpcstrFileName, int iLine, const char *lpcstrExpression, T val, Args && ... args)
     {
         if (0 == m_PanicLevel)
         {
             std::stringstream ss;
             m_Error = "Assertion failure ";
 
-            m_Error += m_AssertExpression + " file.." + m_FileName + " line..";
-            ss << m_Line;
+            m_Error += lpcstrExpression;
+            m_Error += " file..";
+            
+            std::string strFileName(lpcstrFileName);
+            size_t npos = strFileName.find_last_of('\\');
+            assert(npos != std::string::npos);
+            strFileName = strFileName.substr(npos + 1, strFileName.length() - (npos + 1));
+
+            m_Error += strFileName + " line..";
+            ss << iLine;
             m_Error += ss.str() + "    ";
         }
 
@@ -28,24 +34,29 @@ public:
         ss << val;
         m_Error += ss.str();
 
-        Assert(std::forward<Args&&>(args)...);
+        Assert(lpcstrFileName, iLine, lpcstrExpression, std::forward<Args&&>(args)...);
     }
 
-    void Assert()
+    void Assert(const char *lpcstrFileName, int iLine, const char *lpcstrExpression)
     {
         m_PanicLevel = 0;
         throw AssertException(m_Error.c_str());
     }
 
-    template <typename T, typename ... Args> void Panic(T val, Args && ... args)
+    template <typename T, typename ... Args> void Panic(const char *lpcstrFileName, int iLine, T val, Args && ... args)
     {
         if (0 == m_PanicLevel)
         {
             std::stringstream ss;
             m_Error = "Panic!! file..";
             
-            m_Error += m_FileName + " line..";
-            ss << m_Line;
+            std::string strFileName(lpcstrFileName);
+            size_t npos = strFileName.find_last_of('\\');
+            assert(npos != std::string::npos);
+            strFileName = strFileName.substr(npos + 1, strFileName.length() - (npos + 1));
+
+            m_Error += strFileName + " line..";
+            ss << iLine;
             m_Error += ss.str() + "    ";
         }
 
@@ -55,20 +66,16 @@ public:
         ss << val;
         m_Error += ss.str();
 
-        Panic(std::forward<Args&&>(args)...);
+        Panic(lpcstrFileName, iLine, std::forward<Args&&>(args)...);
     }
 
-    void Panic()
+    void Panic(const char *lpcstrFileName, int iLine)
     {
         m_PanicLevel = 0;
         throw PanicException(m_Error.c_str());
     }
 
 private:
-    int             m_Line;
-    std::string     m_FileName;
-    std::string     m_AssertExpression;
-
     int             m_PanicLevel;
     std::string     m_Error;
 };

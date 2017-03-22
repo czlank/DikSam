@@ -42,6 +42,9 @@
     <ClInclude Include="Memory\Storage.h">
       <Filter>Memory</Filter>
     </ClInclude>
+    <ClInclude Include="Compiler\Util.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -61,6 +64,9 @@
     </ClCompile>
     <ClCompile Include="Memory\Storage.cpp">
       <Filter>Memory</Filter>
+    </ClCompile>
+    <ClCompile Include="Compiler\Util.cpp">
+      <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
