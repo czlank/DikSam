@@ -58,7 +58,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;DIKSAM_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>Include;Debug;Memory;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Include;Debug;Memory;Compiler;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -75,7 +75,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;DIKSAM_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>Include;Debug;Memory;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Include;Debug;Memory;Compiler;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -92,6 +92,7 @@
     <ClInclude Include="Debug\Debug.h" />
     <ClInclude Include="DikSam.h" />
     <ClInclude Include="Memory\Memory.h" />
+    <ClInclude Include="Memory\Storage.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
@@ -107,6 +108,7 @@
       </PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Memory\Memory.cpp" />
+    <ClCompile Include="Memory\Storage.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>

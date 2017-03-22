@@ -164,7 +164,7 @@ void Memory::DumpBlocks(std::ostream& out)
 #ifdef _DEBUG
     int iCounter = 0;
 
-    for (Header *pos = m_BlockHeader; pos; pos = pos->m_stHeader.m_stNext)
+    for (Header *pos = m_BlockHeader; pos; pos = pos->m_stHeader.m_pNext)
     {
         CheckMark(pos);
         out << "[" << iCounter << "]" << std::hex << int((char*)pos + sizeof(Header)) << std::dec << "********************" << std::endl
@@ -207,7 +207,7 @@ void Memory::CheckAllBlocks()
 #ifdef _DEBUG
     Header  *pos;
 
-    for (pos = m_BlockHeader; pos; pos = pos->m_stHeader.m_stNext)
+    for (pos = m_BlockHeader; pos; pos = pos->m_stHeader.m_pNext)
     {
         CheckBlock(pos);
     }
@@ -219,45 +219,45 @@ void Memory::ChainBlock(Header *pHeader)
 {
     if (m_BlockHeader)
     {
-        m_BlockHeader->m_stHeader.m_stPrev = pHeader;
+        m_BlockHeader->m_stHeader.m_pPrev = pHeader;
     }
 
-    pHeader->m_stHeader.m_stPrev = nullptr;
-    pHeader->m_stHeader.m_stNext = m_BlockHeader;
+    pHeader->m_stHeader.m_pPrev = nullptr;
+    pHeader->m_stHeader.m_pNext = m_BlockHeader;
     m_BlockHeader = pHeader;
 }
 
 void Memory::ReChainBlock(Header *pHeader)
 {
-    if (pHeader->m_stHeader.m_stPrev)
+    if (pHeader->m_stHeader.m_pPrev)
     {
-        pHeader->m_stHeader.m_stPrev->m_stHeader.m_stNext = pHeader;
+        pHeader->m_stHeader.m_pPrev->m_stHeader.m_pNext = pHeader;
     }
     else
     {
         m_BlockHeader = pHeader;
     }
 
-    if (pHeader->m_stHeader.m_stNext)
+    if (pHeader->m_stHeader.m_pNext)
     {
-        pHeader->m_stHeader.m_stNext->m_stHeader.m_stPrev = pHeader;
+        pHeader->m_stHeader.m_pNext->m_stHeader.m_pPrev = pHeader;
     }
 }
 
 void Memory::UnChainBlock(Header *pHeader)
 {
-    if (pHeader->m_stHeader.m_stPrev)
+    if (pHeader->m_stHeader.m_pPrev)
     {
-        pHeader->m_stHeader.m_stPrev->m_stHeader.m_stNext = pHeader->m_stHeader.m_stNext;
+        pHeader->m_stHeader.m_pPrev->m_stHeader.m_pNext = pHeader->m_stHeader.m_pNext;
     }
     else
     {
-        m_BlockHeader = pHeader->m_stHeader.m_stNext;
+        m_BlockHeader = pHeader->m_stHeader.m_pNext;
     }
 
-    if (pHeader->m_stHeader.m_stNext)
+    if (pHeader->m_stHeader.m_pNext)
     {
-        pHeader->m_stHeader.m_stNext->m_stHeader.m_stPrev = pHeader->m_stHeader.m_stPrev;
+        pHeader->m_stHeader.m_pNext->m_stHeader.m_pPrev = pHeader->m_stHeader.m_pPrev;
     }
 }
 

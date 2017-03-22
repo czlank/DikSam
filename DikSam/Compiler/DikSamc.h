@@ -1,11 +1,6 @@
 #ifndef PRIVATE_DIKSAMC_H_INCLUDED
 #define PRIVATE_DIKSAMC_H_INCLUDED
 
-#include <stdio.h>
-#include <setjmp.h>
-#include <wchar.h>
-
-#include "MEM.h"
 #include "DKC.h"
 #include "DVM_code.h"
 #include "share.h"
@@ -14,6 +9,37 @@
 extern "C"
 {
 #endif  // __cplusplus
+
+#define smaller(a, b) ((a) < (b) ? (a) : (b))
+#define larger(a, b) ((a) > (b) ? (a) : (b))
+
+typedef struct MEM_Storage_tag *MEM_Storage;
+
+typedef enum
+{
+    PARSE_ERR = 1,
+    CHARACTER_INVALID_ERR,
+    FUNCTION_MULTIPLE_DEFINE_ERR,
+    BAD_MULTIBYTE_CHARACTER_ERR,
+    UNEXPECTED_WIDE_STRING_IN_COMPILE_ERR,
+    PARAMETER_MULTIPLE_DEFINE_ERR,
+    VARIABLE_MULTIPLE_DEFINE_ERR,
+    IDENTIFIER_NOT_FOUND_ERR,
+    DERIVE_TYPE_CAST_ERR,
+    CAST_MISMATCH_ERR,
+    MATH_TYPE_MISMATCH_ERR,
+    COMPARE_TYPE_MISMATCH_ERR,
+    LOGICAL_TYPE_MISMATCH_ERR,
+    MINUS_TYPE_MISMATCH_ERR,
+    LOGICAL_NOT_TYPE_MISMATCH_ERR,
+    INC_DEC_TYPE_MISMATCH_ERR,
+    FUNCTION_NOT_IDENTIFIER_ERR,
+    FUNCTION_NOT_FOUND_ERR,
+    ARGUMENT_COUNT_MISMATCH_ERR,
+    NOT_LVALUE_ERR,
+    LABEL_NOT_FOUND_ERR,
+    COMPILE_ERROR_COUNT_PLUS_1
+} CompileError;
 
 typedef struct Expression_tag   Expression;
 
@@ -341,6 +367,26 @@ struct FunctionDefinition_tag
     Declaration     **local_variable;
     int             index;
     struct FunctionDefinition_tag   *next;
+};
+
+typedef enum
+{
+    EUC_ENCODING = 1,
+    GB2312_ENCODING,
+    UTF_8_ENCODING
+} Encoding;
+
+struct DKC_Compiler_tag
+{
+    MEM_Storage         compile_storage;
+    FunctionDefinition  *function_list;
+    int                 function_count;
+    DeclarationList     *declaration_list;
+    StatementList       *statement_list;
+    int                 current_line_number;
+    Block               *current_block;
+    DKC_InputMode       input_mode;
+    Encoding            source_encoding;
 };
 
 #ifdef __cplusplus

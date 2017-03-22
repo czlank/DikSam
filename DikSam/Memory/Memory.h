@@ -1,19 +1,20 @@
 #pragma once
 
-#include "MEM.h"
-
 class Memory
 {
 public:
-    Memory(std::ostream& out);
-    ~Memory();
-
 #define MARK_SIZE               (4)
 #define ALIGN_SIZE              (sizeof(Align))
 #define REVALUE_UP_ALIGN(val)   ((val) ? (((val) - 1) / ALIGN_SIZE + 1) : 0)
 #define HEADER_ALIGN_SIZE       (REVALUE_UP_ALIGN(sizeof(HeaderStruct)))
 #define INITIAL_MARK            (0xCC)
 #define MARK                    (0xCD)
+
+    typedef enum
+    {
+        MEM_FAIL_AND_EXIT,
+        MEM_FAIL_AND_RETURN
+    } MEM_FailMode;
 
     typedef union
     {
@@ -29,8 +30,8 @@ public:
         int             m_iSize;
         const char      *m_lpcstrFileName;
         int             m_iLine;
-        Header_tag      *m_stPrev;
-        Header_tag      *m_stNext;
+        Header_tag      *m_pPrev;
+        Header_tag      *m_pNext;
         unsigned char   m_czMark[MARK_SIZE];
     } HeaderStruct;
 
@@ -41,6 +42,9 @@ public:
     };
 
     typedef Header_tag Header;
+
+    Memory(std::ostream& out);
+    ~Memory();
 
     void SetFailMode(MEM_FailMode enFailMode) { m_FailMode = enFailMode; }
 

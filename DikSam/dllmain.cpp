@@ -22,7 +22,7 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 
 DIKSAM_DECLARE void DKC_Compile(int iThreadIndex)
 {
-    DikSam diksam(0);
+    g_iCurrentThreadIndex = iThreadIndex;
 }
 
 DIKSAM_DECLARE void DKC_Run(int iThreadIndex)
