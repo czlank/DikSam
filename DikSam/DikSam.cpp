@@ -26,7 +26,7 @@ DikSam::DikSam(int iThreadIndex)
     : m_iThreadIndex(iThreadIndex)
     , m_Memory(std::cout)
     , m_Storage(m_Memory)
-    , m_Util(m_Storage)
+    , m_Util(m_Storage, m_Memory, m_Debug)
 {
 
 }

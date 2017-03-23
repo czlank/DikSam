@@ -4,6 +4,7 @@
 #include "Memory.h"
 #include "Storage.h"
 #include "Util.h"
+#include "Error.h"
 
 class DikSam
 {
@@ -17,6 +18,7 @@ public:
     Memory* GetMemory() { return &m_Memory; }
     Storage* GetStorage() { return &m_Storage; }
     Util* GetUtil() { return &m_Util; }
+    Error* GetError() { return &m_Error; }
 
 private:
     static std::map<int, std::auto_ptr<DikSam>> m_DikSamObject;
@@ -26,4 +28,5 @@ private:
     Memory      m_Memory;
     Storage     m_Storage;
     Util        m_Util;
+    Error       m_Error;
 };

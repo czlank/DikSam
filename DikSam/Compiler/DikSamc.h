@@ -389,6 +389,17 @@ struct DKC_Compiler_tag
     Encoding            source_encoding;
 };
 
+typedef struct 
+{
+    DVM_Char            *string;
+} VString;
+
+// diksam.l
+void dkc_set_source_string(char **source);
+
+// util.c
+DKC_Compiler* dkc_get_current_compiler(void);
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus

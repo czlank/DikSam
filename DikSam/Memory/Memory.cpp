@@ -25,13 +25,14 @@ void* Memory::Malloc(const char *lpcstrFileName, int iLine, size_t szSize)
     szAllocSize = szSize;
 #endif // _DEBUG
 
-    void *ptr = new unsigned char[szAllocSize]{INITIAL_MARK};
+    void *ptr = new unsigned char[szAllocSize];
     if (nullptr == ptr)
     {
         ErrorHandler(m_Out, lpcstrFileName, iLine, "malloc");
     }
 
 #ifdef _DEBUG
+    memset(ptr, INITIAL_MARK, szAllocSize);
     SetHeader((Header*)ptr, szSize, lpcstrFileName, iLine);
     SetTail(ptr, szAllocSize);
     ChainBlock((Header*)ptr);
@@ -70,15 +71,9 @@ void* Memory::Realloc(const char *lpcstrFileName, int iLine, void *ptr, size_t s
     RealPtr = ptr;
 #endif // _DEBUG
 
-    if (RealPtr)
-    {
-        delete[] RealPtr;
-        RealPtr = nullptr;
-    }
+    void *pNewPtr = new unsigned char[szAllocSize];
 
-    void *NewPtr = new unsigned char[szAllocSize]{INITIAL_MARK};
-
-    if (nullptr == NewPtr)
+    if (nullptr == pNewPtr)
     {
         if (nullptr == ptr)
         {
@@ -90,25 +85,38 @@ void* Memory::Realloc(const char *lpcstrFileName, int iLine, void *ptr, size_t s
         }
     }
 
+    if (ptr)
+    {
+        memcpy((char*)pNewPtr + sizeof(Header), ptr, szOldSize);
+
+        delete[] RealPtr;
+        RealPtr = nullptr;
+    }
+
 #ifdef _DEBUG
     if (ptr)
     {
-        *((Header*)NewPtr) = stOldHeader;
-        ((Header*)NewPtr)->m_stHeader.m_iSize = szSize;
-        ReChainBlock((Header*)NewPtr);
-        SetTail(NewPtr, szAllocSize);
+        *((Header*)pNewPtr) = stOldHeader;
+        ((Header*)pNewPtr)->m_stHeader.m_iSize = szSize;
+        ReChainBlock((Header*)pNewPtr);
+        SetTail(pNewPtr, szAllocSize);
     }
     else
     {
-        SetHeader((Header*)NewPtr, szSize, lpcstrFileName, iLine);
-        SetTail(NewPtr, szAllocSize);
-        ChainBlock((Header*)NewPtr);
+        SetHeader((Header*)pNewPtr, szSize, lpcstrFileName, iLine);
+        SetTail(pNewPtr, szAllocSize);
+        ChainBlock((Header*)pNewPtr);
     }
 
-    NewPtr = (char*)NewPtr + sizeof(Header);
+    pNewPtr = (char*)pNewPtr + sizeof(Header);
+
+    if (szSize > szOldSize)
+    {
+        memset((char *)pNewPtr + szOldSize, INITIAL_MARK, szSize - szOldSize);
+    }
 #endif // _DEBUG
 
-    return NewPtr;
+    return pNewPtr;
 }
 
 char* Memory::StrDUP(const char *lpcstrFileName, int iLine, const char *lpcstrStr)
@@ -122,7 +130,7 @@ char* Memory::StrDUP(const char *lpcstrFileName, int iLine, const char *lpcstrSt
     szAllocSize = iSize;
 #endif // _DEBUG
 
-    char *ptr = new char[szAllocSize]{};
+    char *ptr = new char[szAllocSize];
     if (nullptr == ptr)
     {
         ErrorHandler(m_Out, lpcstrFileName, iLine, "strdup");
@@ -266,10 +274,9 @@ void Memory::SetHeader(Header *pHeader, int iSize, const char *lpcstrFileName, i
     std::string strFileName(lpcstrFileName);
     size_t npos = strFileName.find_last_of('\\');
     assert(npos != std::string::npos);
-    strFileName = strFileName.substr(npos + 1, strFileName.length() - (npos + 1));
 
     pHeader->m_stHeader.m_iSize = iSize;
-    pHeader->m_stHeader.m_lpcstrFileName = strFileName.c_str();
+    pHeader->m_stHeader.m_lpcstrFileName = lpcstrFileName + npos + 1;
     pHeader->m_stHeader.m_iLine = iLine;
 
     memset(pHeader->m_stHeader.m_czMark, MARK, (char*)&pHeader[1] - (char*)pHeader->m_stHeader.m_czMark);
@@ -299,7 +306,7 @@ void Memory::CheckMark(Header *pHeader)
     unsigned char   *tail;
 
     CheckMarkSub(pHeader->m_stHeader.m_czMark, (char*)&pHeader[1] - (char*)pHeader->m_stHeader.m_czMark);
-    tail = ((unsigned char*)pHeader) + pHeader->m_stHeader.m_iSize + sizeof(pHeader);
+    tail = ((unsigned char*)pHeader) + pHeader->m_stHeader.m_iSize + sizeof(Header);
     CheckMarkSub(tail, MARK_SIZE);
 }
 #endif // _DEBUG

@@ -19,6 +19,9 @@
     <Filter Include="Memory">
       <UniqueIdentifier>{e8996a2c-74cc-47ed-9c82-ca261154b059}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Share">
+      <UniqueIdentifier>{bd45f93f-5221-43eb-bbd0-b6fef626a782}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -45,6 +48,9 @@
     <ClInclude Include="Compiler\Util.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Share\Error.h">
+      <Filter>Share</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -67,6 +73,9 @@
     </ClCompile>
     <ClCompile Include="Compiler\Util.cpp">
       <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Share\Error.cpp">
+      <Filter>Share</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

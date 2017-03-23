@@ -22,6 +22,7 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 
 DIKSAM_DECLARE void DKC_Compile(int iThreadIndex)
 {
+    setlocale(LC_CTYPE, "");
     g_iCurrentThreadIndex = iThreadIndex;
     DikSam::GetClassObject(0);
 }
