@@ -17,6 +17,16 @@ typedef struct MEM_Storage_tag *MEM_Storage;
 
 typedef enum
 {
+    INT_MESSAGE_ARGUMENT = 1,
+    DOUBLE_MESSAGE_ARGUMENT,
+    STRING_MESSAGE_ARGUMENT,
+    CHARACTER_MESSAGE_ARGUMENT,
+    POINTER_MESSAGE_ARGUMENT,
+    MESSAGE_ARGUMENT_END
+} MessageArgumentType;
+
+typedef enum
+{
     PARSE_ERR = 1,
     CHARACTER_INVALID_ERR,
     FUNCTION_MULTIPLE_DEFINE_ERR,
@@ -40,6 +50,14 @@ typedef enum
     LABEL_NOT_FOUND_ERR,
     COMPILE_ERROR_COUNT_PLUS_1
 } CompileError;
+
+typedef enum
+{
+    BAD_MULTIBYTE_CHARACTER_ERR = 1,
+    FUNCTION_NOT_FOUND_ERR,
+    FUNCTION_MULTIPLE_DEFINE_ERR,
+    RUNTIME_ERROR_COUNT_PLUS_1
+} RuntimeError;
 
 typedef struct Expression_tag   Expression;
 
