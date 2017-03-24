@@ -21,12 +21,14 @@
 #endif // _DEBUG
 
 #include <cassert>
+#include <cstdarg>
+#include <exception>
+#include <memory>
 #include <string>
 #include <sstream>
-#include <memory>
-#include <exception>
 #include <iostream>
 #include <map>
+#include <vector>
 
 #include "DikSamc.h"
 

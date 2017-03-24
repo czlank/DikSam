@@ -1,10 +1,19 @@
 #pragma once
 
+#include "Exception.h"
+#include "Util.h"
+#include "Debug.h"
+
 class Error
 {
+#define ERROR_DBG_Assert(expression, arg) ((expression) ? (void)(0) : (m_Debug.Assert(__FILE__, __LINE__, #expression, arg)))
+#define ERROR_DBG_Panic(arg) (m_Debug.Panic(__FILE__, __LINE__, arg))
+
 public:
-    Error();
+    Error(Util& util, Debug& debug);
     ~Error();
+
+    void CompileError(int iLine, DikSamError id, ...);
 
 private:
     typedef struct
@@ -22,11 +31,14 @@ private:
     } MessageArgument;
 
 private:
-    int InitMessageFormat();
+    void InitMessageFormat();
+    void SelfCheck();
+    void CreateMessageArgument(std::vector<MessageArgument>& vecArg, va_list ap);
+    void FormatMessage(int iLine, const wchar_t* lpcwstrFormat, VString *vstrMsg, va_list ap);
 
 private:
-    typedef std::map<int, const wchar_t*>   MessageFormat, *pMessageFormat;
-    pMessageFormat  m_pMessageFormat;
-    MessageFormat   m_CompilerErrorMessageFormat;
-    MessageFormat   m_DvmErrorMessageFormat;
+    Util    &m_Util;
+    Debug   &m_Debug;
+
+    std::map<int, const wchar_t*>   m_ErrorMessageFormat;
 };

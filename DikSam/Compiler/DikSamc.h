@@ -48,16 +48,8 @@ typedef enum
     ARGUMENT_COUNT_MISMATCH_ERR,
     NOT_LVALUE_ERR,
     LABEL_NOT_FOUND_ERR,
-    COMPILE_ERROR_COUNT_PLUS_1
-} CompileError;
-
-typedef enum
-{
-    BAD_MULTIBYTE_CHARACTER_ERR = 1,
-    FUNCTION_NOT_FOUND_ERR,
-    FUNCTION_MULTIPLE_DEFINE_ERR,
-    RUNTIME_ERROR_COUNT_PLUS_1
-} RuntimeError;
+    DIKSAM_ERROR_COUNT_PLUS_1
+} DikSamError;
 
 typedef struct Expression_tag   Expression;
 
