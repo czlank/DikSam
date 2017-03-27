@@ -26,14 +26,14 @@ public:
     Declaration* SearchDeclaration(const char *lpcstrIdentifier, Block *pBlock);
 
     void VStrClear(VString *vStr);
-    void VStrAppandString(VString *vStr, DVM_Char *lpcstrStr);
+    void VStrAppandString(VString *vStr, const DVM_Char *lpcstrStr);
     void VStrAppandCharacter(VString *vStr, DVM_Char ch);
 
     char* GetBasicTypeName(DVM_BasicType enType);
     DVM_Char* ExpressionToString(Expression *stExpr);
 
 private:
-    int StrLen(DVM_Char *str);
+    int StrLen(const DVM_Char *str);
 
 private:
     DKC_Compiler    *m_pCompiler;

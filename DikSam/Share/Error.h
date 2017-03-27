@@ -3,6 +3,7 @@
 #include "Exception.h"
 #include "Util.h"
 #include "Debug.h"
+#include "DVM_pri.h"
 
 class Error
 {
@@ -14,6 +15,7 @@ public:
     ~Error();
 
     void CompileError(int iLine, DikSamError id, ...);
+    void DVMError(DVM_Executable *pExe, Function *pFunc, int pc, DikSamError id, ...);
 
 private:
     typedef struct
@@ -34,7 +36,9 @@ private:
     void InitMessageFormat();
     void SelfCheck();
     void CreateMessageArgument(std::vector<MessageArgument>& vecArg, va_list ap);
-    void FormatMessage(int iLine, const wchar_t* lpcwstrFormat, VString *vstrMsg, va_list ap);
+    std::vector<MessageArgument>::iterator SearchArgument(std::vector<MessageArgument>& vecArg, const char* lpcstrName);
+    void FormatMessage(const wchar_t* lpcwstrFormat, VString *vstrMsg, va_list ap);
+    int ConvertPCToLineNumber(DVM_Executable *pExe, Function *pFunc, int pc);
 
 private:
     Util    &m_Util;

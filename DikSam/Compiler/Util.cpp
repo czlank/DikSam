@@ -79,7 +79,7 @@ void Util::VStrClear(VString *vStr)
     vStr->string = nullptr;
 }
 
-void Util::VStrAppandString(VString *vStr, DVM_Char *lpcstrStr)
+void Util::VStrAppandString(VString *vStr, const DVM_Char *lpcstrStr)
 {
     int iOldLen = StrLen(vStr->string);
     int iNewLen = iOldLen + StrLen(lpcstrStr) + 1;
@@ -151,7 +151,7 @@ DVM_Char* Util::ExpressionToString(Expression *stExpr)
     return pNewStr;
 }
 
-int Util::StrLen(DVM_Char *str)
+int Util::StrLen(const DVM_Char *str)
 {
     if (nullptr == str)
         return 0;
