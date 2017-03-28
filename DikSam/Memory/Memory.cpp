@@ -25,7 +25,7 @@ void* Memory::Malloc(const char *lpcstrFileName, int iLine, size_t szSize)
     szAllocSize = szSize;
 #endif // _DEBUG
 
-    void *ptr = new unsigned char[szAllocSize];
+    void *ptr = new unsigned char[szAllocSize]();
     if (nullptr == ptr)
     {
         ErrorHandler(m_Out, lpcstrFileName, iLine, "malloc");
@@ -71,7 +71,7 @@ void* Memory::Realloc(const char *lpcstrFileName, int iLine, void *ptr, size_t s
     RealPtr = ptr;
 #endif // _DEBUG
 
-    void *pNewPtr = new unsigned char[szAllocSize];
+    void *pNewPtr = new unsigned char[szAllocSize]();
 
     if (nullptr == pNewPtr)
     {
@@ -132,7 +132,7 @@ char* Memory::StrDUP(const char *lpcstrFileName, int iLine, const char *lpcstrSt
     szAllocSize = iSize;
 #endif // _DEBUG
 
-    char *ptr = new char[szAllocSize];
+    char *ptr = new char[szAllocSize]();
     if (nullptr == ptr)
     {
         ErrorHandler(m_Out, lpcstrFileName, iLine, "strdup");

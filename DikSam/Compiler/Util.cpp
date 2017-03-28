@@ -1,5 +1,22 @@
 #include "stdafx.h"
 #include "Util.h"
+#include "DikSam.h"
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif // __cplusplus
+
+extern int  g_iCurrentThreadIndex;
+
+DKC_Compiler* dkc_get_current_compiler(void)
+{
+    return DikSam::GetClassObject(g_iCurrentThreadIndex)->GetUtil()->GetCompiler();
+}
+
+#ifdef __cplusplus
+}
+#endif // __cplusplus
 
 Util::Util(Storage& storage, Memory& memory, Debug& debug)
     : m_pCompiler(nullptr)
@@ -15,17 +32,17 @@ Util::~Util()
 
 }
 
-void* Util::Malloc(size_t szSize)
+void* Util::Malloc(const char *lpcstrFileName, int iLine, size_t szSize)
 {
     assert(m_pCompiler);
 
-    void *p = UTIL_STORAGE_Malloc(szSize);
+    void *p = m_Storage.Malloc(lpcstrFileName, iLine, m_pCompiler->compile_storage, szSize);
     return p;
 }
 
 TypeSpecifier* Util::AllocTypeSpecifier(DVM_BasicType enType)
 {
-    TypeSpecifier *ts = (TypeSpecifier*)Malloc(sizeof(TypeSpecifier));
+    TypeSpecifier *ts = (TypeSpecifier*)Malloc(__FILE__, __LINE__, sizeof(TypeSpecifier));
 
     ts->basic_type = enType;
     ts->derive = nullptr;

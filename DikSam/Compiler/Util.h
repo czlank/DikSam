@@ -7,7 +7,6 @@
 
 class Util
 {
-#define UTIL_STORAGE_Malloc(size)           (m_Storage.Malloc(__FILE__, __LINE__, m_pCompiler->compile_storage, size))
 #define UTIL_MEM_Malloc(size)               (m_Memory.Malloc(__FILE__, __LINE__, size))
 #define UTIL_MEM_Realloc(ptr, size)         (m_Memory.Realloc(__FILE__, __LINE__, ptr, size))
 #define UTIL_DBG_Assert(expression, arg)    ((expression) ? (void)(0) : (m_Debug.Assert(__FILE__, __LINE__, #expression, arg)))
@@ -17,9 +16,9 @@ public:
     ~Util();
 
     void SetCompiler(DKC_Compiler *pCompiler) { assert(pCompiler), m_pCompiler = pCompiler; }
-    DKC_Compiler* GetCompiler() const { return m_pCompiler; }
+    DKC_Compiler* GetCompiler() const { assert(m_pCompiler); return m_pCompiler; }
 
-    void* Malloc(size_t szSize);
+    void* Malloc(const char *lpcstrFileName, int iLine, size_t szSize);
     TypeSpecifier* AllocTypeSpecifier(DVM_BasicType enType);
     
     FunctionDefinition* SearchFunction(const char *lpcstrName);

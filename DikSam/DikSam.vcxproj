@@ -89,9 +89,11 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Compiler\Create.h" />
+    <ClInclude Include="Compiler\DikSam.h" />
+    <ClInclude Include="Compiler\StringLiteral.h" />
     <ClInclude Include="Compiler\Util.h" />
     <ClInclude Include="Debug\Debug.h" />
-    <ClInclude Include="DikSam.h" />
     <ClInclude Include="Memory\Memory.h" />
     <ClInclude Include="Memory\Storage.h" />
     <ClInclude Include="Share\Error.h" />
@@ -99,9 +101,11 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Compiler\Create.cpp" />
+    <ClCompile Include="Compiler\DikSam.cpp" />
+    <ClCompile Include="Compiler\StringLiteral.cpp" />
     <ClCompile Include="Compiler\Util.cpp" />
     <ClCompile Include="Debug\Debug.cpp" />
-    <ClCompile Include="DikSam.cpp" />
     <ClCompile Include="dllmain.cpp">
       <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</CompileAsManaged>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">

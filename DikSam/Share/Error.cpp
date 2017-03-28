@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "Error.h"
-#include "../DikSam.h"
+#include "DikSam.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -28,8 +28,6 @@ Error::Error(Util& util, Debug& debug)
     , m_Debug(debug)
 {
     InitMessageFormat();
-
-    //CompileError(0, PARSE_ERR, STRING_MESSAGE_ARGUMENT, "token", "abc", MESSAGE_ARGUMENT_END);
 }
 
 Error::~Error()

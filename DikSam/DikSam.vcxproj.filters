@@ -22,6 +22,9 @@
     <Filter Include="Share">
       <UniqueIdentifier>{bd45f93f-5221-43eb-bbd0-b6fef626a782}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Compiler">
+      <UniqueIdentifier>{514a9894-39d5-4f5a-a5f0-46d50b3e8f7a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -33,9 +36,6 @@
     <ClInclude Include="targetver.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="DikSam.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="Debug\Debug.h">
       <Filter>Debug</Filter>
     </ClInclude>
@@ -45,18 +45,24 @@
     <ClInclude Include="Memory\Storage.h">
       <Filter>Memory</Filter>
     </ClInclude>
-    <ClInclude Include="Compiler\Util.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="Share\Error.h">
       <Filter>Share</Filter>
+    </ClInclude>
+    <ClInclude Include="Compiler\Util.h">
+      <Filter>Compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="Compiler\DikSam.h">
+      <Filter>Compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="Compiler\StringLiteral.h">
+      <Filter>Compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="Compiler\Create.h">
+      <Filter>Compiler</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="DikSam.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="dllmain.cpp">
@@ -71,11 +77,20 @@
     <ClCompile Include="Memory\Storage.cpp">
       <Filter>Memory</Filter>
     </ClCompile>
-    <ClCompile Include="Compiler\Util.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="Share\Error.cpp">
       <Filter>Share</Filter>
+    </ClCompile>
+    <ClCompile Include="Compiler\Util.cpp">
+      <Filter>Compiler</Filter>
+    </ClCompile>
+    <ClCompile Include="Compiler\DikSam.cpp">
+      <Filter>Compiler</Filter>
+    </ClCompile>
+    <ClCompile Include="Compiler\StringLiteral.cpp">
+      <Filter>Compiler</Filter>
+    </ClCompile>
+    <ClCompile Include="Compiler\Create.cpp">
+      <Filter>Compiler</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -11,11 +11,6 @@ extern "C"
 
 int  g_iCurrentThreadIndex = -1;
 
-DKC_Compiler* dkc_get_current_compiler(void)
-{
-    return DikSam::GetClassObject(g_iCurrentThreadIndex)->GetUtil()->GetCompiler();
-}
-
 #ifdef __cplusplus
 }
 #endif // __cplusplus
@@ -28,6 +23,8 @@ DikSam::DikSam(int iThreadIndex)
     , m_Storage(m_Memory)
     , m_Util(m_Storage, m_Memory, m_Debug)
     , m_Error(m_Util, m_Debug)
+    , m_StringLiteral(m_Memory, m_Util, m_Error)
+    , m_Create(m_Debug, m_Error, m_Util)
 {
 
 }
