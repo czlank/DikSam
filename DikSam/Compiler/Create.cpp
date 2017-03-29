@@ -95,6 +95,243 @@ ParameterList* Create::CreateParameter(DVM_BasicType enType, char *lpstrIdentifi
     return p;
 }
 
+ParameterList* Create::ChainParameter(ParameterList *pList, DVM_BasicType enType, char *lpstrIdentifier)
+{
+    ParameterList *pos = pList;
+
+    for (; pos->next; pos = pos->next)
+        ;
+    pos->next = CreateParameter(enType, lpstrIdentifier);
+
+    return pList;
+}
+
+ArgumentList* Create::CreateArgumentList(Expression *pExpression)
+{
+    ArgumentList *pArgumentList = (ArgumentList*)CREATE_UTIL_Malloc(sizeof(ArgumentList));
+
+    pArgumentList->expression = pExpression;
+    pArgumentList->next = nullptr;
+
+    return pArgumentList;
+}
+
+ArgumentList* Create::ChainArgumentList(ArgumentList *pList, Expression *pExpression)
+{
+    ArgumentList *pos = pList;
+
+    for (; pos->next; pos = pos->next)
+        ;
+    pos->next = CreateArgumentList(pExpression);
+
+    return pList;
+}
+
+StatementList* Create::CreateStatementList(Statement *pStatement)
+{
+    StatementList *pStatementList = (StatementList*)CREATE_UTIL_Malloc(sizeof(StatementList));
+
+    pStatementList->statement = pStatement;
+    pStatementList->next = nullptr;
+
+    return pStatementList;
+}
+
+StatementList* Create::ChainStatementList(StatementList *pList, Statement *pStatement)
+{
+    if (nullptr == pList)
+        return CreateStatementList(pStatement);
+
+    StatementList *pos = pList;
+
+    for (; pos->next; pos = pos->next)
+        ;
+    pos->next = CreateStatementList(pStatement);
+
+    return pList;
+}
+
+Expression* Create::AllocExpression(ExpressionKind enKind)
+{
+    Expression *pExpression = (Expression*)CREATE_UTIL_Malloc(sizeof(Expression));
+
+    pExpression->type = nullptr;
+    pExpression->kind = enKind;
+    pExpression->line_number = m_Util.GetCompiler()->current_line_number;
+
+    return pExpression;
+}
+
+Expression* Create::CreateCommaExpression(Expression *pLeft, Expression *pRight)
+{
+    Expression *pExpression = AllocExpression(COMMA_EXPRESSION);
+
+    pExpression->u.comma.left = pLeft;
+    pExpression->u.comma.right = pRight;
+
+    return pExpression;
+}
+
+Expression* Create::CreateAssignExpression(Expression *pLeft, AssignmentOperator enOperator, Expression *pOperand)
+{
+    Expression *pExpression = AllocExpression(ASSIGN_EXPRESSION);
+
+    pExpression->u.assign_expression.left = pLeft;
+    pExpression->u.assign_expression.op = enOperator;
+    pExpression->u.assign_expression.operand = pOperand;
+
+    return pExpression;
+}
+
+Expression* Create::CreateBinaryExpression(ExpressionKind enKind, Expression *pLeft, Expression *pRight)
+{
+    Expression *pExpression = AllocExpression(enKind);
+
+    pExpression->u.binary_expression.left = pLeft;
+    pExpression->u.binary_expression.right = pRight;
+
+    return pExpression;
+}
+
+Expression* Create::CreateMinusExpression(Expression *pOperand)
+{
+    Expression *pExpression = AllocExpression(MINUS_EXPRESSION);
+
+    pExpression->u.minus_expression = pOperand;
+
+    return pExpression;
+}
+
+Expression* Create::CreateLogicalNotExpression(Expression *pOperand)
+{
+    Expression *pExpression = AllocExpression(LOGICAL_NOT_EXPRESSION);
+
+    pExpression->u.logical_not = pOperand;
+
+    return pExpression;
+}
+
+Expression* Create::CreateIncDecExpression(Expression *pOperand, ExpressionKind enKind)
+{
+    Expression *pExpression = AllocExpression(enKind);
+
+    pExpression->u.inc_dec.operand = pOperand;
+
+    return pExpression;
+}
+
+Expression* Create::CreateIdentifierExpression(char *lpstrIdentifier)
+{
+    Expression *pExpression = AllocExpression(IDENTIFIER_EXPRESSION);
+
+    pExpression->u.identifier.name = lpstrIdentifier;
+
+    return pExpression;
+}
+
+Expression* Create::CreateFunctionCallExpression(Expression *pFunction, ArgumentList *pArgument)
+{
+    Expression *pExpression = AllocExpression(FUNCTION_CALL_EXPRESSION);
+
+    pExpression->u.function_call_expression.function = pFunction;
+    pExpression->u.function_call_expression.argument = pArgument;
+
+    return pExpression;
+}
+
+Expression* Create::CreateBooleanExpression(DVM_Boolean enValue)
+{
+    Expression *pExpression = AllocExpression(BOOLEAN_EXPRESSION);
+
+    pExpression->u.boolean_value = enValue;
+
+    return pExpression;
+}
+
+Statement* Create::CreateIfStatement(Expression *pCondition, Block *pThenBlock, Elsif *pElsifList, Block *pElseBlock)
+{
+    Statement *pStatement = AllocStatement(IF_STATEMENT);
+
+    pStatement->u.if_s.condition = pCondition;
+    pStatement->u.if_s.then_block = pThenBlock;
+    pStatement->u.if_s.elsif_list = pElsifList;
+    pStatement->u.if_s.else_block = pElseBlock;
+
+    return pStatement;
+}
+
+Elsif* Create::ChainElsifList(Elsif *pList, Elsif *pAdd)
+{
+    Elsif *pos = pList;
+
+    for (; pos->next; pos = pos->next)
+        ;
+    pos->next = pAdd;
+
+    return pList;
+}
+
+Elsif* Create::CreateElsif(Expression *pExpression, Block *pBlock)
+{
+    Elsif *pElsif = (Elsif*)CREATE_UTIL_Malloc(sizeof(Elsif));
+
+    pElsif->condition = pExpression;
+    pElsif->block = pBlock;
+    pElsif->next = nullptr;
+
+    return pElsif;
+}
+
+Statement* Create::CreateWhileStatement(char *lpstrLabel, Expression *pConfition, Block *pBlock)
+{
+    Statement *pStatement = AllocStatement(WHILE_STATEMENT);
+
+    pStatement->u.while_s.label = lpstrLabel;
+    pStatement->u.while_s.condition = pConfition;
+    pStatement->u.while_s.block = pBlock;
+    pBlock->type = WHILE_STATEMENT_BLOCK;
+    pBlock->parent.statement.statement = pStatement;
+
+    return pStatement;
+}
+
+Statement* Create::CreateForStatement(char *lpstrLabel, Expression *pInit, Expression *pCondition, Expression *pPost, Block *pBlock)
+{
+    Statement *pStatement = AllocStatement(FOR_STATEMENT);
+
+    pStatement->u.for_s.label = lpstrLabel;
+    pStatement->u.for_s.init = pInit;
+    pStatement->u.for_s.condition = pCondition;
+    pStatement->u.for_s.post = pPost;
+    pStatement->u.for_s.block = pBlock;
+    pBlock->type = FOR_STATEMENT_BLOCK;
+    pBlock->parent.statement.statement = pStatement;
+
+    return pStatement;
+}
+
+Block* Create::OpenBlock()
+{
+    Block *pBlock = (Block*)CREATE_UTIL_Malloc(sizeof(Block));
+
+    pBlock->type = UNDEFINED_BLOCK;
+    pBlock->outer_block = m_Util.GetCompiler()->current_block;
+    pBlock->declaration_list = nullptr;
+    m_Util.GetCompiler()->current_block = pBlock;
+
+    return pBlock;
+}
+
+Block* Create::CloseBlock(Block *pBlock, StatementList *pStatementList)
+{
+    CREATE_DBG_Assert(pBlock == m_Util.GetCompiler()->current_block, ("block mismatch."));
+
+    pBlock->statement_list = pStatementList;
+    m_Util.GetCompiler()->current_block = pBlock->outer_block;
+
+    return pBlock;
+}
+
 FunctionDefinition* Create::CreateFunctionDefinition(DVM_BasicType enType, char *lpstrIdentifier, ParameterList *pParameterList, Block *pBlock)
 {
     DKC_Compiler *pCompiler = m_Util.GetCompiler();
@@ -110,4 +347,14 @@ FunctionDefinition* Create::CreateFunctionDefinition(DVM_BasicType enType, char 
     pFD->next = nullptr;
 
     return pFD;
+}
+
+Statement* Create::AllocStatement(StatementType enType)
+{
+    Statement *pStatement = (Statement*)CREATE_UTIL_Malloc(sizeof(Statement));
+
+    pStatement->type = enType;
+    pStatement->line_number = m_Util.GetCompiler()->current_line_number;
+
+    return pStatement;
 }
