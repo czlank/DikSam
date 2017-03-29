@@ -22,4 +22,4 @@ lex.yy.o : lex.yy.c
 	$(CC) -c -g $*.c $(INCLUDES)
 
 clean:
-	rm -f *.o
+	rm -f *.o lex.yy.c y.tab.h y.tab.c y.output

@@ -332,6 +332,74 @@ Block* Create::CloseBlock(Block *pBlock, StatementList *pStatementList)
     return pBlock;
 }
 
+Statement* Create::CreateExpressionStatement(Expression *pExpression)
+{
+    Statement *pStatement = AllocStatement(EXPRESSION_STATEMENT);
+
+    pStatement->u.expression_s = pExpression;
+
+    return pStatement;
+}
+
+Statement* Create::CreateReturnStatement(Expression *pExpression)
+{
+    Statement *pStatement = AllocStatement(RETURN_STATEMENT);
+
+    pStatement->u.return_s.return_value = pExpression;
+
+    return pStatement;
+}
+
+Statement* Create::CreateBreakStatement(char *lpstrLabel)
+{
+    Statement *pStatement = AllocStatement(BREAK_STATEMENT);
+
+    pStatement->u.break_s.label = lpstrLabel;
+
+    return pStatement;
+}
+
+Statement* Create::CreateContinueStatement(char *lpstrLabel)
+{
+    Statement *pStatement = AllocStatement(CONTINUE_STATEMENT);
+
+    pStatement->u.continue_s.label = lpstrLabel;
+
+    return pStatement;
+}
+
+Statement* Create::CreateTryStatement(Block *pTryBlock, char *lpstrException, Block *pCatchBlock, Block *pFinallyBlock)
+{
+    Statement *pStatement = AllocStatement(TRY_STATEMENT);
+
+    pStatement->u.try_s.try_block = pTryBlock;
+    pStatement->u.try_s.catch_block = pCatchBlock;
+    pStatement->u.try_s.exception = lpstrException;
+    pStatement->u.try_s.finally_block = pFinallyBlock;
+
+    return pStatement;
+}
+
+Statement* Create::CreateThrowStatement(Expression *pExpression)
+{
+    Statement *pStatement = AllocStatement(THROW_STATEMENT);
+
+    pStatement->u.throw_s.exception = pExpression;
+
+    return pStatement;
+}
+
+Statement* Create::CreateDeclarationStatement(DVM_BasicType enType, char *lpstrIdentifier, Expression *pInitializer)
+{
+    Statement *pStatement = AllocStatement(DECLARATION_STATEMENT);
+    Declaration *pDeclaration = AllocDeclaration(m_Util.AllocTypeSpecifier(enType), lpstrIdentifier);
+
+    pDeclaration->initializer = pInitializer;
+    pStatement->u.declaration_s = pDeclaration;
+
+    return pStatement;
+}
+
 FunctionDefinition* Create::CreateFunctionDefinition(DVM_BasicType enType, char *lpstrIdentifier, ParameterList *pParameterList, Block *pBlock)
 {
     DKC_Compiler *pCompiler = m_Util.GetCompiler();

@@ -10,8 +10,12 @@ extern "C"
 {
 #endif  // __cplusplus
 
+#define dkc_compile_error(line_number, id, arg)  DikSam::GetClassObject(g_iCurrentThreadIndex)->GetError()->CompileError(line_number, id, arg)
+
 #define smaller(a, b) ((a) < (b) ? (a) : (b))
 #define larger(a, b) ((a) > (b) ? (a) : (b))
+
+#define LINE_BUF_SIZE       (1024)
 
 typedef struct MEM_Storage_tag *MEM_Storage;
 
@@ -407,8 +411,50 @@ typedef struct
 // diksam.l
 void dkc_set_source_string(char **source);
 
-// util.c
+// Util.cpp
 DKC_Compiler* dkc_get_current_compiler(void);
+
+// Error.cpp
+int yyerror(char const *str);
+
+// StringLiteral.cpp
+void dkc_open_string_literal(void);
+void dkc_add_string_literal(int letter);
+DVM_Char* dkc_close_string_literal(void);
+char* dkc_create_identifier(char *str);
+
+// CreateC.cpp
+void dkc_function_define(DVM_BasicType type, char *identifier, ParameterList *parameter_list, Block *block);
+ParameterList* dkc_create_parameter(DVM_BasicType type, char *identifier);
+ParameterList* dkc_chain_parameter(ParameterList *list, DVM_BasicType type, char *identifier);
+ArgumentList* dkc_create_argument_list(Expression *expression);
+ArgumentList* dkc_chain_argument_list(ArgumentList *list, Expression *expr);
+StatementList* dkc_create_statement_list(Statement *statement);
+StatementList* dkc_chain_statement_list(StatementList *list, Statement *statement);
+Expression* dkc_alloc_expression(ExpressionKind kind);
+Expression* dkc_create_comma_expression(Expression *left, Expression *right);
+Expression* dkc_create_assign_expression(Expression *left, AssignmentOperator op, Expression *operand);
+Expression* dkc_create_binary_expression(ExpressionKind op, Expression *left, Expression *right);
+Expression* dkc_create_munis_expression(Expression *operand);
+Expression* dkc_create_logical_not_expression(Expression *operand);
+Expression* dkc_create_incdec_expression(Expression *operand, ExpressionKind inc_or_dec);
+Expression* dkc_create_identifier_expression(char *identifier);
+Expression* dkc_create_function_call_expression(Expression *function, ArgumentList *argument);
+Expression* dkc_create_boolean_expression(DVM_Boolean value);
+Statement* dkc_create_if_statement(Expression *condition, Block *then_block, Elsif *elsif_list, Block *else_block);
+Elsif* dkc_chain_elsif_list(Elsif *list, Elsif *add);
+Elsif* dkc_create_elsif(Expression *expr, Block *block);
+Statement* dkc_create_while_statement(char *label, Expression *condition, Block *block);
+Statement* dkc_create_for_statement(char *label, Expression *init, Expression *cond, Expression *post, Block *block);
+Block* dkc_open_block(void);
+Block* dkc_close_block(Block *block, StatementList *statement_list);
+Statement* dkc_create_expression_statement(Expression *expression);
+Statement* dkc_create_return_statement(Expression *expression);
+Statement* dkc_create_break_statement(char *label);
+Statement* dkc_create_continue_statement(char *label);
+Statement* dkc_create_try_statement(Block *try_block, char *exception, Block *catch_block, Block *finally_block);
+Statement* dkc_create_throw_statement(Expression *expression);
+Statement* dkc_create_declaration_statement(DVM_BasicType type, char *identifier, Expression *initializer);
 
 #ifdef __cplusplus
 }

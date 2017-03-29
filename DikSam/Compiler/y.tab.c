@@ -115,8 +115,8 @@
      RETURN_T = 267,
      BREAK = 268,
      CONTINUE = 269,
-     LP = 270,
-     RP = 271,
+     LEFTP = 270,
+     RIGHTP = 271,
      LC = 272,
      RC = 273,
      SEMICOLON = 274,
@@ -170,8 +170,8 @@
 #define RETURN_T 267
 #define BREAK 268
 #define CONTINUE 269
-#define LP 270
-#define RP 271
+#define LEFTP 270
+#define RIGHTP 271
 #define LC 272
 #define RC 273
 #define SEMICOLON 274
@@ -593,18 +593,19 @@ static const char *const yytname[] =
 {
   "$end", "error", "$undefined", "INT_LITERAL", "DOUBLE_LITERAL",
   "STRING_LITERAL", "IDENTIFIER", "IF", "ELSE", "ELSIF", "WHILE", "FOR",
-  "RETURN_T", "BREAK", "CONTINUE", "LP", "RP", "LC", "RC", "SEMICOLON",
-  "COLON", "COMMA", "ASSIGN_T", "LOGICAL_AND", "LOGICAL_OR", "EQ", "NE",
-  "GT", "GE", "LT", "LE", "ADD", "SUB", "MUL", "DIV", "MOD", "TRUE_T",
-  "FALSE_T", "EXCLAMATION", "DOT", "ADD_ASSIGN_T", "SUB_ASSIGN_T",
-  "MUL_ASSIGN_T", "DIV_ASSIGN_T", "MOD_ASSIGN_T", "INCREMENT", "DECREMENT",
-  "TRY", "CATCH", "FINALLY", "THROW", "BOOLEAN_T", "INT_T", "DOUBLE_T",
-  "STRING_T", "$accept", "translation_unit", "definition_or_statement",
-  "statement_list", "statement", "if_statement", "elsif_list", "elsif",
-  "while_statement", "for_statement", "expression_opt", "return_statement",
-  "break_statement", "continue_statement", "declaration_statement",
-  "block", "@1", "function_definition", "parameter_list", "argument_list",
-  "expression", "assignment_expression", "logical_or_expression",
+  "RETURN_T", "BREAK", "CONTINUE", "LEFTP", "RIGHTP", "LC", "RC",
+  "SEMICOLON", "COLON", "COMMA", "ASSIGN_T", "LOGICAL_AND", "LOGICAL_OR",
+  "EQ", "NE", "GT", "GE", "LT", "LE", "ADD", "SUB", "MUL", "DIV", "MOD",
+  "TRUE_T", "FALSE_T", "EXCLAMATION", "DOT", "ADD_ASSIGN_T",
+  "SUB_ASSIGN_T", "MUL_ASSIGN_T", "DIV_ASSIGN_T", "MOD_ASSIGN_T",
+  "INCREMENT", "DECREMENT", "TRY", "CATCH", "FINALLY", "THROW",
+  "BOOLEAN_T", "INT_T", "DOUBLE_T", "STRING_T", "$accept",
+  "translation_unit", "definition_or_statement", "statement_list",
+  "statement", "if_statement", "elsif_list", "elsif", "while_statement",
+  "for_statement", "expression_opt", "return_statement", "break_statement",
+  "continue_statement", "declaration_statement", "block", "@1",
+  "function_definition", "parameter_list", "argument_list", "expression",
+  "assignment_expression", "logical_or_expression",
   "logical_and_expression", "equality_expression", "relational_expression",
   "additive_expression", "multiplicative_expression", "unary_expression",
   "postfix_expression", "primary_expression", "label_opt",
@@ -954,11 +955,7 @@ yy_symbol_value_print (yyoutput, yytype, yyvaluep)
 # else
   YYUSE (yyoutput);
 # endif
-  switch (yytype)
-    {
-      default:
-	break;
-    }
+  ;
 }
 
 
@@ -1319,12 +1316,6 @@ yydestruct (yymsg, yytype, yyvaluep)
     yymsg = "Deleting";
   YY_SYMBOL_PRINT (yymsg, yytype, yyvaluep, yylocationp);
 
-  switch (yytype)
-    {
-
-      default:
-	break;
-    }
 }
 
 /* Prevent warnings from -Wmissing-prototypes.  */
@@ -2231,7 +2222,7 @@ yyreduce:
 
 
 /* Line 1464 of yacc.c  */
-#line 2235 "y.tab.c"
+#line 2236 "y.tab.c"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);

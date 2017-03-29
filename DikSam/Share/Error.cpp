@@ -2,27 +2,6 @@
 #include "Error.h"
 #include "DikSam.h"
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif // __cplusplus
-
-//extern char *yytext;
-extern int  g_iCurrentThreadIndex;
-
-// int yyerror(char const *str)
-// {
-//     DikSam::GetClassObject(g_iCurrentThreadIndex)->GetError()->CompileError(
-//         DikSam::GetClassObject(g_iCurrentThreadIndex)->GetUtil()->GetCompiler()->current_line_number,
-//         PARSE_ERR, STRING_MESSAGE_ARGUMENT, "token", yytext, MESSAGE_ARGUMENT_END);
-// 
-//     return 0;
-// }
-
-#ifdef __cplusplus
-}
-#endif // __cplusplus
-
 Error::Error(Util& util, Debug& debug)
     : m_Util(util)
     , m_Debug(debug)

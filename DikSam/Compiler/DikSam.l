@@ -3,9 +3,9 @@
 #define YY_INPUT(buf, result, max_size) (result = DikSam_yyinput(buf, max_size))
 
 #include <stdio.h>
+#include <io.h>
 #include <string.h>
 
-#include "DBG.h"
 #include "DikSamc.h"
 #include "y.tab.h"
 
@@ -55,10 +55,10 @@ static int string_input(char *buf, int max_size)
     if (NULL == st_source_string[st_current_source_line])
         return 0;
         
-    len = smaller(strlen(st_source_string[st_current_source_line])
+    len = smaller(int(strlen(st_source_string[st_current_source_line]))
                   - st_current_char_index,
                   max_size);
-    strncpy(buf, &st_source_string[st_current_source_line][st_current_char_index],
+    strncpy_s(buf, max_size, &st_source_string[st_current_source_line][st_current_char_index],
             len);
             
     st_current_char_index += len;
@@ -80,9 +80,9 @@ static int DikSam_yyinput(char *buf, int max_size)
         result = string_input(buf, max_size);
         break;
     
-    default :
-        DBG_panic(("bad default. input_mode..%d\n",
-                   dkc_get_current_compiler()->input_mode));
+    /*default :
+        DBG_panic(("bad default. input_mode..",
+                   dkc_get_current_compiler()->input_mode));*/
     }
     
     return result;
@@ -120,8 +120,8 @@ int yywrap(void)
 <INITIAL>"int"          return INT_T;
 <INITIAL>"double"       return DOUBLE_T;
 <INITIAL>"string"       return STRING_T;
-<INITIAL>"("            return LP;
-<INITIAL>")"            return RP;
+<INITIAL>"("            return LEFTP;
+<INITIAL>")"            return RIGHTP;
 <INITIAL>"{"            return LC;
 <INITIAL>"}"            return RC;
 <INITIAL>";"            return SEMICOLON;
@@ -151,38 +151,33 @@ int yywrap(void)
 <INITIAL>"!"            return EXCLAMATION;
 <INITIAL>"."            return DOT;
 
-<INITIAL>[A-Za-z_][A-Za-z_0-9]*
-{
+<INITIAL>[A-Za-z_][A-Za-z_0-9]* {
     yylval.identifier = dkc_create_identifier(yytext);
     return IDENTIFIER;
 }
 
-<INITIAL>[1-9][0-9]*
-{
-    Expression *expression = dkc_alloc_expression(INT_EXPRESSION);
-    sscanf(yytext, "%d", &expression->u.int_value);
+<INITIAL>[1-9][0-9]* {
+    Expression  *expression = dkc_alloc_expression(INT_EXPRESSION);
+    sscanf_s(yytext, "%d", &expression->u.int_value);
     yylval.expression = expression;
     return INT_LITERAL;
 }
 
-<INITIAL>"0"
-{
+<INITIAL>"0" {
     Expression *expression = dkc_alloc_expression(INT_EXPRESSION);
     expression->u.int_value=0;
     yylval.expression = expression;
     return INT_LITERAL;
 }
 
-<INITIAL>[0-9]+\.[0-9]+
-{
+<INITIAL>[0-9]+\.[0-9]+ {
     Expression *expression = dkc_alloc_expression(DOUBLE_EXPRESSION);
-    sscanf(yytext, "%lf", &expression->u.double_value);
+    sscanf_s(yytext, "%lf", &expression->u.double_value);
     yylval.expression = expression;
     return DOUBLE_LITERAL;
 }
 
-<INITIAL>\"
-{
+<INITIAL>\" {
     dkc_open_string_literal();
     BEGIN STRING_LITERAL_STATE;
 }
@@ -190,9 +185,8 @@ int yywrap(void)
 <INITIAL>[ \t]     ;
 <INITIAL>[ \t\r\n] { increment_line_number(); }
 <INITIAL>"/*"      BEGIN C_COMMENT;
-<INITIAL>"//"      BEGIN_CC_COMMENT;
-<INITIAL>.
-{
+<INITIAL>"//"      BEGIN CC_COMMENT;
+<INITIAL>. {
     char buf[LINE_BUF_SIZE];
     
     if (isprint(yytext[0]))
@@ -202,28 +196,25 @@ int yywrap(void)
     }
     else
     {
-        sprintf(buf, "0x%02x", (unsigned char)yytext[0]);
+        sprintf_s(buf, "0x%02x", (unsigned char)yytext[0]);
     }
     
     dkc_compile_error(dkc_get_current_compiler()->current_line_number,
                       CHARACTER_INVALID_ERR,
-                      STRING_MESSAGE_ARGUMENT, "bad_char", buf,
-                      MESSAGE_ARGUMENT_END);
+                      (STRING_MESSAGE_ARGUMENT, "bad_char", buf, MESSAGE_ARGUMENT_END));
 }
 
 <C_COMMENT>\n   increment_line_number();
 <C_COMMENT>"*/" BEGIN INITIAL;
 <C_COMMENT>.    ;
 
-<CC_COMMENT>\n
-{
+<CC_COMMENT>\n {
     increment_line_number();
     BEGIN INITIAL;
 }
 <CC_COMMENT>.   ;
 
-<STRING_LITERAL_STATE>\"
-{
+<STRING_LITERAL_STATE>\" {
     Expression *expression = dkc_alloc_expression(STRING_EXPRESSION);
     expression->u.string_value = dkc_close_string_literal();
     yylval.expression = expression;
@@ -231,8 +222,7 @@ int yywrap(void)
     return STRING_LITERAL;
 }
 
-<STRING_LITERAL_STATE>\n
-{
+<STRING_LITERAL_STATE>\n {
     dkc_add_string_literal('\n');
     increment_line_number();
 }
@@ -242,8 +232,7 @@ int yywrap(void)
 <STRING_LITERAL_STATE>\\t   dkc_add_string_literal('\t');
 <STRING_LITERAL_STATE>\\\\  dkc_add_string_literal('\\');
 
-<STRING_LITERAL_STATE>.
-{
+<STRING_LITERAL_STATE>. {
     Encoding enc = dkc_get_current_compiler()->source_encoding;
     dkc_add_string_literal(yytext[0]);
     if (enc == GB2312_ENCODING
@@ -253,9 +242,8 @@ int yywrap(void)
     }
 }
 
-<GB2312_2ND_CHAR>.
-{
-    crb_add_string_literal(yytext[0]);
+<GB2312_2ND_CHAR>. {
+    dkc_add_string_literal(yytext[0]);
     BEGIN STRING_LITERAL_STATE;
 }
 

@@ -25,7 +25,7 @@
 %token <identifier>     IDENTIFIER
 
 %token IF ELSE ELSIF WHILE FOR RETURN_T BREAK CONTINUE
-       LP RP LC RC SEMICOLON COLON COMMA ASSIGN_T LOGICAL_AND LOGICAL_OR
+       LEFTP RIGHTP LC RC SEMICOLON COLON COMMA ASSIGN_T LOGICAL_AND LOGICAL_OR
        EQ NE GT GE LT LE ADD SUB MUL DIV MOD TRUE_T FALSE_T EXCLAMATION DOT
        ADD_ASSIGN_T SUB_ASSIGN_T MUL_ASSIGN_T DIV_ASSIGN_T MOD_ASSIGN_T
        INCREMENT DECREMENT TRY CATCH FINALLY THROW
@@ -92,19 +92,19 @@ statement
         ;
 
 if_statement
-        : IF LP expression RP block
+        : IF LEFTP expression RIGHTP block
         {
             $$ = dkc_create_if_statement($3, $5, NULL, NULL);
         }
-        | IF LP expression RP block ELSE block
+        | IF LEFTP expression RIGHTP block ELSE block
         {
             $$ = dkc_create_if_statement($3, $5, NULL, $7);
         }
-        | IF LP expression RP block elsif_list
+        | IF LEFTP expression RIGHTP block elsif_list
         {
             $$ = dkc_create_if_statement($3, $5, $6, NULL);
         }
-        | IF LP expression RP block elsif_list ELSE block
+        | IF LEFTP expression RIGHTP block elsif_list ELSE block
         {
             $$ = dkc_create_if_statement($3, $5, $6, $8);
         }
@@ -119,22 +119,22 @@ elsif_list
         ;
 
 elsif
-        : ELSIF LP expression RP block
+        : ELSIF LEFTP expression RIGHTP block
         {
             $$ = dkc_create_elsif($3, $5);
         }
         ;
 
 while_statement
-        : label_opt WHILE LP expression RP block
+        : label_opt WHILE LEFTP expression RIGHTP block
         {
             $$ = dkc_create_while_statement($1, $4, $6);
         }
         ;
 
 for_statement
-        : label_opt FOR LP expression_opt SEMICOLON expression_opt SEMICOLON
-          expression_opt RP block
+        : label_opt FOR LEFTP expression_opt SEMICOLON expression_opt SEMICOLON
+          expression_opt RIGHTP block
         {
             $$ = dkc_create_for_statement($1, $4, $6, $8, $10);
         }
@@ -197,19 +197,19 @@ block
         ;
 
 function_definition
-        : type_specifier IDENTIFIER LP parameter_list RP block
+        : type_specifier IDENTIFIER LEFTP parameter_list RIGHTP block
         {
             dkc_function_define($1, $2, $4, $6);
         }
-        | type_specifier IDENTIFIER LP RP block
+        | type_specifier IDENTIFIER LEFTP RIGHTP block
         {
             dkc_function_define($1, $2, NULL, $5);
         }
-        | type_specifier IDENTIFIER LP parameter_list RP SEMICOLON
+        | type_specifier IDENTIFIER LEFTP parameter_list RIGHTP SEMICOLON
         {
             dkc_function_define($1, $2, $4, NULL);
         }
-        | type_specifier IDENTIFIER LP RP SEMICOLON
+        | type_specifier IDENTIFIER LEFTP RIGHTP SEMICOLON
         {
             dkc_function_define($1, $2, NULL, NULL);
         }
@@ -342,11 +342,11 @@ unary_expression
 
 postfix_expression
         : primary_expression
-        | postfix_expression LP argument_list RP
+        | postfix_expression LEFTP argument_list RIGHTP
         {
             $$ = dkc_create_function_call_expression($1, $3);
         }
-        | postfix_expression LP RP
+        | postfix_expression LEFTP RIGHTP
         {
             $$ = dkc_create_function_call_expression($1, NULL);
         }
@@ -361,7 +361,7 @@ postfix_expression
         ;
 
 primary_expression
-        : LP expression RP
+        : LEFTP expression RIGHTP
         {
             $$ = $2;
         }

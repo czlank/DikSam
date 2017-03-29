@@ -50,8 +50,8 @@
      RETURN_T = 267,
      BREAK = 268,
      CONTINUE = 269,
-     LP = 270,
-     RP = 271,
+     LEFTP = 270,
+     RIGHTP = 271,
      LC = 272,
      RC = 273,
      SEMICOLON = 274,
@@ -105,8 +105,8 @@
 #define RETURN_T 267
 #define BREAK 268
 #define CONTINUE 269
-#define LP 270
-#define RP 271
+#define LEFTP 270
+#define RIGHTP 271
 #define LC 272
 #define RC 273
 #define SEMICOLON 274

@@ -4,6 +4,16 @@ extern "C"
 #endif // __cplusplus
 
 extern int  g_iCurrentThreadIndex;
+extern char* yytext;
+
+int yyerror(char const *str)
+{
+    DikSam::GetClassObject(g_iCurrentThreadIndex)->GetError()->CompileError(
+        DikSam::GetClassObject(g_iCurrentThreadIndex)->GetUtil()->GetCompiler()->current_line_number,
+        PARSE_ERR, STRING_MESSAGE_ARGUMENT, "token", yytext, MESSAGE_ARGUMENT_END);
+
+    return 0;
+}
 
 void dkc_function_define(DVM_BasicType type, char *identifier, ParameterList *parameter_list, Block *block)
 {
@@ -60,7 +70,7 @@ Expression* dkc_create_binary_expression(ExpressionKind op, Expression *left, Ex
     return DikSam::GetClassObject(g_iCurrentThreadIndex)->GetCreate()->CreateBinaryExpression(op, left, right);
 }
 
-Expression* dkc_create_munis_expression(Expression *operand)
+Expression* dkc_create_minus_expression(Expression *operand)
 {
     return DikSam::GetClassObject(g_iCurrentThreadIndex)->GetCreate()->CreateMinusExpression(operand);
 }
@@ -125,6 +135,45 @@ Block* dkc_close_block(Block *block, StatementList *statement_list)
     return DikSam::GetClassObject(g_iCurrentThreadIndex)->GetCreate()->CloseBlock(block, statement_list);
 }
 
+Statement* dkc_create_expression_statement(Expression *expression)
+{
+    return DikSam::GetClassObject(g_iCurrentThreadIndex)->GetCreate()->CreateExpressionStatement(expression);
+}
+
+Statement* dkc_create_return_statement(Expression *expression)
+{
+    return DikSam::GetClassObject(g_iCurrentThreadIndex)->GetCreate()->CreateReturnStatement(expression);
+}
+
+Statement* dkc_create_break_statement(char *label)
+{
+    return DikSam::GetClassObject(g_iCurrentThreadIndex)->GetCreate()->CreateBreakStatement(label);
+}
+
+Statement* dkc_create_continue_statement(char *label)
+{
+    return DikSam::GetClassObject(g_iCurrentThreadIndex)->GetCreate()->CreateContinueStatement(label);
+}
+
+Statement* dkc_create_try_statement(Block *try_block, char *exception, Block *catch_block, Block *finally_block)
+{
+    return DikSam::GetClassObject(g_iCurrentThreadIndex)->GetCreate()->CreateTryStatement(try_block, exception, catch_block, finally_block);
+}
+
+Statement* dkc_create_throw_statement(Expression *expression)
+{
+    return DikSam::GetClassObject(g_iCurrentThreadIndex)->GetCreate()->CreateThrowStatement(expression);
+}
+
+Statement* dkc_create_declaration_statement(DVM_BasicType type, char *identifier, Expression *initializer)
+{
+    return DikSam::GetClassObject(g_iCurrentThreadIndex)->GetCreate()->CreateDeclarationStatement(type, identifier, initializer);
+}
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus
+
+#define YY_NO_UNISTD_H
+#include "lex.yy.c"
+#include "y.tab.c"

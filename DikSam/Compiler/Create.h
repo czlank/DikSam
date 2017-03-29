@@ -51,6 +51,13 @@ public:
     Statement* CreateForStatement(char *lpstrLabel, Expression *pInit, Expression *pCondition, Expression *pPost, Block *pBlock);
     Block*     OpenBlock();
     Block*     CloseBlock(Block *pBlock, StatementList *pStatementList);
+    Statement* CreateExpressionStatement(Expression *pExpression);
+    Statement* CreateReturnStatement(Expression *pExpression);
+    Statement* CreateBreakStatement(char *lpstrLabel);
+    Statement* CreateContinueStatement(char *lpstrLabel);
+    Statement* CreateTryStatement(Block *pTryBlock, char *lpstrException, Block *pCatchBlock, Block *pFinallyBlock);
+    Statement* CreateThrowStatement(Expression *pExpression);
+    Statement* CreateDeclarationStatement(DVM_BasicType enType, char *lpstrIdentifier, Expression *pInitializer);
 
 private:
     FunctionDefinition* CreateFunctionDefinition(DVM_BasicType enType, char *lpstrIdentifier, ParameterList *pParameterList, Block *pBlock);
