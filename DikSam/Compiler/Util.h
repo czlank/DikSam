@@ -1,9 +1,11 @@
 #pragma once
 
 #include "DikSamc.h"
-#include "Storage.h"
-#include "Memory.h"
-#include "Debug.h"
+
+class Debug;
+class Memory;
+class Storage;
+class Interface;
 
 class Util
 {
@@ -12,11 +14,8 @@ class Util
 #define UTIL_DBG_Assert(expression, arg)    ((expression) ? (void)(0) : (m_Debug.Assert(__FILE__, __LINE__, #expression, arg)))
 
 public:
-    Util(Storage& storage, Memory& memory, Debug& debug);
+    Util(Debug& debug, Memory& memory, Storage& storage, Interface& rInterface);
     ~Util();
-
-    void SetCompiler(DKC_Compiler *pCompiler) { assert(pCompiler), m_pCompiler = pCompiler; }
-    DKC_Compiler* GetCompiler() const { assert(m_pCompiler); return m_pCompiler; }
 
     void* Malloc(const char *lpcstrFileName, int iLine, size_t szSize);
     TypeSpecifier* AllocTypeSpecifier(DVM_BasicType enType);
@@ -35,8 +34,8 @@ private:
     int StrLen(const DVM_Char *str);
 
 private:
-    DKC_Compiler    *m_pCompiler;
-    Storage         &m_Storage;
-    Memory          &m_Memory;
     Debug           &m_Debug;
+    Memory          &m_Memory;
+    Storage         &m_Storage;
+    Interface       &m_Interface;
 };

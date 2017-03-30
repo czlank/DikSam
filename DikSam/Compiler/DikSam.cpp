@@ -21,10 +21,11 @@ DikSam::DikSam(int iThreadIndex)
     : m_iThreadIndex(iThreadIndex)
     , m_Memory(std::cout)
     , m_Storage(m_Memory)
-    , m_Util(m_Storage, m_Memory, m_Debug)
-    , m_Error(m_Util, m_Debug)
     , m_StringLiteral(m_Memory, m_Util, m_Error)
-    , m_Create(m_Debug, m_Error, m_Util)
+    , m_Interface(m_Debug, m_Memory, m_Storage, m_StringLiteral)
+    , m_Util(m_Debug, m_Memory, m_Storage, m_Interface)
+    , m_Error(m_Debug, m_Util)
+    , m_Create(m_Debug, m_Error, m_Util, m_Interface)
 {
 
 }

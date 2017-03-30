@@ -1,9 +1,10 @@
 #pragma once
 
-#include "Memory.h"
-#include "Util.h"
-#include "Error.h"
 #include "DikSamc.h"
+
+class Memory;
+class Util;
+class Error;
 
 class StringLiteral
 {

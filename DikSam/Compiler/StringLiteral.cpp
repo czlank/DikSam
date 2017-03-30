@@ -1,6 +1,9 @@
 #include "StdAfx.h"
 #include "StringLiteral.h"
 #include "DikSam.h"
+#include "Memory.h"
+#include "Util.h"
+#include "Error.h"
 
 #ifdef __cplusplus
 extern "C"

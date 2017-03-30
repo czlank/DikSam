@@ -1,9 +1,11 @@
 #pragma once
 
-#include "Debug.h"
-#include "Error.h"
-#include "Util.h"
 #include "DikSamc.h"
+
+class Debug;
+class Error;
+class Util;
+class Interface;
 
 class Create
 {
@@ -11,7 +13,7 @@ class Create
 #define CREATE_DBG_Assert(expression, arg)  ((expression) ? (void)(0) : (m_Debug.Assert(__FILE__, __LINE__, #expression, arg)))
 
 public:
-    Create(Debug& debug, Error& error, Util& util);
+    Create(Debug& debug, Error& error, Util& util, Interface& rInterface);
     ~Create();
 
     // ÉùÃ÷
@@ -64,7 +66,8 @@ private:
     Statement* AllocStatement(StatementType enType);
 
 private:
-    Debug&  m_Debug;
-    Error&  m_Error;
-    Util&   m_Util;
+    Debug       &m_Debug;
+    Error       &m_Error;
+    Util        &m_Util;
+    Interface   &m_Interface;
 };

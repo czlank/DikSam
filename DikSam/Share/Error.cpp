@@ -1,10 +1,12 @@
 #include "stdafx.h"
 #include "Error.h"
 #include "DikSam.h"
+#include "Debug.h"
+#include "Util.h"
 
-Error::Error(Util& util, Debug& debug)
-    : m_Util(util)
-    , m_Debug(debug)
+Error::Error(Debug& debug, Util& util)
+    : m_Debug(debug)
+    , m_Util(util)
 {
     InitMessageFormat();
 }

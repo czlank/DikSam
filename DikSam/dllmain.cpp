@@ -24,7 +24,13 @@ DIKSAM_DECLARE void DKC_Compile(int iThreadIndex)
 {
     setlocale(LC_CTYPE, "");
     g_iCurrentThreadIndex = iThreadIndex;
-    DikSam::GetClassObject(0);
+
+    char *sc[] = {
+        "int int_val;",
+        "int_val = 3;",
+        ""
+    };
+    DikSam::GetClassObject(iThreadIndex)->GetInterface()->Compile(sc);
 }
 
 DIKSAM_DECLARE void DKC_Run(int iThreadIndex)

@@ -60,6 +60,9 @@
     <ClInclude Include="Compiler\Create.h">
       <Filter>Compiler</Filter>
     </ClInclude>
+    <ClInclude Include="Compiler\Interface.h">
+      <Filter>Compiler</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -90,6 +93,9 @@
       <Filter>Compiler</Filter>
     </ClCompile>
     <ClCompile Include="Compiler\Create.cpp">
+      <Filter>Compiler</Filter>
+    </ClCompile>
+    <ClCompile Include="Compiler\Interface.cpp">
       <Filter>Compiler</Filter>
     </ClCompile>
   </ItemGroup>

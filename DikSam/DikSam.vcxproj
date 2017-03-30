@@ -56,7 +56,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;DIKSAM_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>GB2312_SOURCE;WIN32;_DEBUG;_WINDOWS;_USRDLL;DIKSAM_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>Include;Debug;Memory;Compiler;Share;DVM;</AdditionalIncludeDirectories>
     </ClCompile>
@@ -73,7 +73,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;DIKSAM_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>GB2312_SOURCE;WIN32;NDEBUG;_WINDOWS;_USRDLL;DIKSAM_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>Include;Debug;Memory;Compiler;Share;DVM;</AdditionalIncludeDirectories>
     </ClCompile>
@@ -91,6 +91,7 @@
   <ItemGroup>
     <ClInclude Include="Compiler\Create.h" />
     <ClInclude Include="Compiler\DikSam.h" />
+    <ClInclude Include="Compiler\Interface.h" />
     <ClInclude Include="Compiler\StringLiteral.h" />
     <ClInclude Include="Compiler\Util.h" />
     <ClInclude Include="Debug\Debug.h" />
@@ -103,6 +104,7 @@
   <ItemGroup>
     <ClCompile Include="Compiler\Create.cpp" />
     <ClCompile Include="Compiler\DikSam.cpp" />
+    <ClCompile Include="Compiler\Interface.cpp" />
     <ClCompile Include="Compiler\StringLiteral.cpp" />
     <ClCompile Include="Compiler\Util.cpp" />
     <ClCompile Include="Debug\Debug.cpp" />

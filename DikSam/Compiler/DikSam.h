@@ -3,9 +3,10 @@
 #include "Debug.h"
 #include "Memory.h"
 #include "Storage.h"
+#include "StringLiteral.h"
+#include "Interface.h"
 #include "Util.h"
 #include "Error.h"
-#include "StringLiteral.h"
 #include "Create.h"
 
 class DikSam
@@ -19,9 +20,10 @@ public:
     Debug* GetDebug() { return &m_Debug; }
     Memory* GetMemory() { return &m_Memory; }
     Storage* GetStorage() { return &m_Storage; }
+    StringLiteral* GetStringLiteral() { return &m_StringLiteral; }
+    Interface* GetInterface() { return &m_Interface; }
     Util* GetUtil() { return &m_Util; }
     Error* GetError() { return &m_Error; }
-    StringLiteral* GetStringLiteral() { return &m_StringLiteral; }
     Create* GetCreate() { return &m_Create; }
 
 private:
@@ -31,8 +33,9 @@ private:
     Debug           m_Debug;
     Memory          m_Memory;
     Storage         m_Storage;
+    StringLiteral   m_StringLiteral;
+    Interface       m_Interface;
     Util            m_Util;
     Error           m_Error;
-    StringLiteral   m_StringLiteral;
     Create          m_Create;
 };

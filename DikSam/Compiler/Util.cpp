@@ -1,28 +1,16 @@
 #include "stdafx.h"
 #include "Util.h"
 #include "DikSam.h"
+#include "Debug.h"
+#include "Memory.h"
+#include "Storage.h"
+#include "Interface.h"
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif // __cplusplus
-
-extern int  g_iCurrentThreadIndex;
-
-DKC_Compiler* dkc_get_current_compiler(void)
-{
-    return DikSam::GetClassObject(g_iCurrentThreadIndex)->GetUtil()->GetCompiler();
-}
-
-#ifdef __cplusplus
-}
-#endif // __cplusplus
-
-Util::Util(Storage& storage, Memory& memory, Debug& debug)
-    : m_pCompiler(nullptr)
-    , m_Storage(storage)
+Util::Util(Debug& debug, Memory& memory, Storage& storage, Interface& rInterface)
+    : m_Debug(debug)
     , m_Memory(memory)
-    , m_Debug(debug)
+    , m_Storage(storage)
+    , m_Interface(rInterface)
 {
 
 }
@@ -34,9 +22,7 @@ Util::~Util()
 
 void* Util::Malloc(const char *lpcstrFileName, int iLine, size_t szSize)
 {
-    assert(m_pCompiler);
-
-    void *p = m_Storage.Malloc(lpcstrFileName, iLine, m_pCompiler->compile_storage, szSize);
+    void *p = m_Storage.Malloc(lpcstrFileName, iLine, m_Interface.GetCompiler()->compile_storage, szSize);
     return p;
 }
 
@@ -52,11 +38,9 @@ TypeSpecifier* Util::AllocTypeSpecifier(DVM_BasicType enType)
 
 FunctionDefinition* Util::SearchFunction(const char *lpcstrName)
 {
-    assert(m_pCompiler);
-
     FunctionDefinition  *pos = nullptr;
 
-    for (pos = m_pCompiler->function_list; pos; pos = pos->next)
+    for (pos = m_Interface.GetCompiler()->function_list; pos; pos = pos->next)
     {
         if (std::string(pos->name) == lpcstrName)
             break;
@@ -67,8 +51,6 @@ FunctionDefinition* Util::SearchFunction(const char *lpcstrName)
 
 Declaration* Util::SearchDeclaration(const char *lpcstrIdentifier, Block *pBlock)
 {
-    assert(m_pCompiler);
-
     for (Block *bPos = pBlock; bPos; bPos = bPos->outer_block)
     {
         for (DeclarationList *dPos = bPos->declaration_list; dPos; dPos = dPos->next)
@@ -80,7 +62,7 @@ Declaration* Util::SearchDeclaration(const char *lpcstrIdentifier, Block *pBlock
         }
     }
 
-    for (DeclarationList *dPos = m_pCompiler->declaration_list; dPos; dPos = dPos->next)
+    for (DeclarationList *dPos = m_Interface.GetCompiler()->declaration_list; dPos; dPos = dPos->next)
     {
         if (std::string(lpcstrIdentifier) == dPos->declaration->name)
         {
@@ -120,7 +102,6 @@ char* Util::GetBasicTypeName(DVM_BasicType enType)
     {
     case DVM_BOOLEAN_TYPE :
         return "boolean";
-        break;
 
     case DVM_INT_TYPE :
         return "int";

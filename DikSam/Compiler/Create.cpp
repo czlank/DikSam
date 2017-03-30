@@ -1,13 +1,18 @@
 #include "StdAfx.h"
 #include "Create.h"
 #include "DikSam.h"
+#include "Debug.h"
+#include "Error.h"
+#include "Util.h"
+#include "Interface.h"
 
 #include "CreateC.cpp"
 
-Create::Create(Debug& debug, Error& error, Util& util)
+Create::Create(Debug& debug, Error& error, Util& util, Interface& rInterface)
     : m_Debug(debug)
     , m_Error(error)
     , m_Util(util)
+    , m_Interface(rInterface)
 {
 
 }
@@ -52,7 +57,7 @@ void Create::FunctionDefine(DVM_BasicType enType, char *lpstrIdentifier, Paramet
 {
     if (m_Util.SearchFunction(lpstrIdentifier) || m_Util.SearchDeclaration(lpstrIdentifier, nullptr))
     {
-        m_Error.CompileError(m_Util.GetCompiler()->current_line_number,
+        m_Error.CompileError(m_Interface.GetCompiler()->current_line_number,
             FUNCTION_MULTIPLE_DEFINE_ERR,
             STRING_MESSAGE_ARGUMENT, "name", lpstrIdentifier,
             MESSAGE_ARGUMENT_END);
@@ -68,7 +73,7 @@ void Create::FunctionDefine(DVM_BasicType enType, char *lpstrIdentifier, Paramet
         pBlock->parent.function.function = pFD;
     }
 
-    DKC_Compiler *pCompiler = m_Util.GetCompiler();
+    DKC_Compiler *pCompiler = m_Interface.GetCompiler();
 
     if (pCompiler->function_list)
     {
@@ -89,7 +94,7 @@ ParameterList* Create::CreateParameter(DVM_BasicType enType, char *lpstrIdentifi
 
     p->name = lpstrIdentifier;
     p->type = m_Util.AllocTypeSpecifier(enType);
-    p->line_number = m_Util.GetCompiler()->current_line_number;
+    p->line_number = m_Interface.GetCompiler()->current_line_number;
     p->next = nullptr;
 
     return p;
@@ -157,7 +162,7 @@ Expression* Create::AllocExpression(ExpressionKind enKind)
 
     pExpression->type = nullptr;
     pExpression->kind = enKind;
-    pExpression->line_number = m_Util.GetCompiler()->current_line_number;
+    pExpression->line_number = m_Interface.GetCompiler()->current_line_number;
 
     return pExpression;
 }
@@ -315,19 +320,19 @@ Block* Create::OpenBlock()
     Block *pBlock = (Block*)CREATE_UTIL_Malloc(sizeof(Block));
 
     pBlock->type = UNDEFINED_BLOCK;
-    pBlock->outer_block = m_Util.GetCompiler()->current_block;
+    pBlock->outer_block = m_Interface.GetCompiler()->current_block;
     pBlock->declaration_list = nullptr;
-    m_Util.GetCompiler()->current_block = pBlock;
+    m_Interface.GetCompiler()->current_block = pBlock;
 
     return pBlock;
 }
 
 Block* Create::CloseBlock(Block *pBlock, StatementList *pStatementList)
 {
-    CREATE_DBG_Assert(pBlock == m_Util.GetCompiler()->current_block, ("block mismatch."));
+    CREATE_DBG_Assert(pBlock == m_Interface.GetCompiler()->current_block, ("block mismatch."));
 
     pBlock->statement_list = pStatementList;
-    m_Util.GetCompiler()->current_block = pBlock->outer_block;
+    m_Interface.GetCompiler()->current_block = pBlock->outer_block;
 
     return pBlock;
 }
@@ -402,7 +407,7 @@ Statement* Create::CreateDeclarationStatement(DVM_BasicType enType, char *lpstrI
 
 FunctionDefinition* Create::CreateFunctionDefinition(DVM_BasicType enType, char *lpstrIdentifier, ParameterList *pParameterList, Block *pBlock)
 {
-    DKC_Compiler *pCompiler = m_Util.GetCompiler();
+    DKC_Compiler *pCompiler = m_Interface.GetCompiler();
     FunctionDefinition *pFD = (FunctionDefinition*)CREATE_UTIL_Malloc(sizeof(FunctionDefinition));
 
     pFD->type = m_Util.AllocTypeSpecifier(enType);
@@ -422,7 +427,7 @@ Statement* Create::AllocStatement(StatementType enType)
     Statement *pStatement = (Statement*)CREATE_UTIL_Malloc(sizeof(Statement));
 
     pStatement->type = enType;
-    pStatement->line_number = m_Util.GetCompiler()->current_line_number;
+    pStatement->line_number = m_Interface.GetCompiler()->current_line_number;
 
     return pStatement;
 }
