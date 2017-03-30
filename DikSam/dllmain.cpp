@@ -1,6 +1,7 @@
 // dllmain.cpp : 定义 DLL 应用程序的入口点。
 #include "stdafx.h"
 #include "DikSam.h"
+#include "Exception.h"
 
 BOOL APIENTRY DllMain(HMODULE hModule,
     DWORD  ul_reason_for_call,
@@ -26,11 +27,31 @@ DIKSAM_DECLARE void DKC_Compile(int iThreadIndex)
     g_iCurrentThreadIndex = iThreadIndex;
 
     char *sc[] = {
-        "int int_val;",
-        "int_val = 3;",
+        "int int_val;\n",
+        "int_val = 3;\n",
         ""
     };
-    DikSam::GetClassObject(iThreadIndex)->GetInterface()->Compile(sc);
+
+    try
+    {
+        DikSam::GetClassObject(iThreadIndex)->GetInterface()->Compile(sc);
+    }
+    catch (const PanicException& e)
+    {
+        std::cout << e.what();
+    }
+    catch (const AssertException& e)
+    {
+        std::cout << e.what();
+    }
+    catch (const MemoryException& e)
+    {
+        std::cout << e.what();
+    }
+    catch (const ErrorException& e)
+    {
+        std::cout << e.what();
+    }
 }
 
 DIKSAM_DECLARE void DKC_Run(int iThreadIndex)
