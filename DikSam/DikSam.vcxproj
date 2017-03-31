@@ -91,6 +91,7 @@
   <ItemGroup>
     <ClInclude Include="Compiler\Create.h" />
     <ClInclude Include="Compiler\DikSam.h" />
+    <ClInclude Include="Compiler\FixTree.h" />
     <ClInclude Include="Compiler\Interface.h" />
     <ClInclude Include="Compiler\StringLiteral.h" />
     <ClInclude Include="Compiler\Util.h" />
@@ -104,6 +105,7 @@
   <ItemGroup>
     <ClCompile Include="Compiler\Create.cpp" />
     <ClCompile Include="Compiler\DikSam.cpp" />
+    <ClCompile Include="Compiler\FixTree.cpp" />
     <ClCompile Include="Compiler\Interface.cpp" />
     <ClCompile Include="Compiler\StringLiteral.cpp" />
     <ClCompile Include="Compiler\Util.cpp" />
