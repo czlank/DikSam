@@ -23,13 +23,16 @@ DKC_Compiler* dkc_get_current_compiler(void)
 }
 #endif // __cplusplus
 
-Interface::Interface(Debug& debug, Memory& memory, Storage& storage, StringLiteral& stringliteral)
+std::mutex Interface::m_Mutex;
+
+Interface::Interface(Debug& debug, Memory& memory, Storage& storage, StringLiteral& stringliteral, int iThreadIndex)
     : m_Debug(debug)
     , m_Memory(memory)
     , m_Storage(storage)
     , m_StringLiteral(stringliteral)
     , m_pCompiler(nullptr)
     , m_pExe(nullptr)
+    , m_iThreadIndex(iThreadIndex)
 {
     CreateCompiler();
 }
@@ -48,20 +51,17 @@ void Interface::Compile(FILE *pFile)
 
     yyin = pFile;
 
-    m_pExe = DoCompile(m_pCompiler);
+    m_pExe = DoCompile(m_pCompiler, nullptr);
 
     m_StringLiteral.Reset();
 }
 
 void Interface::Compile(char **ppLines)
 {
-    extern int yyparse(void);
-
-    dkc_set_source_string(ppLines);
     m_pCompiler->current_line_number = 1;
     m_pCompiler->input_mode = DKC_STRING_INPUT_MODE;
 
-    m_pExe = DoCompile(m_pCompiler);
+    m_pExe = DoCompile(m_pCompiler, ppLines);
 
     m_StringLiteral.Reset();
 }
@@ -107,14 +107,28 @@ void Interface::CreateCompiler()
 #endif
 }
 
-DVM_Executable* Interface::DoCompile(DKC_Compiler *pCompiler)
+DVM_Executable* Interface::DoCompile(DKC_Compiler *pCompiler, char **ppLines)
 {
     extern int yyparse(void);
+    extern void ResetLex(void);
     
-    if (yyparse())
+    do
     {
-        throw ErrorException(TEXT("Error ! Error ! Error !"));
-    }
+        m_Mutex.lock();
+        g_iCurrentThreadIndex = m_iThreadIndex;
+
+        if (DKC_STRING_INPUT_MODE == m_pCompiler->input_mode)
+        {
+            dkc_set_source_string(ppLines);
+        }
+
+        if (yyparse())
+        {
+            throw ErrorException(TEXT("Error ! Error ! Error !"));
+        }
+        ResetLex();
+        m_Mutex.unlock();
+    } while (0);
 
     return nullptr;
 }

@@ -10,3 +10,8 @@ FixTree::~FixTree()
 {
 
 }
+
+void FixTree::Fix(DKC_Compiler *pCompiler)
+{
+
+}

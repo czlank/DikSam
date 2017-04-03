@@ -14,7 +14,7 @@ class Interface
 #define INTERFACE_STORAGE_MALLOC(storage, size) (m_Storage.Malloc(__FILE__, __LINE__, storage, size))
 
 public:
-    Interface(Debug& debug, Memory& memory, Storage& storage, StringLiteral& stringliteral);
+    Interface(Debug& debug, Memory& memory, Storage& storage, StringLiteral& stringliteral, int iThreadIndex);
     ~Interface();
 
     DKC_Compiler* GetCompiler() { return m_pCompiler; }
@@ -24,13 +24,16 @@ public:
 
 private:
     void CreateCompiler();
-    DVM_Executable* DoCompile(DKC_Compiler *pCompiler);
+    DVM_Executable* DoCompile(DKC_Compiler *pCompiler, char **ppLines);
 
 private:
-    Debug           &m_Debug;
-    Memory          &m_Memory;
-    Storage         &m_Storage;
-    StringLiteral   &m_StringLiteral;
-    DKC_Compiler    *m_pCompiler;
-    DVM_Executable  *m_pExe;
+    Debug               &m_Debug;
+    Memory              &m_Memory;
+    Storage             &m_Storage;
+    StringLiteral       &m_StringLiteral;
+    DKC_Compiler        *m_pCompiler;
+    DVM_Executable      *m_pExe;
+    int                 m_iThreadIndex;
+
+    static std::mutex   m_Mutex;
 };

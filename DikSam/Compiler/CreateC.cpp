@@ -177,3 +177,17 @@ Statement* dkc_create_declaration_statement(DVM_BasicType type, char *identifier
 #define YY_NO_UNISTD_H
 #include "lex.yy.c"
 #include "y.tab.c"
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+void ResetLex(void)
+{
+    yylex_destroy();
+}
+
+#ifdef __cplusplus
+}
+#endif

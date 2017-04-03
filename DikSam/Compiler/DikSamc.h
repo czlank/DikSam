@@ -10,6 +10,8 @@ extern "C"
 {
 #endif  // __cplusplus
 
+void ResetLex(void);
+
 #define dkc_compile_error(line_number, id, arg)  DikSam::GetClassObject(g_iCurrentThreadIndex)->GetError()->CompileError(line_number, id, arg)
 
 #define smaller(a, b) ((a) < (b) ? (a) : (b))
