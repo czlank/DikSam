@@ -4,8 +4,12 @@
 #include "Debug.h"
 #include "Memory.h"
 #include "Storage.h"
+#include "Util.h"
+#include "Error.h"
 #include "StringLiteral.h"
+#include "Create.h"
 #include "Exception.h"
+#include "FixTree.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -25,11 +29,14 @@ DKC_Compiler* dkc_get_current_compiler(void)
 
 std::mutex Interface::m_Mutex;
 
-Interface::Interface(Debug& debug, Memory& memory, Storage& storage, StringLiteral& stringliteral, int iThreadIndex)
+Interface::Interface(Debug& debug, Memory& memory, Storage& storage, Util& util, Error& error, StringLiteral& stringliteral, Create& create, int iThreadIndex)
     : m_Debug(debug)
     , m_Memory(memory)
     , m_Storage(storage)
+    , m_Util(util)
+    , m_Error(error)
     , m_StringLiteral(stringliteral)
+    , m_Create(create)
     , m_pCompiler(nullptr)
     , m_pExe(nullptr)
     , m_iThreadIndex(iThreadIndex)
@@ -39,12 +46,14 @@ Interface::Interface(Debug& debug, Memory& memory, Storage& storage, StringLiter
 
 Interface::~Interface()
 {
-
+    DisposeCompiler();
 }
 
 void Interface::Compile(FILE *pFile)
 {
     extern FILE *yyin;
+
+    ResetCompiler();
 
     m_pCompiler->current_line_number = 1;
     m_pCompiler->input_mode = DKC_FILE_INPUT_MODE;
@@ -58,6 +67,8 @@ void Interface::Compile(FILE *pFile)
 
 void Interface::Compile(char **ppLines)
 {
+    ResetCompiler();
+
     m_pCompiler->current_line_number = 1;
     m_pCompiler->input_mode = DKC_STRING_INPUT_MODE;
 
@@ -66,16 +77,14 @@ void Interface::Compile(char **ppLines)
     m_StringLiteral.Reset();
 }
 
-void Interface::DisposeCompiler()
+void Interface::ResetCompiler()
 {
-    FunctionDefinition *pos = m_pCompiler->function_list;
+    DisposeCompiler();
 
-    for (; pos; pos = pos->next)
-    {
-        m_Memory.Free(pos->local_variable);
-    }
+    m_Memory.CheckAllBlocks();
+    m_Memory.DumpBlocks(std::cout);
 
-    m_Storage.Dispose(m_pCompiler->compile_storage);
+    CreateCompiler();
 }
 
 void Interface::CreateCompiler()
@@ -107,6 +116,18 @@ void Interface::CreateCompiler()
 #endif
 }
 
+void Interface::DisposeCompiler()
+{
+    FunctionDefinition *pos = m_pCompiler->function_list;
+
+    for (; pos; pos = pos->next)
+    {
+        m_Memory.Free(pos->local_variable);
+    }
+
+    m_Storage.Dispose(m_pCompiler->compile_storage);
+}
+
 DVM_Executable* Interface::DoCompile(DKC_Compiler *pCompiler, char **ppLines)
 {
     extern int yyparse(void);
@@ -129,6 +150,9 @@ DVM_Executable* Interface::DoCompile(DKC_Compiler *pCompiler, char **ppLines)
         ResetLex();
         m_Mutex.unlock();
     } while (0);
+
+    FixTree fix(m_Debug, m_Memory, m_Util, m_Error, m_Create);
+    fix.Fix(m_pCompiler);
 
     return nullptr;
 }

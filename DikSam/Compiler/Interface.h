@@ -5,7 +5,10 @@
 class Debug;
 class Memory;
 class Storage;
+class Util;
+class Error;
 class StringLiteral;
+class Create;
 
 class Interface
 {
@@ -14,23 +17,27 @@ class Interface
 #define INTERFACE_STORAGE_MALLOC(storage, size) (m_Storage.Malloc(__FILE__, __LINE__, storage, size))
 
 public:
-    Interface(Debug& debug, Memory& memory, Storage& storage, StringLiteral& stringliteral, int iThreadIndex);
+    Interface(Debug& debug, Memory& memory, Storage& storage, Util& util, Error& error, StringLiteral& stringliteral, Create& create, int iThreadIndex);
     ~Interface();
 
     DKC_Compiler* GetCompiler() { return m_pCompiler; }
     void Compile(FILE *pFile);
     void Compile(char **ppLines);
-    void DisposeCompiler();
 
 private:
+    void ResetCompiler();
     void CreateCompiler();
+    void DisposeCompiler();
     DVM_Executable* DoCompile(DKC_Compiler *pCompiler, char **ppLines);
 
 private:
     Debug               &m_Debug;
     Memory              &m_Memory;
     Storage             &m_Storage;
+    Util                &m_Util;
+    Error               &m_Error;
     StringLiteral       &m_StringLiteral;
+    Create              &m_Create;
     DKC_Compiler        *m_pCompiler;
     DVM_Executable      *m_pExe;
     int                 m_iThreadIndex;

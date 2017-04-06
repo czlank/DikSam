@@ -22,11 +22,13 @@
 
 #include <cassert>
 #include <cstdarg>
+#include <cmath>
 #include <exception>
 #include <memory>
 #include <string>
 #include <sstream>
 #include <iostream>
+#include <fstream>
 #include <map>
 #include <vector>
 #include <mutex>
