@@ -15,6 +15,8 @@ class FixTree
 #define FIXTREE_MEM_Malloc(size)            (m_Memory.Malloc(__FILE__, __LINE__, size))
 #define FIXTREE_MEM_Realloc(ptr, size)      (m_Memory.Realloc(__FILE__, __LINE__, ptr, size))
 
+#define eps 1e-8
+
 public:
     FixTree(Debug& debug, Memory& memory, Util& util, Error& error, Create& create);
     ~FixTree();
@@ -22,10 +24,18 @@ public:
     void Fix(DKC_Compiler *pCompiler);
 
 private:
+    Expression* FixExpression(Block *pBlock, Expression *pExpression);
+
     Expression* FixIdentifierExpression(Block *pBlock, Expression *pExpression);
     Expression* FixCommaExpression(Block *pBlock, Expression *pExpression);
     Expression* FixAssignExpression(Block *pBlock, Expression *pExpression);
     Expression* FixMathBinaryExpression(Block *pBlock, Expression *pExpression);
+    Expression* FixCompareExpression(Block *pBlock, Expression *pExpression);
+    Expression* FixLogicalAndOrExpression(Block *pBlock, Expression *pExpression);
+    Expression* FixMinusExpression(Block *pBlock, Expression *pExpression);
+    Expression* FixLogicalNotExpression(Block *pBlock, Expression *pExpression);
+    Expression* FixFunctionCallExpression(Block *pBlock, Expression *pExpression);
+    Expression* FixIncDecExpression(Block *pBlock, Expression *pExpression);
 
     Expression* EvalMathExpressionInt(Expression *pExpression, int left, int right);
     Expression* EvalMathExpressionDouble(Expression *pExpression, double left, double right);
@@ -33,11 +43,15 @@ private:
     Expression* EvalCompareExpressionBoolean(Expression *pExpression, DVM_Boolean left, DVM_Boolean right);
     Expression* EvalCompareExpressionInt(Expression *pExpression, int left, int right);
     Expression* EvalCompareExpressionDouble(Expression *pExpression, double left, double right);
+    Expression* EvalCompareExpressionString(Expression *pExpression, DVM_Char *left, DVM_Char *right);
+    Expression* EvalCompareExpression(Expression *pExpression);
 
     Expression* AllocCastExpression(CastType enType, Expression *pOperand);
     Expression* CreateAssignCast(Expression *pSrc, TypeSpecifier *pDest);
     Expression* ChainString(Expression *pExpression);
     Expression* CastBinaryExpression(Expression *pExpression);
+
+    void CheckArgument(Block *pBlock, FunctionDefinition *pFunctionDefinition, Expression *pExpression);
 
     void CastMismatchError(int iLine, DVM_BasicType enSrc, DVM_BasicType enDest);
 

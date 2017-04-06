@@ -26,6 +26,89 @@ void FixTree::Fix(DKC_Compiler *pCompiler)
 
 }
 
+Expression* FixTree::FixExpression(Block *pBlock, Expression *pExpression)
+{
+    if (nullptr == pExpression)
+    {
+        return nullptr;
+    }
+
+    switch (pExpression->kind)
+    {
+    case BOOLEAN_EXPRESSION :
+        pExpression->type = m_Util.AllocTypeSpecifier(DVM_BOOLEAN_TYPE);
+        break;
+
+    case INT_EXPRESSION :
+        pExpression->type = m_Util.AllocTypeSpecifier(DVM_INT_TYPE);
+        break;
+
+    case DOUBLE_EXPRESSION :
+        pExpression->type = m_Util.AllocTypeSpecifier(DVM_DOUBLE_TYPE);
+        break;
+
+    case STRING_EXPRESSION :
+        pExpression->type = m_Util.AllocTypeSpecifier(DVM_STRING_TYPE);
+        break;
+
+    case IDENTIFIER_EXPRESSION :
+        pExpression = FixIdentifierExpression(pBlock, pExpression);
+        break;
+
+    case COMMA_EXPRESSION :
+        pExpression = FixCommaExpression(pBlock, pExpression);
+        break;
+
+    case ASSIGN_EXPRESSION :
+        pExpression = FixAssignExpression(pBlock, pExpression);
+        break;
+
+    case ADD_EXPRESSION :
+    case SUB_EXPRESSION :
+    case MUL_EXPRESSION :
+    case DIV_EXPRESSION :
+    case MOD_EXPRESSION :
+        pExpression = FixMathBinaryExpression(pBlock, pExpression);
+        break;
+
+    case EQ_EXPRESSION :
+    case NE_EXPRESSION :
+    case GT_EXPRESSION :
+    case GE_EXPRESSION :
+    case LT_EXPRESSION :
+    case LE_EXPRESSION :
+        pExpression = FixCompareExpression(pBlock, pExpression);
+        break;
+
+    case LOGICAL_AND_EXPRESSION :
+    case LOGICAL_OR_EXPRESSION :
+        pExpression = FixLogicalAndOrExpression(pBlock, pExpression);
+        break;
+
+    case MINUS_EXPRESSION :
+        pExpression = FixMinusExpression(pBlock, pExpression);
+        break;
+
+    case LOGICAL_NOT_EXPRESSION :
+        pExpression = FixLogicalNotExpression(pBlock, pExpression);
+        break;
+
+    case FUNCTION_CALL_EXPRESSION :
+        pExpression = FixFunctionCallExpression(pBlock, pExpression);
+        break;
+
+    case INCREMENT_EXPRESSION :
+    case DECREMENT_EXPRESSION :
+        pExpression = FixIncDecExpression(pBlock, pExpression);
+        break;
+
+    default :
+        FIXTREE_DBG_Assert(0, ("bad case. kind..", pExpression->kind));
+    }
+
+    return pExpression;
+}
+
 Expression* FixTree::FixIdentifierExpression(Block *pBlock, Expression *pExpression)
 {
     Declaration *pDeclaration = m_Util.SearchDeclaration(pExpression->u.identifier.name, pBlock);
@@ -70,6 +153,36 @@ Expression* FixTree::FixMathBinaryExpression(Block *pBlock, Expression *pExpress
     return nullptr;
 }
 
+Expression* FixTree::FixCompareExpression(Block *pBlock, Expression *pExpression)
+{
+    return nullptr;
+}
+
+Expression* FixTree::FixLogicalAndOrExpression(Block *pBlock, Expression *pExpression)
+{
+    return nullptr;
+}
+
+Expression* FixTree::FixMinusExpression(Block *pBlock, Expression *pExpression)
+{
+    return nullptr;
+}
+
+Expression* FixTree::FixLogicalNotExpression(Block *pBlock, Expression *pExpression)
+{
+    return nullptr;
+}
+
+Expression* FixTree::FixFunctionCallExpression(Block *pBlock, Expression *pExpression)
+{
+    return nullptr;
+}
+
+Expression* FixTree::FixIncDecExpression(Block *pBlock, Expression *pExpression)
+{
+    return nullptr;
+}
+
 Expression* FixTree::EvalMathExpressionInt(Expression *pExpression, int left, int right)
 {
     switch (pExpression->kind)
@@ -96,11 +209,10 @@ Expression* FixTree::EvalMathExpressionInt(Expression *pExpression, int left, in
 
     default :
         FIXTREE_DBG_Assert(0, ("pExpression->kind..", pExpression->kind));
-        break;
     }
 
-    pExpression->kind = INT_EXPRESSION;
     pExpression->type = m_Util.AllocTypeSpecifier(DVM_INT_TYPE);
+    pExpression->kind = INT_EXPRESSION;
 
     return pExpression;
 }
@@ -131,11 +243,10 @@ Expression* FixTree::EvalMathExpressionDouble(Expression *pExpression, double le
 
     default :
         FIXTREE_DBG_Assert(0, ("pExpression->kind..", pExpression->kind));
-        break;
     }
 
-    pExpression->kind = DOUBLE_EXPRESSION;
     pExpression->type = m_Util.AllocTypeSpecifier(DVM_DOUBLE_TYPE);
+    pExpression->kind = DOUBLE_EXPRESSION;
 
     return pExpression;
 }
@@ -192,8 +303,8 @@ Expression* FixTree::EvalCompareExpressionBoolean(Expression *pExpression, DVM_B
         break;
     }
 
-    pExpression->kind = BOOLEAN_EXPRESSION;
     pExpression->type = m_Util.AllocTypeSpecifier(DVM_BOOLEAN_TYPE);
+    pExpression->kind = BOOLEAN_EXPRESSION;
 
     return pExpression;
 }
@@ -236,9 +347,131 @@ Expression* FixTree::EvalCompareExpressionInt(Expression *pExpression, int left,
     return pExpression;
 }
 
-Expression* EvalCompareExpressionDouble(Expression *pExpression, double left, double right)
+Expression* FixTree::EvalCompareExpressionDouble(Expression *pExpression, double left, double right)
 {
+    switch (pExpression->kind)
+    {
+    case EQ_EXPRESSION :
+        pExpression->u.boolean_value = (double(std::abs(left - right)) < eps ? DVM_TRUE : DVM_FALSE);
+        break;
 
+    case NE_EXPRESSION :
+        pExpression->u.boolean_value = (double(std::abs(left - right)) > eps ? DVM_TRUE : DVM_FALSE);
+        break;
+
+    case GT_EXPRESSION :
+        pExpression->u.boolean_value = (left - right > eps ? DVM_TRUE : DVM_FALSE);
+        break;
+
+    case GE_EXPRESSION :
+        pExpression->u.boolean_value = (left - right >= eps ? DVM_TRUE : DVM_FALSE);
+        break;
+
+    case LT_EXPRESSION :
+        pExpression->u.boolean_value = (right - left > eps ? DVM_TRUE : DVM_FALSE);
+        break;
+
+    case LE_EXPRESSION :
+        pExpression->u.boolean_value = (right - left >= eps ? DVM_TRUE : DVM_FALSE);
+        break;
+
+    default :
+        FIXTREE_DBG_Assert(0, ("pExpression->kind..", pExpression));
+    }
+
+    pExpression->type = m_Util.AllocTypeSpecifier(DVM_BOOLEAN_TYPE);
+    pExpression->kind = BOOLEAN_EXPRESSION;
+
+    return pExpression;
+}
+
+Expression* FixTree::EvalCompareExpressionString(Expression *pExpression, DVM_Char *left, DVM_Char *right)
+{
+    switch (pExpression->kind)
+    {
+    case EQ_EXPRESSION :
+        pExpression->u.boolean_value = (std::basic_string<DVM_Char>(left) == right ? DVM_TRUE : DVM_FALSE);
+        break;
+
+    case NE_EXPRESSION :
+        pExpression->u.boolean_value = (std::basic_string<DVM_Char>(left) != right ? DVM_TRUE : DVM_FALSE);
+        break;
+
+    case GT_EXPRESSION :
+        pExpression->u.boolean_value = (std::basic_string<DVM_Char>(left) > right ? DVM_TRUE : DVM_FALSE);
+        break;
+
+    case GE_EXPRESSION :
+        pExpression->u.boolean_value = (std::basic_string<DVM_Char>(left) >= right ? DVM_TRUE : DVM_FALSE);
+        break;
+
+    case LT_EXPRESSION :
+        pExpression->u.boolean_value = (std::basic_string<DVM_Char>(left) < right ? DVM_TRUE : DVM_FALSE);
+        break;
+
+    case LE_EXPRESSION :
+        pExpression->u.boolean_value = (std::basic_string<DVM_Char>(left) <= right ? DVM_TRUE : DVM_FALSE);
+        break;
+
+    default :
+        FIXTREE_DBG_Assert(0, ("pExpression->kind..", pExpression));
+    }
+
+    m_Memory.Free(left);
+    m_Memory.Free(right);
+
+    pExpression->type = m_Util.AllocTypeSpecifier(DVM_BOOLEAN_TYPE);
+    pExpression->kind = BOOLEAN_EXPRESSION;
+
+    return pExpression;
+}
+
+Expression* FixTree::EvalCompareExpression(Expression *pExpression)
+{
+    if (BOOLEAN_EXPRESSION == pExpression->u.binary_expression.left->kind
+        && BOOLEAN_EXPRESSION == pExpression->u.binary_expression.right->kind)
+    {
+        pExpression = EvalCompareExpressionBoolean(pExpression,
+            pExpression->u.binary_expression.left->u.boolean_value,
+            pExpression->u.binary_expression.right->u.boolean_value);
+    }
+    else if (INT_EXPRESSION == pExpression->u.binary_expression.left->kind
+        && INT_EXPRESSION == pExpression->u.binary_expression.right->kind)
+    {
+        pExpression = EvalCompareExpressionInt(pExpression,
+            pExpression->u.binary_expression.left->u.int_value,
+            pExpression->u.binary_expression.right->u.int_value);
+    }
+    else if (DOUBLE_EXPRESSION == pExpression->u.binary_expression.left->kind
+        && DOUBLE_EXPRESSION == pExpression->u.binary_expression.right->kind)
+    {
+        pExpression = EvalCompareExpressionDouble(pExpression,
+            pExpression->u.binary_expression.left->u.double_value,
+            pExpression->u.binary_expression.right->u.double_value);
+    }
+    else if (INT_EXPRESSION == pExpression->u.binary_expression.left->kind
+        && DOUBLE_EXPRESSION == pExpression->u.binary_expression.right->kind)
+    {
+        pExpression = EvalCompareExpressionDouble(pExpression,
+            pExpression->u.binary_expression.left->u.int_value,
+            pExpression->u.binary_expression.right->u.double_value);
+    }
+    else if (DOUBLE_EXPRESSION == pExpression->u.binary_expression.left->kind
+        && INT_EXPRESSION == pExpression->u.binary_expression.right->kind)
+    {
+        pExpression = EvalCompareExpressionDouble(pExpression,
+            pExpression->u.binary_expression.left->u.double_value,
+            pExpression->u.binary_expression.right->u.int_value);
+    }
+    else if (STRING_EXPRESSION == pExpression->u.binary_expression.left->kind
+        && STRING_EXPRESSION == pExpression->u.binary_expression.right->kind)
+    {
+        pExpression = EvalCompareExpressionString(pExpression,
+            pExpression->u.binary_expression.left->u.string_value,
+            pExpression->u.binary_expression.right->u.string_value);
+    }
+
+    return pExpression;
 }
 
 Expression* FixTree::AllocCastExpression(CastType enType, Expression *pOperand)
@@ -354,6 +587,11 @@ Expression* FixTree::CastBinaryExpression(Expression *pExpression)
     }
 
     return pExpression;
+}
+
+void FixTree::CheckArgument(Block *pBlock, FunctionDefinition *pFunctionDefinition, Expression *pExpression)
+{
+
 }
 
 void FixTree::CastMismatchError(int iLine, DVM_BasicType enSrc, DVM_BasicType enDest)
