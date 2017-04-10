@@ -7,6 +7,7 @@ class Memory;
 class Util;
 class Error;
 class Create;
+class Interface;
 
 class FixTree
 {
@@ -18,13 +19,14 @@ class FixTree
 #define eps 1e-8
 
 public:
-    FixTree(Debug& debug, Memory& memory, Util& util, Error& error, Create& create);
+    FixTree(Debug& debug, Memory& memory, Util& util, Error& error, Create& create, Interface& refInterface);
     ~FixTree();
 
     void Fix(DKC_Compiler *pCompiler);
 
 private:
     Expression* FixExpression(Block *pBlock, Expression *pExpression);
+    void FixStatement(Block *pBlock, Statement *pStatement, FunctionDefinition *pFunctionDefinition);
 
     Expression* FixIdentifierExpression(Block *pBlock, Expression *pExpression);
     Expression* FixCommaExpression(Block *pBlock, Expression *pExpression);
@@ -36,6 +38,10 @@ private:
     Expression* FixLogicalNotExpression(Block *pBlock, Expression *pExpression);
     Expression* FixFunctionCallExpression(Block *pBlock, Expression *pExpression);
     Expression* FixIncDecExpression(Block *pBlock, Expression *pExpression);
+    
+    void FixIfStatement(Block *pBlock, IfStatement *pIfStatement, FunctionDefinition *pFunctionDefinition);
+    void FixReturnStatement(Block *pBlock, ReturnStatement *pReturnStatement, FunctionDefinition *pFunctionDefinition);
+    void FixStatementList(Block *pBlock, StatementList *pStatementList, FunctionDefinition *pFunctionDefinition);
 
     Expression* EvalMathExpressionInt(Expression *pExpression, int left, int right);
     Expression* EvalMathExpressionDouble(Expression *pExpression, double left, double right);
@@ -52,6 +58,10 @@ private:
     Expression* CastBinaryExpression(Expression *pExpression);
 
     void CheckArgument(Block *pBlock, FunctionDefinition *pFunctionDefinition, Expression *pExpression);
+    void AddLocalVariable(FunctionDefinition *pFunctionDefinition, Declaration *pDeclaration);
+    void AddDeclaration(Block *pBlock, Declaration *pDeclaration, FunctionDefinition *pFunctionDefinition, int iLine);
+    void AddParameterAsDeclaration(FunctionDefinition *pFunctionDefinition);
+    void AddReturnFunction(FunctionDefinition *pFunctionDefinition);
 
     void CastMismatchError(int iLine, DVM_BasicType enSrc, DVM_BasicType enDest);
 
@@ -66,4 +76,5 @@ private:
     Util        &m_Util;
     Error       &m_Error;
     Create      &m_Create;
+    Interface   &m_Interface;
 };

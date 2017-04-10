@@ -21,20 +21,34 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 
 #define DIKSAM_DECLARE  extern "C" __declspec (dllexport)
 
-DIKSAM_DECLARE void DKC_Compile(int iThreadIndex)
+DIKSAM_DECLARE void DKC_Compile(int iThreadIndex, const char* lpctstrScriptFile)
 {
     setlocale(LC_CTYPE, "");
     g_iCurrentThreadIndex = iThreadIndex;
 
-    char *sc[] = {
-        "int int_val;\n",
-        "int_val = 3;\n",
-        ""
-    };
+    std::ifstream ifs(lpctstrScriptFile);
+    std::vector<std::string> vecScriptFile;
+    std::string sLine;
+
+    while (std::getline(ifs, sLine))
+    {
+        sLine += "\n";
+        vecScriptFile.push_back(sLine);
+    }
+
+    vecScriptFile.push_back("");
+
+    char* *ppLines = new char*[vecScriptFile.size()]();
+    for (size_t i = 0; i < vecScriptFile.size(); i++)
+    {
+#pragma message ("*** WARNING : force const char* cast to char* is dangerous***")
+#pragma message ("这里进行强制转换时，已经确定const char*中的内容不会改变，转换的目的仅用于能够完全编译")
+        ppLines[i] = const_cast<char*>(vecScriptFile[i].c_str());
+    }
 
     try
     {
-        DikSam::GetClassObject(iThreadIndex)->GetInterface()->Compile(sc);
+        DikSam::GetClassObject(iThreadIndex)->GetInterface()->Compile(ppLines);
     }
     catch (const PanicException& e)
     {
@@ -52,6 +66,8 @@ DIKSAM_DECLARE void DKC_Compile(int iThreadIndex)
     {
         std::cout << e.what();
     }
+
+    delete[] ppLines;
 }
 
 DIKSAM_DECLARE void DKC_Run(int iThreadIndex)

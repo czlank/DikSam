@@ -151,7 +151,7 @@ DVM_Executable* Interface::DoCompile(DKC_Compiler *pCompiler, char **ppLines)
         m_Mutex.unlock();
     } while (0);
 
-    FixTree fix(m_Debug, m_Memory, m_Util, m_Error, m_Create);
+    FixTree fix(m_Debug, m_Memory, m_Util, m_Error, m_Create, *this);
     fix.Fix(m_pCompiler);
 
     return nullptr;
