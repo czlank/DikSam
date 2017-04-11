@@ -75,6 +75,10 @@ Declaration* Util::SearchDeclaration(const char *lpcstrIdentifier, Block *pBlock
 
 void Util::VStrClear(VString *vStr)
 {
+    if (nullptr == vStr->string)
+        return;
+
+    m_Memory.Free(vStr->string);
     vStr->string = nullptr;
 }
 

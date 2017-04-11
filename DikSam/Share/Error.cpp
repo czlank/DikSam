@@ -19,25 +19,27 @@ Error::~Error()
 void Error::CompileError(int iLine, DikSamError id, ...)
 {
     va_list ap;
-    VString vStrMessage;
+    VString vStrMessage{ nullptr };
 
     SelfCheck();
+
     va_start(ap, id);
-    m_Util.VStrClear(&vStrMessage);
     FormatMessage(m_ErrorMessageFormat[id], &vStrMessage, ap);
     std::wstringstream ss;
     ss << iLine << TEXT(" ") << vStrMessage.string;
     va_end(ap);
 
+    m_Util.VStrClear(&vStrMessage);
     throw ErrorException(ss.str().c_str());
 }
 
 void Error::DVMError(DVM_Executable *pExe, Function *pFunc, int pc, DikSamError id, ...)
 {
     va_list ap;
-    VString vStrMessage;
+    VString vStrMessage{ nullptr };
 
     SelfCheck();
+    
     va_start(ap, id);
     FormatMessage(m_ErrorMessageFormat[id], &vStrMessage, ap);
 
@@ -50,6 +52,7 @@ void Error::DVMError(DVM_Executable *pExe, Function *pFunc, int pc, DikSamError 
     ss << vStrMessage.string;
     va_end(ap);
 
+    m_Util.VStrClear(&vStrMessage);
     throw ErrorException(ss.str().c_str());
 }
 
