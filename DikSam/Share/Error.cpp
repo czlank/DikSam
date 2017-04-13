@@ -185,7 +185,7 @@ void Error::FormatMessage(const wchar_t* lpcwstrFormat, VString *vstrMsg, va_lis
             wstrArgName[i - iStart] = lpcwstrFormat[i];
         }
 
-        assert(lpcwstrFormat[i + 1] == L')');
+        assert(lpcwstrFormat[i] == L')');
 
         size_t _Dsize = 2 * wstrArgName.size() + 1;
         size_t szCount;
