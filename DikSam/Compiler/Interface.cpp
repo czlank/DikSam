@@ -61,8 +61,6 @@ void Interface::Compile(FILE *pFile)
     yyin = pFile;
 
     m_pExe = DoCompile(m_pCompiler, nullptr);
-
-    m_StringLiteral.Reset();
 }
 
 void Interface::Compile(char **ppLines)
@@ -73,13 +71,12 @@ void Interface::Compile(char **ppLines)
     m_pCompiler->input_mode = DKC_STRING_INPUT_MODE;
 
     m_pExe = DoCompile(m_pCompiler, ppLines);
-
-    m_StringLiteral.Reset();
 }
 
 void Interface::ResetCompiler()
 {
     DisposeCompiler();
+    m_StringLiteral.Reset();
 
     m_Memory.CheckAllBlocks();
     m_Memory.DumpBlocks(std::cout);

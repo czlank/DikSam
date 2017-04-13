@@ -2,6 +2,7 @@
 #include "StringLiteral.h"
 #include "DikSam.h"
 #include "Memory.h"
+#include "Storage.h"
 #include "Util.h"
 #include "Error.h"
 
@@ -36,11 +37,12 @@ char* dkc_create_identifier(char *str)
 }
 #endif // __cplusplus
 
-StringLiteral::StringLiteral(Memory& memory, Util& util, Error& error)
+StringLiteral::StringLiteral(Memory& memory, Storage& storage, Util& util, Error& error)
     : m_iIndex(0)
     , m_iBufferSize(0)
     , m_pBuffer(nullptr)
     , m_Memory(memory)
+    , m_Storage(storage)
     , m_Util(util)
     , m_Error(error)
 {
@@ -80,7 +82,7 @@ DVM_Char* StringLiteral::Close()
     std::wstring str(_Dest);
     delete [] _Dest;
 
-    DVM_Char *pNewStr = (DVM_Char*)STRING_MEM_Malloc(sizeof(DVM_Char*)* (str.length() + 1));
+    DVM_Char *pNewStr = (DVM_Char*)STRING_UTIL_Malloc(sizeof(DVM_Char*)* (str.length() + 1));
     for (size_t i = 0; i < str.length(); i++)
     {
         pNewStr[i] = str[i];

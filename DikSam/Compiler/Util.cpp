@@ -28,7 +28,7 @@ void* Util::Malloc(const char *lpcstrFileName, int iLine, size_t szSize)
 
 TypeSpecifier* Util::AllocTypeSpecifier(DVM_BasicType enType)
 {
-    TypeSpecifier *ts = (TypeSpecifier*)Malloc(__FILE__, __LINE__, sizeof(TypeSpecifier));
+    TypeSpecifier *ts = (TypeSpecifier*)UTIL_STORAGE_MALLOC(sizeof(TypeSpecifier));
 
     ts->basic_type = enType;
     ts->derive = nullptr;
@@ -147,7 +147,7 @@ DVM_Char* Util::ExpressionToString(Expression *stExpr)
 
     std::basic_string<DVM_Char> exprVal(dvmChar.str());
     int iLen = exprVal.length();
-    DVM_Char *pNewStr = (DVM_Char*)UTIL_MEM_Malloc(sizeof(DVM_Char)* (iLen + 1));
+    DVM_Char *pNewStr = (DVM_Char*)UTIL_STORAGE_MALLOC(sizeof(DVM_Char)* (iLen + 1));
     wcscpy_s(pNewStr, iLen + 1, exprVal.c_str());
 
     return pNewStr;

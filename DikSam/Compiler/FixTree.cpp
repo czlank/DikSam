@@ -718,9 +718,6 @@ Expression* FixTree::EvalCompareExpressionString(Expression *pExpression, DVM_Ch
         FIXTREE_DBG_Assert(0, ("pExpression->kind..", pExpression));
     }
 
-    m_Memory.Free(left);
-    m_Memory.Free(right);
-
     pExpression->type = m_Util.AllocTypeSpecifier(DVM_BOOLEAN_TYPE);
     pExpression->kind = BOOLEAN_EXPRESSION;
 
@@ -846,11 +843,8 @@ Expression* FixTree::ChainString(Expression *pExpression)
     int iLen = std::basic_string<DVM_Char>(pLeftStr).length()
              + std::basic_string<DVM_Char>(pRightStr).length();
 
-    DVM_Char *pNewStr = (DVM_Char*)FIXTREE_MEM_Malloc(sizeof(DVM_Char)* (iLen + 1));
+    DVM_Char *pNewStr = (DVM_Char*)STRING_UTIL_Malloc(sizeof(DVM_Char)* (iLen + 1));
     wcscpy_s(pNewStr, iLen + 1, (std::basic_string<DVM_Char>(pLeftStr) + std::basic_string<DVM_Char>(pRightStr)).c_str());
-
-    m_Memory.Free(pLeftStr);
-    m_Memory.Free(pRightStr);
 
     pExpression->kind = STRING_EXPRESSION;
     pExpression->type = m_Util.AllocTypeSpecifier(DVM_STRING_TYPE);

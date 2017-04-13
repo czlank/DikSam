@@ -9,8 +9,8 @@ class Interface;
 
 class Util
 {
-#define UTIL_MEM_Malloc(size)               (m_Memory.Malloc(__FILE__, __LINE__, size))
 #define UTIL_MEM_Realloc(ptr, size)         (m_Memory.Realloc(__FILE__, __LINE__, ptr, size))
+#define UTIL_STORAGE_MALLOC(size)           (Malloc(__FILE__, __LINE__, size))
 #define UTIL_DBG_Assert(expression, arg)    ((expression) ? (void)(0) : (m_Debug.Assert(__FILE__, __LINE__, #expression, arg)))
 
 public:
