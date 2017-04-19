@@ -11,6 +11,7 @@
 #include "Exception.h"
 #include "FixTree.h"
 #include "Generate.h"
+#include "Execute.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -39,7 +40,6 @@ Interface::Interface(Debug& debug, Memory& memory, Storage& storage, Util& util,
     , m_StringLiteral(stringliteral)
     , m_Create(create)
     , m_pCompiler(nullptr)
-    , m_pExe(nullptr)
     , m_iThreadIndex(iThreadIndex)
 {
     CreateCompiler();
@@ -50,7 +50,19 @@ Interface::~Interface()
     DisposeCompiler();
 }
 
-void Interface::Compile(FILE *pFile)
+void Interface::RunScript(FILE *pFile)
+{
+    DVM_Executable *pExecutable = Compile(pFile);
+    Execute(m_Debug, m_Memory, m_Error)(pExecutable);
+}
+
+void Interface::RunScript(char **ppLines)
+{
+    DVM_Executable *pExecutable = Compile(ppLines);
+    Execute(m_Debug, m_Memory, m_Error)(pExecutable);
+}
+
+DVM_Executable* Interface::Compile(FILE *pFile)
 {
     extern FILE *yyin;
 
@@ -61,17 +73,58 @@ void Interface::Compile(FILE *pFile)
 
     yyin = pFile;
 
-    m_pExe = DoCompile(m_pCompiler, nullptr);
+    return DoCompile(m_pCompiler, nullptr);
 }
 
-void Interface::Compile(char **ppLines)
+DVM_Executable* Interface::Compile(char **ppLines)
 {
     ResetCompiler();
 
     m_pCompiler->current_line_number = 1;
     m_pCompiler->input_mode = DKC_STRING_INPUT_MODE;
 
-    m_pExe = DoCompile(m_pCompiler, ppLines);
+    return DoCompile(m_pCompiler, ppLines);
+}
+
+DVM_Executable* Interface::DoCompile(DKC_Compiler *pCompiler, char **ppLines)
+{
+    extern int yyparse(void);
+    extern void ResetLex(void);
+
+    do
+    {
+        m_Mutex.lock();
+        g_iCurrentThreadIndex = m_iThreadIndex;
+
+        if (DKC_STRING_INPUT_MODE == m_pCompiler->input_mode)
+        {
+            dkc_set_source_string(ppLines);
+        }
+
+        try
+        {
+            if (yyparse())
+            {
+                ResetLex();
+                m_Mutex.unlock();
+                throw ErrorException(TEXT("Error ! Error ! Error !"));
+            }
+        }
+        catch (const ErrorException& e)
+        {
+            ResetLex();
+            m_Mutex.unlock();
+            throw e;
+        }
+
+        ResetLex();
+        m_Mutex.unlock();
+    } while (0);
+
+    FixTree(m_Debug, m_Memory, m_Util, m_Error, m_Create, *this)(m_pCompiler);
+    DVM_Executable *pExecutable = Generate(m_Debug, m_Memory, m_Error)(m_pCompiler);
+
+    return pExecutable;
 }
 
 void Interface::ResetCompiler()
@@ -124,45 +177,4 @@ void Interface::DisposeCompiler()
     }
 
     m_Storage.Dispose(m_pCompiler->compile_storage);
-}
-
-DVM_Executable* Interface::DoCompile(DKC_Compiler *pCompiler, char **ppLines)
-{
-    extern int yyparse(void);
-    extern void ResetLex(void);
-    
-    do
-    {
-        m_Mutex.lock();
-        g_iCurrentThreadIndex = m_iThreadIndex;
-
-        if (DKC_STRING_INPUT_MODE == m_pCompiler->input_mode)
-        {
-            dkc_set_source_string(ppLines);
-        }
-
-        try
-        {
-            if (yyparse())
-            {
-                ResetLex();
-                m_Mutex.unlock();
-                throw ErrorException(TEXT("Error ! Error ! Error !"));
-            }
-        }
-        catch (const ErrorException& e)
-        {
-            ResetLex();
-            m_Mutex.unlock();
-            throw e;
-        }
-        
-        ResetLex();
-        m_Mutex.unlock();
-    } while (0);
-
-    FixTree(m_Debug, m_Memory, m_Util, m_Error, m_Create, *this)(m_pCompiler);
-    Generate(m_Debug, m_Memory, m_Error)(m_pCompiler);
-
-    return nullptr;
 }

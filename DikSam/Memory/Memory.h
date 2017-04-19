@@ -2,7 +2,6 @@
 
 class Memory
 {
-public:
 #define MARK_SIZE               (4)
 #define ALIGN_SIZE              (sizeof(Align))
 #define REVALUE_UP_ALIGN(val)   ((val) ? (((val) - 1) / ALIGN_SIZE + 1) : 0)
@@ -10,6 +9,7 @@ public:
 #define INITIAL_MARK            (0xCC)
 #define MARK                    (0xCD)
 
+public:
     typedef enum
     {
         MEM_FAIL_AND_EXIT,

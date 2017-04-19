@@ -48,7 +48,7 @@ DIKSAM_DECLARE int RunScript(int iThreadIndex, const char* lpctstrScriptFile)
 
     try
     {
-        DikSam::GetClassObject(iThreadIndex)->GetInterface()->Compile(ppLines.get());
+        DikSam::GetClassObject(iThreadIndex)->GetInterface()->RunScript(ppLines.get());
     }
     catch (const PanicException& e)
     {

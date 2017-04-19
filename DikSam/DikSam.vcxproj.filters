@@ -25,6 +25,9 @@
     <Filter Include="Compiler">
       <UniqueIdentifier>{514a9894-39d5-4f5a-a5f0-46d50b3e8f7a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="DVM">
+      <UniqueIdentifier>{ff2f57f7-a97c-41c6-a53b-b3e7b3a69815}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -69,6 +72,9 @@
     <ClInclude Include="Compiler\Generate.h">
       <Filter>Compiler</Filter>
     </ClInclude>
+    <ClInclude Include="DVM\Execute.h">
+      <Filter>DVM</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -109,6 +115,9 @@
     </ClCompile>
     <ClCompile Include="Compiler\Generate.cpp">
       <Filter>Compiler</Filter>
+    </ClCompile>
+    <ClCompile Include="DVM\Execute.cpp">
+      <Filter>DVM</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

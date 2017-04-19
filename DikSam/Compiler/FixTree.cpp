@@ -23,7 +23,7 @@ FixTree::~FixTree()
 
 }
 
-void FixTree::operator ()(DKC_Compiler *pCompiler)
+void FixTree::operator () (DKC_Compiler *pCompiler)
 {
     FixStatementList(nullptr, pCompiler->statement_list, nullptr);
 

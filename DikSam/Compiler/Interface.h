@@ -9,6 +9,7 @@ class Util;
 class Error;
 class StringLiteral;
 class Create;
+class Execute;
 
 class Interface
 {
@@ -21,26 +22,30 @@ public:
     ~Interface();
 
     DKC_Compiler* GetCompiler() { return m_pCompiler; }
-    void Compile(FILE *pFile);
-    void Compile(char **ppLines);
+
+    void RunScript(FILE *pFile);
+    void RunScript(char **ppLines);
 
 private:
+    DVM_Executable* Compile(FILE *pFile);
+    DVM_Executable* Compile(char **ppLines);
+    DVM_Executable* DoCompile(DKC_Compiler *pCompiler, char **ppLines);
+
     void ResetCompiler();
     void CreateCompiler();
     void DisposeCompiler();
-    DVM_Executable* DoCompile(DKC_Compiler *pCompiler, char **ppLines);
 
 private:
-    Debug               &m_Debug;
-    Memory              &m_Memory;
-    Storage             &m_Storage;
-    Util                &m_Util;
-    Error               &m_Error;
-    StringLiteral       &m_StringLiteral;
-    Create              &m_Create;
-    DKC_Compiler        *m_pCompiler;
-    DVM_Executable      *m_pExe;
-    int                 m_iThreadIndex;
+    Debug                   &m_Debug;
+    Memory                  &m_Memory;
+    Storage                 &m_Storage;
+    Util                    &m_Util;
+    Error                   &m_Error;
+    StringLiteral           &m_StringLiteral;
+    Create                  &m_Create;
+    
+    DKC_Compiler            *m_pCompiler;
+    int                     m_iThreadIndex;
 
     static std::mutex   m_Mutex;
 };
