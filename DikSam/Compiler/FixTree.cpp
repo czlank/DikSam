@@ -23,7 +23,7 @@ FixTree::~FixTree()
 
 }
 
-void FixTree::Fix(DKC_Compiler *pCompiler)
+void FixTree::operator ()(DKC_Compiler *pCompiler)
 {
     FixStatementList(nullptr, pCompiler->statement_list, nullptr);
 
@@ -452,6 +452,7 @@ void FixTree::FixReturnStatement(Block *pBlock, ReturnStatement *pReturnStatemen
             pReturnValue->u.boolean_value = DVM_FALSE;
             break;
 
+        case DVM_VOID_TYPE :
         case DVM_INT_TYPE :
             pReturnValue = m_Create.AllocExpression(INT_EXPRESSION);
             pReturnValue->u.int_value = 0;

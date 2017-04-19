@@ -66,6 +66,9 @@
     <ClInclude Include="Compiler\FixTree.h">
       <Filter>Compiler</Filter>
     </ClInclude>
+    <ClInclude Include="Compiler\Generate.h">
+      <Filter>Compiler</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -102,6 +105,9 @@
       <Filter>Compiler</Filter>
     </ClCompile>
     <ClCompile Include="Compiler\FixTree.cpp">
+      <Filter>Compiler</Filter>
+    </ClCompile>
+    <ClCompile Include="Compiler\Generate.cpp">
       <Filter>Compiler</Filter>
     </ClCompile>
   </ItemGroup>

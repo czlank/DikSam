@@ -10,6 +10,7 @@
 #include "Create.h"
 #include "Exception.h"
 #include "FixTree.h"
+#include "Generate.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -140,16 +141,28 @@ DVM_Executable* Interface::DoCompile(DKC_Compiler *pCompiler, char **ppLines)
             dkc_set_source_string(ppLines);
         }
 
-        if (yyparse())
+        try
         {
-            throw ErrorException(TEXT("Error ! Error ! Error !"));
+            if (yyparse())
+            {
+                ResetLex();
+                m_Mutex.unlock();
+                throw ErrorException(TEXT("Error ! Error ! Error !"));
+            }
         }
+        catch (const ErrorException& e)
+        {
+            ResetLex();
+            m_Mutex.unlock();
+            throw e;
+        }
+        
         ResetLex();
         m_Mutex.unlock();
     } while (0);
 
-    FixTree fix(m_Debug, m_Memory, m_Util, m_Error, m_Create, *this);
-    fix.Fix(m_pCompiler);
+    FixTree(m_Debug, m_Memory, m_Util, m_Error, m_Create, *this)(m_pCompiler);
+    Generate(m_Debug, m_Memory, m_Error)(m_pCompiler);
 
     return nullptr;
 }

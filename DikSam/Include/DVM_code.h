@@ -12,6 +12,7 @@ extern "C"
 
 typedef enum
 {
+    DVM_VOID_TYPE,
     DVM_BOOLEAN_TYPE,
     DVM_INT_TYPE,
     DVM_DOUBLE_TYPE,

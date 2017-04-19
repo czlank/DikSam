@@ -116,6 +116,7 @@ int yywrap(void)
 <INITIAL>"catch"        return CATCH;
 <INITIAL>"finally"      return FINALLY;
 <INITIAL>"throw"        return THROW;
+<INITIAL>"void"         return VOID_T;
 <INITIAL>"boolean"      return BOOLEAN_T;
 <INITIAL>"int"          return INT_T;
 <INITIAL>"double"       return DOUBLE_T;

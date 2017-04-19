@@ -22,7 +22,7 @@ public:
     FixTree(Debug& debug, Memory& memory, Util& util, Error& error, Create& create, Interface& refInterface);
     ~FixTree();
 
-    void Fix(DKC_Compiler *pCompiler);
+    void operator () (DKC_Compiler *pCompiler);
 
 private:
     Expression* FixExpression(Block *pBlock, Expression *pExpression);
