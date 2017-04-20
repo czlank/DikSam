@@ -104,9 +104,6 @@ char* Util::GetBasicTypeName(DVM_BasicType enType)
 {
     switch (enType)
     {
-    case DVM_VOID_TYPE :
-        return "void";
-
     case DVM_BOOLEAN_TYPE :
         return "boolean";
 

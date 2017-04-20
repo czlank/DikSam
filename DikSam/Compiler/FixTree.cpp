@@ -452,7 +452,6 @@ void FixTree::FixReturnStatement(Block *pBlock, ReturnStatement *pReturnStatemen
             pReturnValue->u.boolean_value = DVM_FALSE;
             break;
 
-        case DVM_VOID_TYPE :
         case DVM_INT_TYPE :
             pReturnValue = m_Create.AllocExpression(INT_EXPRESSION);
             pReturnValue->u.int_value = 0;

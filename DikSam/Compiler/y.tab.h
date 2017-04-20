@@ -86,11 +86,10 @@
      CATCH = 303,
      FINALLY = 304,
      THROW = 305,
-     VOID_T = 306,
-     BOOLEAN_T = 307,
-     INT_T = 308,
-     DOUBLE_T = 309,
-     STRING_T = 310
+     BOOLEAN_T = 306,
+     INT_T = 307,
+     DOUBLE_T = 308,
+     STRING_T = 309
    };
 #endif
 /* Tokens.  */
@@ -142,11 +141,10 @@
 #define CATCH 303
 #define FINALLY 304
 #define THROW 305
-#define VOID_T 306
-#define BOOLEAN_T 307
-#define INT_T 308
-#define DOUBLE_T 309
-#define STRING_T 310
+#define BOOLEAN_T 306
+#define INT_T 307
+#define DOUBLE_T 308
+#define STRING_T 309
 
 
 
@@ -172,7 +170,7 @@ typedef union YYSTYPE
 
 
 /* Line 1685 of yacc.c  */
-#line 176 "y.tab.h"
+#line 174 "y.tab.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
