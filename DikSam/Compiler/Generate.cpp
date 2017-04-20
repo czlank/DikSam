@@ -24,7 +24,47 @@ DVM_Executable* Generate::operator () (DKC_Compiler *pCompiler)
 
 int Generate::AddConstantPool(DVM_Executable *pExecutable, DVM_ConstantPool *pConstantPool)
 {
-    return 0;
+    pExecutable->constant_pool = (DVM_ConstantPool*)GENERATE_MEM_Realloc(pExecutable->constant_pool, sizeof(DVM_ConstantPool) * (pExecutable->constant_pool_count + 1));
+    pExecutable->constant_pool[pExecutable->constant_pool_count] = *pConstantPool;
+
+    return pExecutable->constant_pool_count++;
+}
+
+void Generate::AddGlobalVariable(DKC_Compiler *pCompiler, DVM_Executable *pExecutable)
+{
+    int iVariableCount = 0;
+
+    for (DeclarationList *pDeclarationList = pCompiler->declaration_list; pDeclarationList; pDeclarationList = pDeclarationList->next)
+    {
+        iVariableCount++;
+    }
+
+    pExecutable->global_variable_count = iVariableCount;
+    pExecutable->global_variable = (DVM_Variable*)GENERATE_MEM_Malloc(sizeof(DVM_Variable) * iVariableCount);
+
+    int i = 0;
+    for (DeclarationList *pDeclarationList = pCompiler->declaration_list; pDeclarationList; pDeclarationList = pDeclarationList->next, i++)
+    {
+        pExecutable->global_variable[i].name = GENERATE_MEM_StrDUP(pDeclarationList->declaration->name);
+        pExecutable->global_variable[i].type = CopyTypeSpecifier(pDeclarationList->declaration->type);
+    }
+}
+
+void Generate::AddLineNumber(OpcodeBuf *pOpcodeBuf, int iLine, int iStartPC)
+{
+    if (nullptr == pOpcodeBuf->m_LineNumber
+        || pOpcodeBuf->m_LineNumber[pOpcodeBuf->m_iLineNumberSize - 1].line_number != iLine)
+    {
+        pOpcodeBuf->m_LineNumber = (DVM_LineNumber*)GENERATE_MEM_Realloc(pOpcodeBuf->m_LineNumber, sizeof(DVM_LineNumber) * (pOpcodeBuf->m_iLineNumberSize + 1));
+        pOpcodeBuf->m_LineNumber[pOpcodeBuf->m_iLineNumberSize].line_number = iLine;
+        pOpcodeBuf->m_LineNumber[pOpcodeBuf->m_iLineNumberSize].start_pc = iStartPC;
+        pOpcodeBuf->m_LineNumber[pOpcodeBuf->m_iLineNumberSize].pc_count = pOpcodeBuf->m_iSize - iStartPC;
+        pOpcodeBuf->m_iLineNumberSize++;
+    }
+    else
+    {
+        pOpcodeBuf->m_LineNumber[pOpcodeBuf->m_iLineNumberSize - 1].pc_count += pOpcodeBuf->m_iSize - iStartPC;
+    }
 }
 
 DVM_Executable* Generate::AllocExecutable()
@@ -45,12 +85,39 @@ DVM_Executable* Generate::AllocExecutable()
 
 DVM_LocalVariable* Generate::CopyParameterList(ParameterList *pParameterList, int *pParameterCount)
 {
-    return nullptr;
+    int iParamCount = 0;
+
+    for (ParameterList *pParam = pParameterList; pParam; pParam = pParam->next)
+    {
+        iParamCount++;
+    }
+
+    *pParameterCount = iParamCount;
+
+    DVM_LocalVariable *pDest = (DVM_LocalVariable*)GENERATE_MEM_Malloc(sizeof(DVM_LocalVariable)* iParamCount);
+
+    int i = 0;
+    for (ParameterList *pParam = pParameterList; pParam; pParam = pParam->next, i++)
+    {
+        pDest[i].name = GENERATE_MEM_StrDUP(pParam->name);
+        pDest[i].type = CopyTypeSpecifier(pParam->type);
+    }
+
+    return pDest;
 }
 
 DVM_LocalVariable* Generate::CopyLocalVariables(FunctionDefinition *pFunctionDefinition, int iParameterCount)
 {
-    return nullptr;
+    int iLocalVariableCount = pFunctionDefinition->local_variable_count - iParameterCount;
+    DVM_LocalVariable *pDest = (DVM_LocalVariable*)GENERATE_MEM_Malloc(sizeof(DVM_LocalVariable) * iLocalVariableCount);
+
+    for (int i = 0; i < iLocalVariableCount; i++)
+    {
+        pDest[i].name = GENERATE_MEM_StrDUP(pFunctionDefinition->local_variable[iParameterCount + i]->name);
+        pDest[i].type = CopyTypeSpecifier(pFunctionDefinition->local_variable[iParameterCount + i]->type);
+    }
+
+    return pDest;
 }
 
 DVM_TypeSpecifier* Generate::CopyTypeSpecifier(TypeSpecifier *pTypeSpecifier)
