@@ -75,6 +75,9 @@
     <ClInclude Include="DVM\Execute.h">
       <Filter>DVM</Filter>
     </ClInclude>
+    <ClInclude Include="Share\OpcodeInfo.h">
+      <Filter>Share</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -118,6 +121,9 @@
     </ClCompile>
     <ClCompile Include="DVM\Execute.cpp">
       <Filter>DVM</Filter>
+    </ClCompile>
+    <ClCompile Include="Share\OpcodeInfo.cpp">
+      <Filter>Share</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

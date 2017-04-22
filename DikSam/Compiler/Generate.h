@@ -55,6 +55,8 @@ private:
     void AddGlobalVariable(DKC_Compiler *pCompiler, DVM_Executable *pExecutable);
     void AddLineNumber(OpcodeBuf *pOpcodeBuf, int iLine, int iStartPC);
 
+    void GenerateCode(OpcodeBuf *pObcode, int iLine, DVM_Opcode code, ...);
+
     DVM_Executable* AllocExecutable();
     DVM_LocalVariable* CopyParameterList(ParameterList *pParameterList, int *pParameterCount);
     DVM_LocalVariable* CopyLocalVariables(FunctionDefinition *pFunctionDefinition, int iParameterCount);

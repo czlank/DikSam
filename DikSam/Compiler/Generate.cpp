@@ -3,6 +3,7 @@
 #include "Debug.h"
 #include "Memory.h"
 #include "Error.h"
+#include "OpcodeInfo.h"
 
 Generate::Generate(Debug& debug, Memory& memory, Error& error)
     : m_Debug(debug)
