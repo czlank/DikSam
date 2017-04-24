@@ -68,6 +68,57 @@ void Generate::AddLineNumber(OpcodeBuf *pOpcodeBuf, int iLine, int iStartPC)
     }
 }
 
+void Generate::GenerateCode(OpcodeBuf *pObcode, int iLine, DVM_Opcode code, ...)
+{
+    va_list ap;
+
+    va_start(ap, code);
+
+    const char *param = DVMOpcodeInfo::Opcode()[int(code)].parameter;
+    int paramLen = std::string(param).length();
+
+    if (pObcode->m_iAllocSize < pObcode->m_iSize + 1 + (paramLen * 2))
+    {
+        pObcode->m_pCode = (DVM_Byte*)GENERATE_MEM_Realloc(pObcode->m_pCode, pObcode->m_iAllocSize + OPCODE_ALLOC_SIZE);
+        pObcode->m_iAllocSize += OPCODE_ALLOC_SIZE;
+    }
+
+    int iStartPC = pObcode->m_iSize;
+
+    pObcode->m_pCode[pObcode->m_iSize++] = code;
+
+    for (int i = 0; param[i] != '\0'; i++)
+    {
+        unsigned int value = va_arg(ap, int);
+
+        switch (param[i])
+        {
+        case 'b' :  // byte
+            pObcode->m_pCode[pObcode->m_iSize++] = (DVM_Byte)value;
+            break;
+
+        case 's' :  // short (2 byte int)
+            pObcode->m_pCode[pObcode->m_iSize]      = (DVM_Byte)(value >> 8);
+            pObcode->m_pCode[pObcode->m_iSize + 1]  = (DVM_Byte)(value & 0xFF);
+            pObcode->m_iSize += 2;
+            break;
+
+        case 'p' :  // constant pool index
+            pObcode->m_pCode[pObcode->m_iSize] = (DVM_Byte)(value >> 8);
+            pObcode->m_pCode[pObcode->m_iSize + 1] = (DVM_Byte)(value & 0xFF);
+            pObcode->m_iSize += 2;
+            break;
+
+        default :
+            GENERATE_DBG_Assert(0, ("param..", param, ", i..", i));
+        }
+    }
+
+    AddLineNumber(pObcode, iLine, iStartPC);
+
+    va_end(ap);
+}
+
 DVM_Executable* Generate::AllocExecutable()
 {
     DVM_Executable *pExecutable = (DVM_Executable*)GENERATE_MEM_Malloc(sizeof(DVM_Executable));

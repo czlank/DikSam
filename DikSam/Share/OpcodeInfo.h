@@ -2,17 +2,12 @@
 
 #include "DikSamc.h"
 
-class OpcodeInfo
+typedef struct
 {
-public:
-    OpcodeInfo(const char *lpstrmnemonic, const char *lpstrparameter, int stackincrement)
-        : mnemonic(lpstrmnemonic), parameter(lpstrparameter), stack_increment(stackincrement)
-    {}
-
     const char  *mnemonic;
     const char  *parameter;
     int         stack_increment;
-};
+} OpcodeInfo;
 
 class DVMOpcodeInfo
 {
@@ -20,8 +15,8 @@ public:
     DVMOpcodeInfo();
     ~DVMOpcodeInfo();
 
-    static std::vector<OpcodeInfo>& Opcode();
+    static std::map<int, OpcodeInfo>& Opcode() { return m_OpcodeInfo; }
 
 private:
-    static std::vector<OpcodeInfo> m_OpcodeInfo;
+    static std::map<int, OpcodeInfo> m_OpcodeInfo;
 };

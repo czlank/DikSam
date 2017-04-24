@@ -1,3 +1,7 @@
+2017-04-25
+1. 实现Generate部分函数
+下一步计划：实现Generate部分函数
+
 2017-04-24
 1. 完成类DVMOpcodeInfo
 下一步计划：实现Generate部分函数

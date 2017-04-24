@@ -13,6 +13,8 @@ class Generate
 #define GENERATE_MEM_StrDUP(str)                (m_Memory.StrDUP(__FILE__, __LINE__, str))
 #define GENERATE_DBG_Assert(expression, arg)    ((expression) ? (void)(0) : (m_Debug.Assert(__FILE__, __LINE__, #expression, arg)))
 
+#define OPCODE_ALLOC_SIZE   (256)
+
     class LabelTable
     {
     public:
