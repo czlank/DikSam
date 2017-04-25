@@ -51,24 +51,24 @@ void Generate::AddGlobalVariable(DKC_Compiler *pCompiler, DVM_Executable *pExecu
     }
 }
 
-void Generate::AddLineNumber(OpcodeBuf *pOpcodeBuf, int iLine, int iStartPC)
+void Generate::AddLineNumber(OpcodeBuf *pOpcode, int iLine, int iStartPC)
 {
-    if (nullptr == pOpcodeBuf->m_LineNumber
-        || pOpcodeBuf->m_LineNumber[pOpcodeBuf->m_iLineNumberSize - 1].line_number != iLine)
+    if (nullptr == pOpcode->m_LineNumber
+        || pOpcode->m_LineNumber[pOpcode->m_iLineNumberSize - 1].line_number != iLine)
     {
-        pOpcodeBuf->m_LineNumber = (DVM_LineNumber*)GENERATE_MEM_Realloc(pOpcodeBuf->m_LineNumber, sizeof(DVM_LineNumber) * (pOpcodeBuf->m_iLineNumberSize + 1));
-        pOpcodeBuf->m_LineNumber[pOpcodeBuf->m_iLineNumberSize].line_number = iLine;
-        pOpcodeBuf->m_LineNumber[pOpcodeBuf->m_iLineNumberSize].start_pc = iStartPC;
-        pOpcodeBuf->m_LineNumber[pOpcodeBuf->m_iLineNumberSize].pc_count = pOpcodeBuf->m_iSize - iStartPC;
-        pOpcodeBuf->m_iLineNumberSize++;
+        pOpcode->m_LineNumber = (DVM_LineNumber*)GENERATE_MEM_Realloc(pOpcode->m_LineNumber, sizeof(DVM_LineNumber)* (pOpcode->m_iLineNumberSize + 1));
+        pOpcode->m_LineNumber[pOpcode->m_iLineNumberSize].line_number = iLine;
+        pOpcode->m_LineNumber[pOpcode->m_iLineNumberSize].start_pc = iStartPC;
+        pOpcode->m_LineNumber[pOpcode->m_iLineNumberSize].pc_count = pOpcode->m_iSize - iStartPC;
+        pOpcode->m_iLineNumberSize++;
     }
     else
     {
-        pOpcodeBuf->m_LineNumber[pOpcodeBuf->m_iLineNumberSize - 1].pc_count += pOpcodeBuf->m_iSize - iStartPC;
+        pOpcode->m_LineNumber[pOpcode->m_iLineNumberSize - 1].pc_count += pOpcode->m_iSize - iStartPC;
     }
 }
 
-void Generate::GenerateCode(OpcodeBuf *pObcode, int iLine, DVM_Opcode code, ...)
+void Generate::GenerateCode(OpcodeBuf *pOpcode, int iLine, DVM_Opcode code, ...)
 {
     va_list ap;
 
@@ -77,15 +77,15 @@ void Generate::GenerateCode(OpcodeBuf *pObcode, int iLine, DVM_Opcode code, ...)
     const char *param = DVMOpcodeInfo::Opcode()[int(code)].parameter;
     int paramLen = std::string(param).length();
 
-    if (pObcode->m_iAllocSize < pObcode->m_iSize + 1 + (paramLen * 2))
+    if (pOpcode->m_iAllocSize < pOpcode->m_iSize + 1 + (paramLen * 2))
     {
-        pObcode->m_pCode = (DVM_Byte*)GENERATE_MEM_Realloc(pObcode->m_pCode, pObcode->m_iAllocSize + OPCODE_ALLOC_SIZE);
-        pObcode->m_iAllocSize += OPCODE_ALLOC_SIZE;
+        pOpcode->m_pCode = (DVM_Byte*)GENERATE_MEM_Realloc(pOpcode->m_pCode, pOpcode->m_iAllocSize + OPCODE_ALLOC_SIZE);
+        pOpcode->m_iAllocSize += OPCODE_ALLOC_SIZE;
     }
 
-    int iStartPC = pObcode->m_iSize;
+    int iStartPC = pOpcode->m_iSize;
 
-    pObcode->m_pCode[pObcode->m_iSize++] = code;
+    pOpcode->m_pCode[pOpcode->m_iSize++] = code;
 
     for (int i = 0; param[i] != '\0'; i++)
     {
@@ -94,19 +94,19 @@ void Generate::GenerateCode(OpcodeBuf *pObcode, int iLine, DVM_Opcode code, ...)
         switch (param[i])
         {
         case 'b' :  // byte
-            pObcode->m_pCode[pObcode->m_iSize++] = (DVM_Byte)value;
+            pOpcode->m_pCode[pOpcode->m_iSize++] = (DVM_Byte)value;
             break;
 
         case 's' :  // short (2 byte int)
-            pObcode->m_pCode[pObcode->m_iSize]      = (DVM_Byte)(value >> 8);
-            pObcode->m_pCode[pObcode->m_iSize + 1]  = (DVM_Byte)(value & 0xFF);
-            pObcode->m_iSize += 2;
+            pOpcode->m_pCode[pOpcode->m_iSize] = (DVM_Byte)(value >> 8);
+            pOpcode->m_pCode[pOpcode->m_iSize + 1] = (DVM_Byte)(value & 0xFF);
+            pOpcode->m_iSize += 2;
             break;
 
         case 'p' :  // constant pool index
-            pObcode->m_pCode[pObcode->m_iSize] = (DVM_Byte)(value >> 8);
-            pObcode->m_pCode[pObcode->m_iSize + 1] = (DVM_Byte)(value & 0xFF);
-            pObcode->m_iSize += 2;
+            pOpcode->m_pCode[pOpcode->m_iSize] = (DVM_Byte)(value >> 8);
+            pOpcode->m_pCode[pOpcode->m_iSize + 1] = (DVM_Byte)(value & 0xFF);
+            pOpcode->m_iSize += 2;
             break;
 
         default :
@@ -114,9 +114,93 @@ void Generate::GenerateCode(OpcodeBuf *pObcode, int iLine, DVM_Opcode code, ...)
         }
     }
 
-    AddLineNumber(pObcode, iLine, iStartPC);
+    AddLineNumber(pOpcode, iLine, iStartPC);
 
     va_end(ap);
+}
+
+void Generate::GenerateBooleanExpression(DVM_Executable *pExecutable, Expression *pExpression, OpcodeBuf *pOpcode)
+{
+    GenerateCode(pOpcode, pExpression->line_number, DVM_PUSH_INT_1BYTE, (DVM_TRUE == pExpression->u.boolean_value ? 1 : 0));
+}
+
+void Generate::GenerateIntExpression(DVM_Executable *pExecutable, Expression *pExpression, OpcodeBuf *pOpcode)
+{
+    if (pExpression->u.int_value >= 0 && pExpression->u.int_value < 256)
+    {
+        GenerateCode(pOpcode, pExpression->line_number, DVM_PUSH_INT_1BYTE, pExpression->u.int_value);
+    }
+    else if (pExpression->u.int_value >= 0 && pExpression->u.int_value < 65536)
+    {
+        GenerateCode(pOpcode, pExpression->line_number, DVM_PUSH_INT_2BYTE, pExpression->u.int_value);
+    }
+    else
+    {
+        DVM_ConstantPool cPool;
+
+        cPool.tag = DVM_CONSTANT_INT;
+        cPool.u.c_int = pExpression->u.int_value;
+        
+        int cpIdx = AddConstantPool(pExecutable, &cPool);
+        GenerateCode(pOpcode, pExpression->line_number, DVM_PUSH_INT, cpIdx);
+    }
+}
+
+void Generate::GenerateDoubleExpression(DVM_Executable *pExecutable, Expression *pExpression, OpcodeBuf *pOpcode)
+{
+    if (double(std::abs(pExpression->u.double_value - 0.0)) < eps)
+    {
+        GenerateCode(pOpcode, pExpression->line_number, DVM_PUSH_DOUBLE_0);
+    }
+    else if (double(std::abs(pExpression->u.double_value - 1.0)) < eps)
+    {
+        GenerateCode(pOpcode, pExpression->line_number, DVM_PUSH_DOUBLE_1);
+    }
+    else
+    {
+        DVM_ConstantPool cPool;
+
+        cPool.tag = DVM_CONSTANT_DOUBLE;
+        cPool.u.c_double = pExpression->u.double_value;
+
+        int cpIdx = AddConstantPool(pExecutable, &cPool);
+        GenerateCode(pOpcode, pExpression->line_number, DVM_PUSH_DOUBLE, cpIdx);
+    }
+}
+
+void Generate::GenerateStringExpression(DVM_Executable *pExecutable, Expression *pExpression, OpcodeBuf *pOpcode)
+{
+    DVM_ConstantPool cPool;
+
+    cPool.tag = DVM_CONSTANT_STRING;
+    cPool.u.c_string = pExpression->u.string_value;
+
+    int cpIdx = AddConstantPool(pExecutable, &cPool);
+    GenerateCode(pOpcode, pExpression->line_number, DVM_PUSH_STRING, cpIdx);
+}
+
+void Generate::GenerateIdentifierExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode)
+{
+    if (pExpression->u.identifier.is_function)
+    {
+        GenerateCode(pOpcode, pExpression->line_number, DVM_PUSH_FUNCTION, pExpression->u.identifier.u.function->index);
+        return;
+    }
+
+    DVM_Opcode code = pExpression->u.identifier.u.declaration->is_local ? DVM_PUSH_STACK_INT : DVM_PUSH_STATIC_INT;
+
+    GenerateCode(pOpcode, pExpression->line_number,
+        DVM_Opcode(code + GetOpcodeTypeOffset(pExpression->u.identifier.u.declaration->type->basic_type)),
+        pExpression->u.identifier.u.declaration->variable_index);
+}
+
+void Generate::GeneratePopToIdentifier(Declaration *pDeclaration, int iLine, OpcodeBuf *pOpcode)
+{
+    DVM_Opcode code = pDeclaration->is_local ? DVM_POP_STACK_INT : DVM_POP_STATIC_INT;
+
+    GenerateCode(pOpcode, iLine,
+        DVM_Opcode(code + GetOpcodeTypeOffset(pDeclaration->type->basic_type)),
+        pDeclaration->variable_index);
 }
 
 DVM_Executable* Generate::AllocExecutable()
@@ -209,4 +293,27 @@ DVM_TypeSpecifier* Generate::CopyTypeSpecifier(TypeSpecifier *pTypeSpecifier)
     }
 
     return pDestTypeSpecifier;
+}
+
+int Generate::GetOpcodeTypeOffset(DVM_BasicType enType)
+{
+    switch (enType)
+    {
+    case DVM_BOOLEAN_TYPE :
+        return 0;
+
+    case DVM_INT_TYPE :
+        return 0;
+
+    case DVM_DOUBLE_TYPE :
+        return 1;
+
+    case DVM_STRING_TYPE :
+        return 2;
+
+    default :
+        GENERATE_DBG_Assert(0, ("basic_type..", enType));
+    }
+
+    return 0;
 }

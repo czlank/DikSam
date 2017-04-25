@@ -177,8 +177,7 @@ void FixTree::FixStatement(Block *pBlock, Statement *pStatement, FunctionDefinit
 
         if (pStatement->u.declaration_s->initializer)
         {
-            pStatement->u.declaration_s->initializer = CreateAssignCast(
-                pStatement->u.declaration_s->initializer, pStatement->u.declaration_s->type);
+            pStatement->u.declaration_s->initializer = CreateAssignCast(pStatement->u.declaration_s->initializer, pStatement->u.declaration_s->type);
         }
 
         break;
@@ -255,18 +254,15 @@ Expression* FixTree::FixMathBinaryExpression(Block *pBlock, Expression *pExpress
 
     pExpression = CastBinaryExpression(pExpression);
 
-    if (IsInt(pExpression->u.binary_expression.left->type)
-        && IsInt(pExpression->u.binary_expression.right->type))
+    if (IsInt(pExpression->u.binary_expression.left->type) && IsInt(pExpression->u.binary_expression.right->type))
     {
         pExpression->type = m_Util.AllocTypeSpecifier(DVM_INT_TYPE);
     }
-    else if (IsDouble(pExpression->u.binary_expression.left->type)
-        && IsDouble(pExpression->u.binary_expression.right->type))
+    else if (IsDouble(pExpression->u.binary_expression.left->type) && IsDouble(pExpression->u.binary_expression.right->type))
     {
         pExpression->type = m_Util.AllocTypeSpecifier(DVM_DOUBLE_TYPE);
     }
-    else if (IsString(pExpression->u.binary_expression.left->type)
-        && IsString(pExpression->u.binary_expression.right->type))
+    else if (IsString(pExpression->u.binary_expression.left->type) && IsString(pExpression->u.binary_expression.right->type))
     {
         pExpression->type = m_Util.AllocTypeSpecifier(DVM_STRING_TYPE);
     }
@@ -310,8 +306,7 @@ Expression* FixTree::FixLogicalAndOrExpression(Block *pBlock, Expression *pExpre
     pExpression->u.binary_expression.left = FixExpression(pBlock, pExpression->u.binary_expression.left);
     pExpression->u.binary_expression.right = FixExpression(pBlock, pExpression->u.binary_expression.right);
 
-    if (IsBoolean(pExpression->u.binary_expression.left->type)
-        && IsBoolean(pExpression->u.binary_expression.right->type))
+    if (IsBoolean(pExpression->u.binary_expression.left->type) && IsBoolean(pExpression->u.binary_expression.right->type))
     {
         pExpression->type = m_Util.AllocTypeSpecifier(DVM_BOOLEAN_TYPE);
     }
@@ -328,8 +323,7 @@ Expression* FixTree::FixMinusExpression(Block *pBlock, Expression *pExpression)
 {
     pExpression->u.minus_expression = FixExpression(pBlock, pExpression->u.minus_expression);
 
-    if (!IsInt(pExpression->u.minus_expression->type)
-        && !IsDouble(pExpression->u.minus_expression->type))
+    if (!IsInt(pExpression->u.minus_expression->type) && !IsDouble(pExpression->u.minus_expression->type))
     {
         m_Error.CompileError(pExpression->line_number,
             MINUS_TYPE_MISMATCH_ERR, MESSAGE_ARGUMENT_END);

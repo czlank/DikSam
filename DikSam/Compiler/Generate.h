@@ -55,14 +55,21 @@ public:
 private:
     int AddConstantPool(DVM_Executable *pExecutable, DVM_ConstantPool *pConstantPool);
     void AddGlobalVariable(DKC_Compiler *pCompiler, DVM_Executable *pExecutable);
-    void AddLineNumber(OpcodeBuf *pOpcodeBuf, int iLine, int iStartPC);
+    void AddLineNumber(OpcodeBuf *pOpcode, int iLine, int iStartPC);
 
-    void GenerateCode(OpcodeBuf *pObcode, int iLine, DVM_Opcode code, ...);
+    void GenerateCode(OpcodeBuf *pOpcode, int iLine, DVM_Opcode code, ...);
+    void GenerateBooleanExpression(DVM_Executable *pExecutable, Expression *pExpression, OpcodeBuf *pOpcode);
+    void GenerateIntExpression(DVM_Executable *pExecutable, Expression *pExpression, OpcodeBuf *pOpcode);
+    void GenerateDoubleExpression(DVM_Executable *pExecutable, Expression *pExpression, OpcodeBuf *pOpcode);
+    void GenerateStringExpression(DVM_Executable *pExecutable, Expression *pExpression, OpcodeBuf *pOpcode);
+    void GenerateIdentifierExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode);
+    void GeneratePopToIdentifier(Declaration *pDeclaration, int iLine, OpcodeBuf *pOpcode);
 
     DVM_Executable* AllocExecutable();
     DVM_LocalVariable* CopyParameterList(ParameterList *pParameterList, int *pParameterCount);
     DVM_LocalVariable* CopyLocalVariables(FunctionDefinition *pFunctionDefinition, int iParameterCount);
     DVM_TypeSpecifier* CopyTypeSpecifier(TypeSpecifier *pTypeSpecifier);
+    int GetOpcodeTypeOffset(DVM_BasicType enType);
 
 private:
     Debug   &m_Debug;

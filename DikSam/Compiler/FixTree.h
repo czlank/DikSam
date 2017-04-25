@@ -16,8 +16,6 @@ class FixTree
 #define FIXTREE_MEM_Realloc(ptr, size)      (m_Memory.Realloc(__FILE__, __LINE__, ptr, size))
 #define STRING_UTIL_Malloc(size)            (m_Util.Malloc(__FILE__, __LINE__, size))
 
-#define eps 1e-8
-
 public:
     FixTree(Debug& debug, Memory& memory, Util& util, Error& error, Create& create, Interface& refInterface);
     ~FixTree();
