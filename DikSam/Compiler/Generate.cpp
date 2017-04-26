@@ -472,6 +472,271 @@ void Generate::GenerateExpression(DVM_Executable *pExecutable, Block *pBlock, Ex
     }
 }
 
+void Generate::GenerateExpressionStatement(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode)
+{
+    switch (pExpression->kind)
+    {
+    case ASSIGN_EXPRESSION :
+        GenerateAssignExpression(pExecutable, pBlock, pExpression, pOpcode, true);
+        break;
+
+    case INCREMENT_EXPRESSION :
+    case DECREMENT_EXPRESSION :
+        GenerateIncDecExpression(pExecutable, pBlock, pExpression, pExpression->kind, pOpcode, true);
+        break;
+
+    default :
+        GenerateExpression(pExecutable, pBlock, pExpression, pOpcode);
+        GenerateCode(pOpcode, pExpression->line_number, DVM_POP);
+        break;
+    }
+}
+
+void Generate::GenerateIfStatement(DVM_Executable *pExecutable, Block *pBlock, Statement *pStatement, OpcodeBuf *pOpcode)
+{
+    IfStatement *pIfStatement = &pStatement->u.if_s;
+
+    GenerateExpression(pExecutable, pBlock, pIfStatement->condition, pOpcode);
+
+    int ifFalseLabel = GetLabel(pOpcode);
+    GenerateCode(pOpcode, pStatement->line_number, DVM_JUMP_IF_FALSE, ifFalseLabel);
+    GenerateStatementList(pExecutable, pIfStatement->then_block, pIfStatement->then_block->statement_list, pOpcode);
+
+    int endLabel = GetLabel(pOpcode);
+    GenerateCode(pOpcode, pStatement->line_number, DVM_JUMP, endLabel);
+    SetLabel(pOpcode, ifFalseLabel);
+
+    for (Elsif *pElsIf = pIfStatement->elsif_list; pElsIf; pElsIf = pElsIf->next)
+    {
+        GenerateExpression(pExecutable, pBlock, pElsIf->condition, pOpcode);
+
+        ifFalseLabel = GetLabel(pOpcode);
+        GenerateCode(pOpcode, pStatement->line_number, DVM_JUMP_IF_FALSE, ifFalseLabel);
+        GenerateStatementList(pExecutable, pElsIf->block, pElsIf->block->statement_list, pOpcode);
+        GenerateCode(pOpcode, pStatement->line_number, DVM_JUMP, endLabel);
+        SetLabel(pOpcode, ifFalseLabel);
+    }
+
+    if (pIfStatement->else_block)
+    {
+        GenerateStatementList(pExecutable, pIfStatement->else_block, pIfStatement->else_block->statement_list, pOpcode);
+    }
+
+    SetLabel(pOpcode, endLabel);
+}
+
+void Generate::GenerateWhileStatement(DVM_Executable *pExecutable, Block *pBlock, Statement *pStatement, OpcodeBuf *pOpcode)
+{
+    WhileStatement *pWhileStatement = &pStatement->u.while_s;
+
+    int loopLabel = GetLabel(pOpcode);
+
+    SetLabel(pOpcode, loopLabel);
+    GenerateExpression(pExecutable, pBlock, pWhileStatement->condition, pOpcode);
+
+    pWhileStatement->block->parent.statement.break_label = GetLabel(pOpcode);
+    pWhileStatement->block->parent.statement.continue_label = GetLabel(pOpcode);
+
+    GenerateCode(pOpcode, pStatement->line_number, DVM_JUMP_IF_FALSE, pWhileStatement->block->parent.statement.break_label);
+    GenerateStatementList(pExecutable, pWhileStatement->block, pWhileStatement->block->statement_list, pOpcode);
+
+    SetLabel(pOpcode, pWhileStatement->block->parent.statement.continue_label);
+    GenerateCode(pOpcode, pStatement->line_number, DVM_JUMP, loopLabel);
+    SetLabel(pOpcode, pWhileStatement->block->parent.statement.break_label);
+}
+
+void Generate::GenerateForStatement(DVM_Executable *pExecutable, Block *pBlock, Statement *pStatement, OpcodeBuf *pOpcode)
+{
+    ForStatement *pForStatement = &pStatement->u.for_s;
+
+    if (pForStatement->init)
+    {
+        GenerateExpressionStatement(pExecutable, pBlock, pForStatement->init, pOpcode);
+    }
+
+    int loopLabel = GetLabel(pOpcode);
+
+    SetLabel(pOpcode, loopLabel);
+
+    if (pForStatement->condition)
+    {
+        GenerateExpression(pExecutable, pBlock, pForStatement->condition, pOpcode);
+    }
+
+    pForStatement->block->parent.statement.break_label = GetLabel(pOpcode);
+    pForStatement->block->parent.statement.continue_label = GetLabel(pOpcode);
+
+    if (pForStatement->condition)
+    {
+        GenerateCode(pOpcode, pStatement->line_number, DVM_JUMP_IF_FALSE,
+            pForStatement->block->parent.statement.break_label);
+    }
+
+    GenerateStatementList(pExecutable, pForStatement->block, pForStatement->block->statement_list, pOpcode);
+
+    SetLabel(pOpcode, pForStatement->block->parent.statement.continue_label);
+
+    if (pForStatement->post)
+    {
+        GenerateExpressionStatement(pExecutable, pBlock, pForStatement->post, pOpcode);
+    }
+
+    GenerateCode(pOpcode, pStatement->line_number, DVM_JUMP, loopLabel);
+    SetLabel(pOpcode, pForStatement->block->parent.statement.break_label);
+}
+
+void Generate::GenerateReturnStatement(DVM_Executable *pExecutable, Block *pBlock, Statement *pStatement, OpcodeBuf *pOpcode)
+{
+    GENERATE_DBG_Assert(pStatement->u.return_s.return_value, ("return value is null."));
+
+    GenerateExpression(pExecutable, pBlock, pStatement->u.return_s.return_value, pOpcode);
+    GenerateCode(pOpcode, pStatement->line_number, DVM_RETURN);
+}
+
+void Generate::GenerateBreakStatement(DVM_Executable *pExecutable, Block *pBlock, Statement *pStatement, OpcodeBuf *pOpcode)
+{
+    BreakStatement *pBreakStatement = &pStatement->u.break_s;
+    Block *pCurrBlock = nullptr;
+
+    for (pCurrBlock = pBlock; pCurrBlock; pCurrBlock = pCurrBlock->outer_block)
+    {
+        if (pCurrBlock->type != WHILE_STATEMENT_BLOCK && pCurrBlock->type != FOR_STATEMENT_BLOCK)
+            continue;
+
+        if (nullptr == pBreakStatement->label)
+            break;
+
+        if (WHILE_STATEMENT_BLOCK == pCurrBlock->type)
+        {
+            if (nullptr == pCurrBlock->parent.statement.statement->u.while_s.label)
+                continue;
+
+            if (std::string(pBreakStatement->label) == pCurrBlock->parent.statement.statement->u.while_s.label)
+                break;
+        }
+        else if (FOR_STATEMENT_BLOCK == pCurrBlock->type)
+        {
+            if (nullptr == pCurrBlock->parent.statement.statement->u.for_s.label)
+                continue;
+
+            if (std::string(pBreakStatement->label) == pCurrBlock->parent.statement.statement->u.for_s.label)
+                break;
+        }
+    }
+
+    if (nullptr == pCurrBlock)
+    {
+        m_Error.CompileError(pStatement->line_number,
+            LABEL_NOT_FOUND_ERR, STRING_MESSAGE_ARGUMENT, "label", pBreakStatement->label,
+            MESSAGE_ARGUMENT_END);
+    }
+
+    GenerateCode(pOpcode, pStatement->line_number, DVM_JUMP, pCurrBlock->parent.statement.break_label);
+}
+
+void Generate::GenerateContinueStatement(DVM_Executable *pExecutable, Block *pBlock, Statement *pStatement, OpcodeBuf *pOpcode)
+{
+    ContinueStatement *pContinueStatement = &pStatement->u.continue_s;
+    Block *pCurrBlock = nullptr;
+
+    for (pCurrBlock = pBlock; pCurrBlock; pCurrBlock = pCurrBlock->outer_block)
+    {
+        if (pCurrBlock->type != WHILE_STATEMENT_BLOCK && pCurrBlock->type != FOR_STATEMENT_BLOCK)
+            continue;
+
+        if (nullptr == pContinueStatement->label)
+            break;
+
+        if (WHILE_STATEMENT_BLOCK == pCurrBlock->type)
+        {
+            if (nullptr == pCurrBlock->parent.statement.statement->u.while_s.label)
+                continue;
+
+            if (std::string(pContinueStatement->label) == pCurrBlock->parent.statement.statement->u.while_s.label)
+                break;
+        }
+        else if (FOR_STATEMENT_BLOCK == pCurrBlock->type)
+        {
+            if (nullptr == pCurrBlock->parent.statement.statement->u.for_s.label)
+                continue;
+
+            if (std::string(pContinueStatement->label) == pCurrBlock->parent.statement.statement->u.for_s.label)
+                break;
+        }
+    }
+
+    if (nullptr == pCurrBlock)
+    {
+        m_Error.CompileError(pStatement->line_number,
+            LABEL_NOT_FOUND_ERR, STRING_MESSAGE_ARGUMENT, "label", pContinueStatement->label,
+            MESSAGE_ARGUMENT_END);
+    }
+
+    GenerateCode(pOpcode, pStatement->line_number, DVM_JUMP, pCurrBlock->parent.statement.continue_label);
+}
+
+void Generate::GenerateInitializer(DVM_Executable *pExecutable, Block *pBlock, Statement *pStatement, OpcodeBuf *pOpcode)
+{
+    Declaration *pDeclaration = pStatement->u.declaration_s;
+    if (nullptr == pDeclaration->initializer)
+        return;
+
+    GenerateExpression(pExecutable, pBlock, pDeclaration->initializer, pOpcode);
+    GeneratePopToIdentifier(pDeclaration, pStatement->line_number, pOpcode);
+}
+
+void Generate::GenerateStatementList(DVM_Executable *pExecutable, Block *pBlock, StatementList *pStatementList, OpcodeBuf *pOpcode)
+{
+    StatementList *pos = pStatementList;
+
+    for (; pos; pos = pos->next)
+    {
+        switch (pos->statement->type)
+        {
+        case EXPRESSION_STATEMENT :
+            GenerateExpressionStatement(pExecutable, pBlock, pos->statement->u.expression_s, pOpcode);
+            break;
+
+        case IF_STATEMENT :
+            GenerateIfStatement(pExecutable, pBlock, pos->statement, pOpcode);
+            break;
+
+        case WHILE_STATEMENT :
+            GenerateWhileStatement(pExecutable, pBlock, pos->statement, pOpcode);
+            break;
+
+        case FOR_STATEMENT :
+            GenerateForStatement(pExecutable, pBlock, pos->statement, pOpcode);
+            break;
+
+        case RETURN_STATEMENT :
+            GenerateReturnStatement(pExecutable, pBlock, pos->statement, pOpcode);
+            break;
+
+        case BREAK_STATEMENT :
+            GenerateBreakStatement(pExecutable, pBlock, pos->statement, pOpcode);
+            break;
+
+        case CONTINUE_STATEMENT :
+            GenerateContinueStatement(pExecutable, pBlock, pos->statement, pOpcode);
+            break;
+
+        case TRY_STATEMENT :
+            break;
+
+        case THROW_STATEMENT :
+            break;
+
+        case DECLARATION_STATEMENT :
+            GenerateInitializer(pExecutable, pBlock, pos->statement, pOpcode);
+            break;
+
+        default :
+            GENERATE_DBG_Assert(0, ("pos->statement->type..", pos->statement->type));
+        }
+    }
+}
+
 DVM_Executable* Generate::AllocExecutable()
 {
     DVM_Executable *pExecutable = (DVM_Executable*)GENERATE_MEM_Malloc(sizeof(DVM_Executable));
