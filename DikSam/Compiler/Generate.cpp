@@ -20,7 +20,13 @@ Generate::~Generate()
 
 DVM_Executable* Generate::operator () (DKC_Compiler *pCompiler)
 {
-    return nullptr;
+    DVM_Executable *pExecutable = AllocExecutable();
+
+    AddGlobalVariable(pCompiler, pExecutable);
+    AddFunctions(pCompiler, pExecutable);
+    AddTopLevel(pCompiler, pExecutable);
+
+    return pExecutable;
 }
 
 int Generate::AddConstantPool(DVM_Executable *pExecutable, DVM_ConstantPool *pConstantPool)
@@ -53,19 +59,73 @@ void Generate::AddGlobalVariable(DKC_Compiler *pCompiler, DVM_Executable *pExecu
 
 void Generate::AddLineNumber(OpcodeBuf *pOpcode, int iLine, int iStartPC)
 {
-    if (nullptr == pOpcode->m_LineNumber
-        || pOpcode->m_LineNumber[pOpcode->m_iLineNumberSize - 1].line_number != iLine)
+    if (nullptr == pOpcode->m_pLineNumber
+        || pOpcode->m_pLineNumber[pOpcode->m_iLineNumberSize - 1].line_number != iLine)
     {
-        pOpcode->m_LineNumber = (DVM_LineNumber*)GENERATE_MEM_Realloc(pOpcode->m_LineNumber, sizeof(DVM_LineNumber)* (pOpcode->m_iLineNumberSize + 1));
-        pOpcode->m_LineNumber[pOpcode->m_iLineNumberSize].line_number = iLine;
-        pOpcode->m_LineNumber[pOpcode->m_iLineNumberSize].start_pc = iStartPC;
-        pOpcode->m_LineNumber[pOpcode->m_iLineNumberSize].pc_count = pOpcode->m_iSize - iStartPC;
+        pOpcode->m_pLineNumber = (DVM_LineNumber*)GENERATE_MEM_Realloc(pOpcode->m_pLineNumber, sizeof(DVM_LineNumber)* (pOpcode->m_iLineNumberSize + 1));
+        pOpcode->m_pLineNumber[pOpcode->m_iLineNumberSize].line_number = iLine;
+        pOpcode->m_pLineNumber[pOpcode->m_iLineNumberSize].start_pc = iStartPC;
+        pOpcode->m_pLineNumber[pOpcode->m_iLineNumberSize].pc_count = pOpcode->m_iSize - iStartPC;
         pOpcode->m_iLineNumberSize++;
     }
     else
     {
-        pOpcode->m_LineNumber[pOpcode->m_iLineNumberSize - 1].pc_count += pOpcode->m_iSize - iStartPC;
+        pOpcode->m_pLineNumber[pOpcode->m_iLineNumberSize - 1].pc_count += pOpcode->m_iSize - iStartPC;
     }
+}
+
+void Generate::AddFunctions(DKC_Compiler *pCompiler, DVM_Executable *pExecutable)
+{
+    FunctionDefinition *pFunctionDefinition = pCompiler->function_list;
+    int iCount = 0;
+
+    for (; pFunctionDefinition; pFunctionDefinition = pFunctionDefinition->next)
+    {
+        iCount++;
+    }
+
+    pExecutable->function_count = iCount;
+    pExecutable->function = (DVM_Function*)GENERATE_MEM_Malloc(sizeof(DVM_Function) * iCount);
+
+    pFunctionDefinition = pCompiler->function_list;
+    for (int i = 0; pFunctionDefinition; pFunctionDefinition = pFunctionDefinition->next, i++)
+    {
+        CopyFunction(pFunctionDefinition, &pExecutable->function[i]);
+
+        if (pFunctionDefinition->block)
+        {
+            OpcodeBuf opcodeBuf;
+            DVM_Function *pFunction = pExecutable->function;
+
+            InitOpcodeBuf(&opcodeBuf);
+            GenerateStatementList(pExecutable, pFunctionDefinition->block, pFunctionDefinition->block->statement_list, &opcodeBuf);
+
+            pFunction[i].is_implemented = DVM_TRUE;
+            pFunction[i].code_size = opcodeBuf.m_iSize;
+            pFunction[i].code = FixOpcodeBuf(&opcodeBuf);
+            pFunction[i].line_number_size = opcodeBuf.m_iLineNumberSize;
+            pFunction[i].line_number = opcodeBuf.m_pLineNumber;
+            pFunction[i].need_stack_size = CalcNeedStackSize(pExecutable->function[i].code, pExecutable->function[i].code_size);
+        }
+        else
+        {
+            pExecutable->function[i].is_implemented = DVM_FALSE;
+        }
+    }
+}
+
+void Generate::AddTopLevel(DKC_Compiler *pCompiler, DVM_Executable *pExecutable)
+{
+    OpcodeBuf opcodeBuf;
+
+    InitOpcodeBuf(&opcodeBuf);
+    GenerateStatementList(pExecutable, nullptr, pCompiler->statement_list, &opcodeBuf);
+
+    pExecutable->code_size = opcodeBuf.m_iSize;
+    pExecutable->code = FixOpcodeBuf(&opcodeBuf);
+    pExecutable->line_number_size = opcodeBuf.m_iLineNumberSize;
+    pExecutable->line_number = opcodeBuf.m_pLineNumber;
+    pExecutable->need_stack_size = CalcNeedStackSize(pExecutable->code, pExecutable->code_size);
 }
 
 void Generate::GenerateCode(OpcodeBuf *pOpcode, int iLine, DVM_Opcode code, ...)
@@ -868,4 +928,116 @@ int Generate::GetLabel(OpcodeBuf *pOpcode)
 void Generate::SetLabel(OpcodeBuf *pOpcode, int ilabel)
 {
     pOpcode->m_pLabelTable[ilabel].m_iLabelAddress = pOpcode->m_iSize;
+}
+
+void Generate::InitOpcodeBuf(OpcodeBuf *pOpcode)
+{
+    pOpcode->m_iSize = 0;
+    pOpcode->m_iAllocSize = 0;
+    pOpcode->m_pCode = nullptr;
+    pOpcode->m_iLabelTableSize = 0;
+    pOpcode->m_iLabelTableAllocSize = 0;
+    pOpcode->m_pLabelTable = nullptr;
+    pOpcode->m_iLineNumberSize = 0;
+    pOpcode->m_pLineNumber = nullptr;
+}
+
+void Generate::FixLabels(OpcodeBuf *pOpcode)
+{
+    for (int i = 0; i < pOpcode->m_iSize; i++)
+    {
+        if (DVM_JUMP == pOpcode->m_pCode[i]
+            || DVM_JUMP_IF_TRUE == pOpcode->m_pCode[i]
+            || DVM_JUMP_IF_FALSE == pOpcode->m_pCode[i])
+        {
+            int label = (pOpcode->m_pCode[i + 1] << 8) | (pOpcode->m_pCode[i + 2]);
+            int address = pOpcode->m_pLabelTable[label].m_iLabelAddress;
+            
+            pOpcode->m_pCode[i + 1] = DVM_Byte(address >> 8);
+            pOpcode->m_pCode[i + 2] = DVM_Byte(address & 0xFF);
+        }
+
+        OpcodeInfo &Info = DVMOpcodeInfo::Opcode()[pOpcode->m_pCode[i]];
+
+        for (int idx = 0; Info.parameter[idx] != '\0'; idx++)
+        {
+            switch (Info.parameter[idx])
+            {
+            case 'b' :
+                i++;
+                break;
+
+            case 's' :
+            case 'p' :
+                i += 2;
+                break;
+
+            default :
+                GENERATE_DBG_Assert(0, ("param..", Info.parameter, ", idx..", idx));
+            }
+        }
+    }
+}
+
+DVM_Byte* Generate::FixOpcodeBuf(OpcodeBuf *pOpcode)
+{
+    FixLabels(pOpcode);
+
+    DVM_Byte *ret = (DVM_Byte*)GENERATE_MEM_Realloc(pOpcode->m_pCode, pOpcode->m_iSize);
+    GENERATE_MEM_Free(pOpcode->m_pLabelTable);
+
+    return ret;
+}
+
+int Generate::CalcNeedStackSize(DVM_Byte *pCode, int iCodeSize)
+{
+    int iStackSize = 0;
+
+    for (int i = 0; i < iCodeSize; i++)
+    {
+        OpcodeInfo &Info = DVMOpcodeInfo::Opcode()[pCode[i]];
+
+        if (Info.stack_increment > 0)
+        {
+            iStackSize += Info.stack_increment;
+        }
+
+        for (int idx = 0; Info.parameter[idx] != '\0'; idx++)
+        {
+            switch (Info.parameter[idx])
+            {
+            case 'b' :
+                i++;
+                break;
+
+            case 's' :
+            case 'p' :
+                i += 2;
+                break;
+
+            default :
+                GENERATE_DBG_Assert(0, ("param..", Info.parameter, ", idx..", idx));
+            }
+        }
+    }
+
+    return iStackSize;
+}
+
+void Generate::CopyFunction(FunctionDefinition *pFunctionDefinition, DVM_Function *pFunction)
+{
+    pFunction->type = CopyTypeSpecifier(pFunctionDefinition->type);
+    pFunction->name = GENERATE_MEM_StrDUP(pFunctionDefinition->name);
+    pFunction->parameter = CopyParameterList(pFunctionDefinition->parameter, &pFunction->parameter_count);
+
+    if (pFunctionDefinition->block)
+    {
+        pFunction->local_variable = CopyLocalVariables(pFunctionDefinition, pFunction->parameter_count);
+        pFunction->local_variable_count = pFunctionDefinition->local_variable_count - pFunction->parameter_count;
+    }
+    else
+    {
+        pFunction->local_variable = nullptr;
+        pFunction->local_variable_count = 0;
+    }
 }
