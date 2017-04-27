@@ -15,8 +15,8 @@ public:
     DVMOpcodeInfo();
     ~DVMOpcodeInfo();
 
-    static std::map<int, OpcodeInfo>& Opcode() { return m_OpcodeInfo; }
+    static std::map<int, OpcodeInfo>& Opcode();
 
 private:
-    static std::map<int, OpcodeInfo> m_OpcodeInfo;
+    std::map<int, OpcodeInfo> m_OpcodeInfo;
 };

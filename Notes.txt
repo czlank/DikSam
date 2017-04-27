@@ -1,4 +1,8 @@
 2017-04-27
+1. 调试Generate功能
+下一步计划：进一步调试Generate功能
+
+2017-04-27
 1. 实现Generate全部函数
 下一步计划：调试Generate功能
 

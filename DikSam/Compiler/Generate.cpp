@@ -135,7 +135,7 @@ void Generate::GenerateCode(OpcodeBuf *pOpcode, int iLine, DVM_Opcode code, ...)
     va_start(ap, code);
 
     const char *param = DVMOpcodeInfo::Opcode()[int(code)].parameter;
-    int paramLen = std::string(param).length();
+    int paramLen = param ? std::string(param).length() : 0;
 
     if (pOpcode->m_iAllocSize < pOpcode->m_iSize + 1 + (paramLen * 2))
     {

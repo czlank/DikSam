@@ -100,6 +100,7 @@
     <ClInclude Include="DVM\Execute.h" />
     <ClInclude Include="Memory\Memory.h" />
     <ClInclude Include="Memory\Storage.h" />
+    <ClInclude Include="Share\Dispose.h" />
     <ClInclude Include="Share\Error.h" />
     <ClInclude Include="Share\OpcodeInfo.h" />
     <ClInclude Include="stdafx.h" />
@@ -125,6 +126,7 @@
     <ClCompile Include="DVM\Execute.cpp" />
     <ClCompile Include="Memory\Memory.cpp" />
     <ClCompile Include="Memory\Storage.cpp" />
+    <ClCompile Include="Share\Dispose.cpp" />
     <ClCompile Include="Share\Error.cpp" />
     <ClCompile Include="Share\OpcodeInfo.cpp" />
     <ClCompile Include="stdafx.cpp">

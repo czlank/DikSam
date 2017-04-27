@@ -4,6 +4,7 @@
 #include "Memory.h"
 #include "Error.h"
 #include "DVM_pri.h"
+#include "Dispose.h"
 
 Execute::Execute(Debug& debug, Memory& memory, Error& error)
     : m_Debug(debug)
@@ -39,10 +40,5 @@ void Execute::CreateVirtualMachine()
 
 void Execute::DisposeVirtualMachine()
 {
-    DisposeExecutable(m_pVirtualMachine->executable);
-}
-
-void Execute::DisposeExecutable(DVM_Executable *pExecutable)
-{
-
+//    Dispose(m_Debug, m_Memory)(m_pVirtualMachine->executable);
 }

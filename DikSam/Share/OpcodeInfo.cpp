@@ -1,8 +1,6 @@
 #include "StdAfx.h"
 #include "OpcodeInfo.h"
 
-std::map<int, OpcodeInfo> DVMOpcodeInfo::m_OpcodeInfo;
-
 DVMOpcodeInfo::DVMOpcodeInfo()
 {
     m_OpcodeInfo[0]                             = {"dummy",                  "",    0 };
@@ -83,4 +81,10 @@ DVMOpcodeInfo::DVMOpcodeInfo()
 DVMOpcodeInfo::~DVMOpcodeInfo()
 {
 
+}
+
+std::map<int, OpcodeInfo>& DVMOpcodeInfo::Opcode()
+{
+    static DVMOpcodeInfo OpcodeInfo;
+    return OpcodeInfo.m_OpcodeInfo;
 }

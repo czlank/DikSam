@@ -10,7 +10,7 @@ class Execute
 {
 #define EXECUTE_MEM_Malloc(size)               (m_Memory.Malloc(__FILE__, __LINE__, size))
 #define EXECUTE_MEM_Realloc(ptr, size)         (m_Memory.Realloc(__FILE__, __LINE__, ptr, size))
-#define EXECUTE_MEM_Free()                     (m_Memory.Free())
+#define EXECUTE_MEM_Free(ptr)                  (m_Memory.Free(ptr))
 #define EXECUTE_DBG_Assert(expression, arg)    ((expression) ? (void)(0) : (m_Debug.Assert(__FILE__, __LINE__, #expression, arg)))
 
 public:
@@ -24,7 +24,6 @@ private:
 
     void CreateVirtualMachine();
     void DisposeVirtualMachine();
-    void DisposeExecutable(DVM_Executable *pExecutable);
 
 private:
     Debug   &m_Debug;

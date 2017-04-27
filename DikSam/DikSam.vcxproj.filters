@@ -78,6 +78,9 @@
     <ClInclude Include="Share\OpcodeInfo.h">
       <Filter>Share</Filter>
     </ClInclude>
+    <ClInclude Include="Share\Dispose.h">
+      <Filter>Share</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -123,6 +126,9 @@
       <Filter>DVM</Filter>
     </ClCompile>
     <ClCompile Include="Share\OpcodeInfo.cpp">
+      <Filter>Share</Filter>
+    </ClCompile>
+    <ClCompile Include="Share\Dispose.cpp">
       <Filter>Share</Filter>
     </ClCompile>
   </ItemGroup>
