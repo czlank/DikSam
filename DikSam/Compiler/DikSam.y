@@ -29,7 +29,7 @@
        EQ NE GT GE LT LE ADD SUB MUL DIV MOD TRUE_T FALSE_T EXCLAMATION DOT
        ADD_ASSIGN_T SUB_ASSIGN_T MUL_ASSIGN_T DIV_ASSIGN_T MOD_ASSIGN_T
        INCREMENT DECREMENT TRY CATCH FINALLY THROW
-       VOID_T BOOLEAN_T INT_T DOUBLE_T STRING_T
+       BOOLEAN_T INT_T DOUBLE_T STRING_T
 
 %type  <parameter_list>         parameter_list
 %type  <argument_list>          argument_list
@@ -212,22 +212,6 @@ function_definition
         | type_specifier IDENTIFIER LEFTP RIGHTP SEMICOLON
         {
             dkc_function_define($1, $2, NULL, NULL);
-        }
-        | VOID_T IDENTIFIER LEFTP parameter_list RIGHTP block
-        {
-            dkc_function_define(DVM_VOID_TYPE, $2, $4, $6);
-        }
-        | VOID_T IDENTIFIER LEFTP RIGHTP block
-        {
-            dkc_function_define(DVM_VOID_TYPE, $2, NULL, $5);
-        }
-        | VOID_T IDENTIFIER LEFTP parameter_list RIGHTP SEMICOLON
-        {
-            dkc_function_define(DVM_VOID_TYPE, $2, $4, NULL);
-        }
-        | VOID_T IDENTIFIER LEFTP RIGHTP SEMICOLON
-        {
-            dkc_function_define(DVM_VOID_TYPE, $2, NULL, NULL);
         }
         ;
 
