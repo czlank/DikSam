@@ -160,10 +160,12 @@ typedef struct
     } u;
 } IdentifierExpression;
 
+typedef struct Statement_tag    Statement;
+
 typedef struct 
 {
     Expression  *left;
-    Expression  *right;
+    Statement   *right;
 } CommaExpression;
 
 typedef enum
@@ -237,8 +239,6 @@ struct Expression_tag
         CastExpression          cast;
     } u;
 };
-
-typedef struct Statement_tag    Statement;
 
 typedef struct StatementList_tag
 {

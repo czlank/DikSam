@@ -444,7 +444,7 @@ void Generate::GenerateExpression(DVM_Executable *pExecutable, Block *pBlock, Ex
 
     case COMMA_EXPRESSION :
         GenerateExpression(pExecutable, pBlock, pExpression->u.comma.left, pOpcode);
-        GenerateExpression(pExecutable, pBlock, pExpression->u.comma.right, pOpcode);
+        GenerateExpression(pExecutable, pBlock, pExpression->u.comma.right->u.declaration_s->initializer, pOpcode);
         break;
 
     case ASSIGN_EXPRESSION :

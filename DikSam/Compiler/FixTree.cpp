@@ -173,6 +173,27 @@ void FixTree::FixStatement(Block *pBlock, Statement *pStatement, FunctionDefinit
 
     case DECLARATION_STATEMENT :
         AddDeclaration(pBlock, pStatement->u.declaration_s, pFunctionDefinition, pStatement->line_number);
+
+        do 
+        {
+            Expression *pExp = pStatement->u.declaration_s->initializer;
+            std::stack<Declaration*> stkDeclaration;
+
+            while (COMMA_EXPRESSION == pExp->kind)
+            {
+                stkDeclaration.push(pExp->u.comma.right->u.declaration_s);
+                pExp = pExp->u.comma.left;
+            }
+
+            while (!stkDeclaration.empty())
+            {
+                Declaration *pDeclaration = stkDeclaration.top();
+
+                AddDeclaration(pBlock, pDeclaration, pFunctionDefinition, pStatement->line_number);
+                stkDeclaration.pop();
+            }
+        } while (0);
+
         FixExpression(pBlock, pStatement->u.declaration_s->initializer);
 
         if (pStatement->u.declaration_s->initializer)
@@ -219,8 +240,9 @@ Expression* FixTree::FixIdentifierExpression(Block *pBlock, Expression *pExpress
 Expression* FixTree::FixCommaExpression(Block *pBlock, Expression *pExpression)
 {
     pExpression->u.comma.left = FixExpression(pBlock, pExpression->u.comma.left);
-    pExpression->u.comma.right = FixExpression(pBlock, pExpression->u.comma.right);
-    pExpression->type = pExpression->u.comma.right->type;
+    pExpression->u.comma.right->u.declaration_s->type = m_Util.AllocTypeSpecifier(pExpression->u.comma.left->type->basic_type);
+    pExpression->u.comma.right->u.declaration_s->initializer = FixExpression(pBlock, pExpression->u.comma.right->u.declaration_s->initializer);
+    pExpression->type = pExpression->u.comma.left->type;
 
     return pExpression;
 }

@@ -31,6 +31,7 @@
 #include <fstream>
 #include <map>
 #include <vector>
+#include <stack>
 #include <mutex>
 
 #include "DikSamc.h"

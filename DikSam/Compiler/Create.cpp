@@ -61,8 +61,6 @@ void Create::FunctionDefine(DVM_BasicType enType, char *lpstrIdentifier, Paramet
             FUNCTION_MULTIPLE_DEFINE_ERR,
             STRING_MESSAGE_ARGUMENT, "name", lpstrIdentifier,
             MESSAGE_ARGUMENT_END);
-
-        return;
     }
 
     FunctionDefinition  *pFD = CreateFunctionDefinition(enType, lpstrIdentifier, pParameterList, pBlock);
@@ -169,10 +167,26 @@ Expression* Create::AllocExpression(ExpressionKind enKind)
 
 Expression* Create::CreateCommaExpression(Expression *pLeft, Expression *pRight)
 {
-    Expression *pExpression = AllocExpression(COMMA_EXPRESSION);
+    if (pRight->kind != ASSIGN_EXPRESSION)
+    {
+        m_Error.CompileError(m_Interface.GetCompiler()->current_line_number, NOT_LVALUE_ERR, MESSAGE_ARGUMENT_END);
+    }
 
+    Expression *pExpression = AllocExpression(COMMA_EXPRESSION);
     pExpression->u.comma.left = pLeft;
-    pExpression->u.comma.right = pRight;
+
+    Statement *pStatement = (Statement*)CREATE_UTIL_Malloc(sizeof(Statement));
+    pStatement->type = DECLARATION_STATEMENT;
+    pStatement->line_number = pLeft->line_number;
+    
+    Declaration *pDeclaration = (Declaration*)CREATE_UTIL_Malloc(sizeof(Declaration));
+    pDeclaration->name = pRight->u.assign_expression.left->u.identifier.name;
+    pDeclaration->type = nullptr;
+    pDeclaration->initializer = pRight->u.assign_expression.operand;
+    pDeclaration->variable_index = -1;
+    pStatement->u.declaration_s = pDeclaration;
+
+    pExpression->u.comma.right = pStatement;
 
     return pExpression;
 }
