@@ -179,7 +179,7 @@ void FixTree::FixStatement(Block *pBlock, Statement *pStatement, FunctionDefinit
             Expression *pExp = pStatement->u.declaration_s->initializer;
             std::stack<Declaration*> stkDeclaration;
 
-            while (COMMA_EXPRESSION == pExp->kind)
+            while (pExp && COMMA_EXPRESSION == pExp->kind)
             {
                 stkDeclaration.push(pExp->u.comma.right->u.declaration_s);
                 pExp = pExp->u.comma.left;
@@ -240,9 +240,9 @@ Expression* FixTree::FixIdentifierExpression(Block *pBlock, Expression *pExpress
 Expression* FixTree::FixCommaExpression(Block *pBlock, Expression *pExpression)
 {
     pExpression->u.comma.left = FixExpression(pBlock, pExpression->u.comma.left);
-    pExpression->u.comma.right->u.declaration_s->type = m_Util.AllocTypeSpecifier(pExpression->u.comma.left->type->basic_type);
     pExpression->u.comma.right->u.declaration_s->initializer = FixExpression(pBlock, pExpression->u.comma.right->u.declaration_s->initializer);
-    pExpression->type = pExpression->u.comma.left->type;
+    pExpression->u.comma.right->u.declaration_s->type = m_Util.AllocTypeSpecifier(pExpression->u.comma.right->u.declaration_s->initializer->type->basic_type);
+    pExpression->type = pExpression->u.comma.right->u.declaration_s->type;
 
     return pExpression;
 }
