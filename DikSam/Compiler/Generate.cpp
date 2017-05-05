@@ -62,7 +62,7 @@ void Generate::AddLineNumber(OpcodeBuf *pOpcode, int iLine, int iStartPC)
     if (nullptr == pOpcode->m_pLineNumber
         || pOpcode->m_pLineNumber[pOpcode->m_iLineNumberSize - 1].line_number != iLine)
     {
-        pOpcode->m_pLineNumber = (DVM_LineNumber*)GENERATE_MEM_Realloc(pOpcode->m_pLineNumber, sizeof(DVM_LineNumber)* (pOpcode->m_iLineNumberSize + 1));
+        pOpcode->m_pLineNumber = (DVM_LineNumber*)GENERATE_MEM_Realloc(pOpcode->m_pLineNumber, sizeof(DVM_LineNumber) * (pOpcode->m_iLineNumberSize + 1));
         pOpcode->m_pLineNumber[pOpcode->m_iLineNumberSize].line_number = iLine;
         pOpcode->m_pLineNumber[pOpcode->m_iLineNumberSize].start_pc = iStartPC;
         pOpcode->m_pLineNumber[pOpcode->m_iLineNumberSize].pc_count = pOpcode->m_iSize - iStartPC;
@@ -824,7 +824,7 @@ DVM_LocalVariable* Generate::CopyParameterList(ParameterList *pParameterList, in
 
     *pParameterCount = iParamCount;
 
-    DVM_LocalVariable *pDest = (DVM_LocalVariable*)GENERATE_MEM_Malloc(sizeof(DVM_LocalVariable)* iParamCount);
+    DVM_LocalVariable *pDest = (DVM_LocalVariable*)GENERATE_MEM_Malloc(sizeof(DVM_LocalVariable) * iParamCount);
 
     int i = 0;
     for (ParameterList *pParam = pParameterList; pParam; pParam = pParam->next, i++)
@@ -863,7 +863,7 @@ DVM_TypeSpecifier* Generate::CopyTypeSpecifier(TypeSpecifier *pTypeSpecifier)
     }
 
     pDestTypeSpecifier->derive_count = iDeriveCount;
-    pDestTypeSpecifier->derive = (DVM_TypeDerive*)GENERATE_MEM_Malloc(sizeof(DVM_TypeDerive)* iDeriveCount);
+    pDestTypeSpecifier->derive = (DVM_TypeDerive*)GENERATE_MEM_Malloc(sizeof(DVM_TypeDerive) * iDeriveCount);
 
     int i = 0;
     for (TypeDerive *pDerive = pTypeSpecifier->derive; pDerive; pDerive = pDerive->next, i++)

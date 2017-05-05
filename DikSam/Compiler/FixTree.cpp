@@ -859,7 +859,7 @@ Expression* FixTree::ChainString(Expression *pExpression)
     int iLen = std::basic_string<DVM_Char>(pLeftStr).length()
              + std::basic_string<DVM_Char>(pRightStr).length();
 
-    DVM_Char *pNewStr = (DVM_Char*)STRING_UTIL_Malloc(sizeof(DVM_Char)* (iLen + 1));
+    DVM_Char *pNewStr = (DVM_Char*)STRING_UTIL_Malloc(sizeof(DVM_Char) * (iLen + 1));
     wcscpy_s(pNewStr, iLen + 1, (std::basic_string<DVM_Char>(pLeftStr) + std::basic_string<DVM_Char>(pRightStr)).c_str());
 
     pExpression->kind = STRING_EXPRESSION;

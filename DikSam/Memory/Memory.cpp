@@ -146,7 +146,7 @@ char* Memory::StrDUP(const char *lpcstrFileName, int iLine, const char *lpcstrSt
     ptr = (char*)ptr + sizeof(Header);
 #endif // _DEBUG
 
-    strcpy_s(ptr, szAllocSize, lpcstrStr);
+    strcpy_s(ptr, iSize, lpcstrStr);
 
     return ptr;
 }
