@@ -241,7 +241,7 @@ void Generate::GenerateStringExpression(DVM_Executable *pExecutable, Expression 
 
 void Generate::GenerateIdentifierExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode)
 {
-    if (pExpression->u.identifier.is_function)
+    if (DVM_TRUE == pExpression->u.identifier.is_function)
     {
         GenerateCode(pOpcode, pExpression->line_number, DVM_PUSH_FUNCTION, pExpression->u.identifier.u.function->index);
         return;
@@ -256,7 +256,7 @@ void Generate::GenerateIdentifierExpression(DVM_Executable *pExecutable, Block *
 
 void Generate::GeneratePopToIdentifier(Declaration *pDeclaration, int iLine, OpcodeBuf *pOpcode)
 {
-    DVM_Opcode code = pDeclaration->is_local ? DVM_POP_STACK_INT : DVM_POP_STATIC_INT;
+    DVM_Opcode code = DVM_TRUE == pDeclaration->is_local ? DVM_POP_STACK_INT : DVM_POP_STATIC_INT;
 
     GenerateCode(pOpcode, iLine,
         DVM_Opcode(code + GetOpcodeTypeOffset(pDeclaration->type->basic_type)),
@@ -444,7 +444,7 @@ void Generate::GenerateExpression(DVM_Executable *pExecutable, Block *pBlock, Ex
 
     case COMMA_EXPRESSION :
         GenerateExpression(pExecutable, pBlock, pExpression->u.comma.left, pOpcode);
-        GenerateExpression(pExecutable, pBlock, pExpression->u.comma.right->u.declaration_s->initializer, pOpcode);
+        GenerateStatement(pExecutable, pBlock, pExpression->u.comma.right, pOpcode);
         break;
 
     case ASSIGN_EXPRESSION :
