@@ -745,55 +745,60 @@ void Generate::GenerateInitializer(DVM_Executable *pExecutable, Block *pBlock, S
     GeneratePopToIdentifier(pDeclaration, pStatement->line_number, pOpcode);
 }
 
+void Generate::GenerateStatement(DVM_Executable *pExecutable, Block *pBlock, Statement *pStatement, OpcodeBuf *pOpcode)
+{
+    switch (pStatement->type)
+    {
+    case EXPRESSION_STATEMENT :
+        GenerateExpressionStatement(pExecutable, pBlock, pStatement->u.expression_s, pOpcode);
+        break;
+
+    case IF_STATEMENT :
+        GenerateIfStatement(pExecutable, pBlock, pStatement, pOpcode);
+        break;
+
+    case WHILE_STATEMENT :
+        GenerateWhileStatement(pExecutable, pBlock, pStatement, pOpcode);
+        break;
+
+    case FOR_STATEMENT :
+        GenerateForStatement(pExecutable, pBlock, pStatement, pOpcode);
+        break;
+
+    case RETURN_STATEMENT :
+        GenerateReturnStatement(pExecutable, pBlock, pStatement, pOpcode);
+        break;
+
+    case BREAK_STATEMENT :
+        GenerateBreakStatement(pExecutable, pBlock, pStatement, pOpcode);
+        break;
+
+    case CONTINUE_STATEMENT :
+        GenerateContinueStatement(pExecutable, pBlock, pStatement, pOpcode);
+        break;
+
+    case TRY_STATEMENT :
+        break;
+
+    case THROW_STATEMENT :
+        break;
+
+    case DECLARATION_STATEMENT :
+        GenerateInitializer(pExecutable, pBlock, pStatement, pOpcode);
+        break;
+
+    default :
+        GENERATE_DBG_Assert(0, ("pos->statement->type..", pStatement->type));
+    }
+}
+
 void Generate::GenerateStatementList(DVM_Executable *pExecutable, Block *pBlock, StatementList *pStatementList, OpcodeBuf *pOpcode)
 {
     StatementList *pos = pStatementList;
 
     for (; pos; pos = pos->next)
     {
-        switch (pos->statement->type)
-        {
-        case EXPRESSION_STATEMENT :
-            GenerateExpressionStatement(pExecutable, pBlock, pos->statement->u.expression_s, pOpcode);
-            break;
-
-        case IF_STATEMENT :
-            GenerateIfStatement(pExecutable, pBlock, pos->statement, pOpcode);
-            break;
-
-        case WHILE_STATEMENT :
-            GenerateWhileStatement(pExecutable, pBlock, pos->statement, pOpcode);
-            break;
-
-        case FOR_STATEMENT :
-            GenerateForStatement(pExecutable, pBlock, pos->statement, pOpcode);
-            break;
-
-        case RETURN_STATEMENT :
-            GenerateReturnStatement(pExecutable, pBlock, pos->statement, pOpcode);
-            break;
-
-        case BREAK_STATEMENT :
-            GenerateBreakStatement(pExecutable, pBlock, pos->statement, pOpcode);
-            break;
-
-        case CONTINUE_STATEMENT :
-            GenerateContinueStatement(pExecutable, pBlock, pos->statement, pOpcode);
-            break;
-
-        case TRY_STATEMENT :
-            break;
-
-        case THROW_STATEMENT :
-            break;
-
-        case DECLARATION_STATEMENT :
-            GenerateInitializer(pExecutable, pBlock, pos->statement, pOpcode);
-            break;
-
-        default :
-            GENERATE_DBG_Assert(0, ("pos->statement->type..", pos->statement->type));
-        }
+        GenerateStatement(pExecutable, pBlock, pos->statement, pOpcode);
     }
 }
 
