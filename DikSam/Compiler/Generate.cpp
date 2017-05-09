@@ -794,9 +794,7 @@ void Generate::GenerateStatement(DVM_Executable *pExecutable, Block *pBlock, Sta
 
 void Generate::GenerateStatementList(DVM_Executable *pExecutable, Block *pBlock, StatementList *pStatementList, OpcodeBuf *pOpcode)
 {
-    StatementList *pos = pStatementList;
-
-    for (; pos; pos = pos->next)
+    for (StatementList *pos = pStatementList; pos; pos = pos->next)
     {
         GenerateStatement(pExecutable, pBlock, pos->statement, pOpcode);
     }
