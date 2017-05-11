@@ -81,6 +81,9 @@
     <ClInclude Include="Share\Dispose.h">
       <Filter>Share</Filter>
     </ClInclude>
+    <ClInclude Include="DVM\GarbageCollect.h">
+      <Filter>DVM</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -130,6 +133,9 @@
     </ClCompile>
     <ClCompile Include="Share\Dispose.cpp">
       <Filter>Share</Filter>
+    </ClCompile>
+    <ClCompile Include="DVM\GarbageCollect.cpp">
+      <Filter>DVM</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
