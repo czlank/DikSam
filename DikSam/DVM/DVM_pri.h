@@ -43,6 +43,16 @@ typedef struct
     } u;
 } Function;
 
+typedef struct
+{
+    Function    *caller;
+    int         caller_address;
+    int         base;
+} CallInfo;
+
+#define revalue_up_align(val)   ((val) ? (((val) - 1) / sizeof(DVM_Value) + 1) : 0)
+#define CALL_INFO_ALIGN_SIZE    (revalue_up_align(sizeof(CallInfo)))
+
 typedef struct 
 {
     int             alloc_size;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "DikSamc.h"
+#include "DVM_pri.h"
 
 class Debug;
 class Memory;

@@ -42,31 +42,42 @@ Interface::Interface(Debug& debug, Memory& memory, Storage& storage, Util& util,
     , m_pCompiler(nullptr)
     , m_iThreadIndex(iThreadIndex)
 {
-    CreateCompiler();
+    m_MemoryDump.open("MemoryDump.dmp", std::ofstream::out | std::ofstream::trunc);
 }
 
 Interface::~Interface()
 {
-    DisposeCompiler();
+    m_MemoryDump.flush();
+    m_MemoryDump.close();
 }
 
 void Interface::RunScript(FILE *pFile)
 {
     DVM_Executable *pExecutable = Compile(pFile);
     Execute(m_Debug, m_Memory, m_Error)(pExecutable);
+
+    ResetCompiler();
+
+    m_Memory.CheckAllBlocks();
+    m_Memory.DumpBlocks(m_MemoryDump);
 }
 
 void Interface::RunScript(char **ppLines)
 {
     DVM_Executable *pExecutable = Compile(ppLines);
     Execute(m_Debug, m_Memory, m_Error)(pExecutable);
+
+    ResetCompiler();
+
+    m_Memory.CheckAllBlocks();
+    m_Memory.DumpBlocks(std::cout);
 }
 
 DVM_Executable* Interface::Compile(FILE *pFile)
 {
     extern FILE *yyin;
 
-    ResetCompiler();
+    CreateCompiler();
 
     m_pCompiler->current_line_number = 1;
     m_pCompiler->input_mode = DKC_FILE_INPUT_MODE;
@@ -78,7 +89,7 @@ DVM_Executable* Interface::Compile(FILE *pFile)
 
 DVM_Executable* Interface::Compile(char **ppLines)
 {
-    ResetCompiler();
+    CreateCompiler();
 
     m_pCompiler->current_line_number = 1;
     m_pCompiler->input_mode = DKC_STRING_INPUT_MODE;
@@ -131,11 +142,6 @@ void Interface::ResetCompiler()
 {
     DisposeCompiler();
     m_StringLiteral.Reset();
-
-    m_Memory.CheckAllBlocks();
-    m_Memory.DumpBlocks(std::cout);
-
-    CreateCompiler();
 }
 
 void Interface::CreateCompiler()

@@ -47,5 +47,7 @@ private:
     DKC_Compiler            *m_pCompiler;
     int                     m_iThreadIndex;
 
+    std::ofstream           m_MemoryDump;
+
     static std::mutex   m_Mutex;
 };
