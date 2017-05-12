@@ -7,3 +7,4 @@ Generated Files
 DikSam.vcxproj.user
 y.output
 ipch
+*.dmp

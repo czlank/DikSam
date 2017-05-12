@@ -39,6 +39,5 @@ private:
     Memory  &m_Memory;
     Error   &m_Error;
 
-    DVM_Executable      *m_pExecutable;
     DVM_VirtualMachine  *m_pVirtualMachine;
 };

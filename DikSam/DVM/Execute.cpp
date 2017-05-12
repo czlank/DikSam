@@ -12,7 +12,6 @@ Execute::Execute(Debug& debug, Memory& memory, Error& error)
     : m_Debug(debug)
     , m_Memory(memory)
     , m_Error(error)
-    , m_pExecutable(nullptr)
     , m_pVirtualMachine(nullptr)
 {
 }
@@ -25,11 +24,12 @@ DVM_Value Execute::operator () (DVM_Executable* pExecutable)
 {
     CreateVirtualMachine();
 
-    AddExecutable(m_pVirtualMachine, m_pExecutable);
+    AddExecutable(m_pVirtualMachine, pExecutable);
 
     // ExecuteCode();
 
     DisposeVirtualMachine();
+
     return DVM_Value{};
 }
 
@@ -247,4 +247,6 @@ void Execute::DisposeVirtualMachine()
     Dispose(m_Debug, m_Memory)(m_pVirtualMachine->executable);
 
     EXECUTE_MEM_Free(m_pVirtualMachine);
+
+    m_pVirtualMachine = nullptr;
 }
