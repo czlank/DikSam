@@ -4,7 +4,6 @@
 #include "Memory.h"
 #include "Error.h"
 #include "DVM_pri.h"
-#include "GarbageCollect.h"
 #include "Dispose.h"
 #include "OpcodeInfo.h"
 
@@ -12,6 +11,8 @@ Execute::Execute(Debug& debug, Memory& memory, Error& error)
     : m_Debug(debug)
     , m_Memory(memory)
     , m_Error(error)
+    , m_Native(memory)
+    , m_GarbageCollect(debug, memory)
     , m_pVirtualMachine(nullptr)
 {
 }
@@ -24,7 +25,8 @@ DVM_Value Execute::operator () (DVM_Executable* pExecutable)
 {
     CreateVirtualMachine();
 
-    AddExecutable(m_pVirtualMachine, pExecutable);
+    m_Native.AddNativeFunctions(m_pVirtualMachine);
+    AddExecutable(pExecutable);
 
     // ExecuteCode();
 
@@ -33,24 +35,24 @@ DVM_Value Execute::operator () (DVM_Executable* pExecutable)
     return DVM_Value{};
 }
 
-void Execute::AddExecutable(DVM_VirtualMachine *pVirtualMachine, DVM_Executable *pExecutable)
+void Execute::AddExecutable(DVM_Executable *pExecutable)
 {
-    pVirtualMachine->executable = pExecutable;
+    m_pVirtualMachine->executable = pExecutable;
 
-    AddFunctions(pVirtualMachine, pExecutable);
+    AddFunctions(pExecutable);
 
-    ConvertCode(pVirtualMachine, pExecutable, pExecutable->code, pExecutable->code_size, nullptr);
+    ConvertCode(pExecutable, pExecutable->code, pExecutable->code_size, nullptr);
 
     for (int i = 0; i < pExecutable->function_count; i++)
     {
         DVM_Function *pFunction = &pExecutable->function[i];
-        ConvertCode(pVirtualMachine, pExecutable, pFunction->code, pFunction->code_size, pFunction);
+        ConvertCode(pExecutable, pFunction->code, pFunction->code_size, pFunction);
     }
 
-    AddStaticVariables(pVirtualMachine, pExecutable);
+    AddStaticVariables(pExecutable);
 }
 
-void Execute::AddFunctions(DVM_VirtualMachine *pVirtualMachine, DVM_Executable *pExecutable)
+void Execute::AddFunctions(DVM_Executable *pExecutable)
 {
     int iSrcIdx, iDestIdx;
     int iFunctionCount = 0;
@@ -59,12 +61,12 @@ void Execute::AddFunctions(DVM_VirtualMachine *pVirtualMachine, DVM_Executable *
     {
         if (DVM_TRUE == pExecutable->function[iSrcIdx].is_implemented)
         {
-            for (iDestIdx = 0; iDestIdx < pVirtualMachine->function_count; iDestIdx++)
+            for (iDestIdx = 0; iDestIdx < m_pVirtualMachine->function_count; iDestIdx++)
             {
-                if (std::string(pVirtualMachine->function[iDestIdx].name) == pExecutable->function[iSrcIdx].name)
+                if (std::string(m_pVirtualMachine->function[iDestIdx].name) == pExecutable->function[iSrcIdx].name)
                 {
                     m_Error.DVMError(nullptr, nullptr, NO_LINE_NUMBER_PC,
-                        FUNCTION_MULTIPLE_DEFINE_ERR, STRING_MESSAGE_ARGUMENT, "name", pVirtualMachine->function[iDestIdx].name,
+                        FUNCTION_MULTIPLE_DEFINE_ERR, STRING_MESSAGE_ARGUMENT, "name", m_pVirtualMachine->function[iDestIdx].name,
                         MESSAGE_ARGUMENT_END);
                 }
             }
@@ -73,28 +75,28 @@ void Execute::AddFunctions(DVM_VirtualMachine *pVirtualMachine, DVM_Executable *
         }
     }
 
-    pVirtualMachine->function = (Function*)EXECUTE_MEM_Realloc(pVirtualMachine->function, sizeof(Function) * (pVirtualMachine->function_count + iFunctionCount));
+    m_pVirtualMachine->function = (Function*)EXECUTE_MEM_Realloc(m_pVirtualMachine->function, sizeof(Function) * (m_pVirtualMachine->function_count + iFunctionCount));
 
-    for (iSrcIdx = 0, iDestIdx = pVirtualMachine->function_count; iSrcIdx < pExecutable->function_count; iSrcIdx++)
+    for (iSrcIdx = 0, iDestIdx = m_pVirtualMachine->function_count; iSrcIdx < pExecutable->function_count; iSrcIdx++)
     {
         if (DVM_FALSE == pExecutable->function[iSrcIdx].is_implemented)
             continue;
 
-        pVirtualMachine->function[iDestIdx].name = EXECUTE_MEM_StrDUP(pExecutable->function[iSrcIdx].name);
-        pVirtualMachine->function[iDestIdx].u.diksam_f.executable = pExecutable;
-        pVirtualMachine->function[iDestIdx].u.diksam_f.index = iSrcIdx;
+        m_pVirtualMachine->function[iDestIdx].name = EXECUTE_MEM_StrDUP(pExecutable->function[iSrcIdx].name);
+        m_pVirtualMachine->function[iDestIdx].u.diksam_f.executable = pExecutable;
+        m_pVirtualMachine->function[iDestIdx].u.diksam_f.index = iSrcIdx;
 
         iDestIdx++;
     }
 
-    pVirtualMachine->function_count += iFunctionCount;
+    m_pVirtualMachine->function_count += iFunctionCount;
 }
 
-int Execute::SearchFunction(DVM_VirtualMachine *pVirtualMachine, char *lpstrName)
+int Execute::SearchFunction(char *lpstrName)
 {
-    for (int i = 0; i < pVirtualMachine->function_count; i++)
+    for (int i = 0; i < m_pVirtualMachine->function_count; i++)
     {
-        if (std::string(pVirtualMachine->function[i].name) == lpstrName)
+        if (std::string(m_pVirtualMachine->function[i].name) == lpstrName)
         {
             return i;
         }
@@ -107,7 +109,7 @@ int Execute::SearchFunction(DVM_VirtualMachine *pVirtualMachine, char *lpstrName
     return 0;
 }
 
-void Execute::ConvertCode(DVM_VirtualMachine *pVirtualMachine, DVM_Executable *pExecutable, DVM_Byte *pCode, int iCodeSize, DVM_Function *pFunction)
+void Execute::ConvertCode(DVM_Executable *pExecutable, DVM_Byte *pCode, int iCodeSize, DVM_Function *pFunction)
 {
     for (int i = 0; i < iCodeSize; i++)
     {
@@ -137,7 +139,7 @@ void Execute::ConvertCode(DVM_VirtualMachine *pVirtualMachine, DVM_Executable *p
         else if (DVM_PUSH_FUNCTION == pCode[i])
         {
             int iIdxInExe = GET_2BYTE_INT(&pCode[i + 1]);
-            unsigned int iFunctionIdx = SearchFunction(pVirtualMachine, pExecutable->function[iIdxInExe].name);
+            unsigned int iFunctionIdx = SearchFunction(pExecutable->function[iIdxInExe].name);
             SET_2BYTE_INT(&pCode[i + 1], iFunctionIdx);
         }
 
@@ -163,10 +165,8 @@ void Execute::ConvertCode(DVM_VirtualMachine *pVirtualMachine, DVM_Executable *p
     }
 }
 
-void Execute::InitializeValue(DVM_VirtualMachine *pVirtualMachine, DVM_BasicType enType, DVM_Value *pValue)
+void Execute::InitializeValue(DVM_BasicType enType, DVM_Value *pValue)
 {
-    GarbageCollect garbageCollect(m_Debug, m_Memory);
-
     switch (enType)
     {
     case DVM_BOOLEAN_TYPE :
@@ -179,7 +179,7 @@ void Execute::InitializeValue(DVM_VirtualMachine *pVirtualMachine, DVM_BasicType
         break;
 
     case DVM_STRING_TYPE :
-        pValue->object = garbageCollect.LiteralToString(pVirtualMachine, L"");
+        pValue->object = m_GarbageCollect.LiteralToString(m_pVirtualMachine, L"");
         break;
 
     default :
@@ -187,23 +187,96 @@ void Execute::InitializeValue(DVM_VirtualMachine *pVirtualMachine, DVM_BasicType
     }
 }
 
-void Execute::AddStaticVariables(DVM_VirtualMachine *pVirtualMachine, DVM_Executable *pExecutable)
+void Execute::AddStaticVariables(DVM_Executable *pExecutable)
 {
-    pVirtualMachine->static_v.variable = (DVM_Value*)EXECUTE_MEM_Malloc(sizeof(DVM_Value) * pExecutable->global_variable_count);
-    pVirtualMachine->static_v.variable_count = pExecutable->global_variable_count;
+    m_pVirtualMachine->static_v.variable = (DVM_Value*)EXECUTE_MEM_Malloc(sizeof(DVM_Value) * pExecutable->global_variable_count);
+    m_pVirtualMachine->static_v.variable_count = pExecutable->global_variable_count;
 
     for (int i = 0; i < pExecutable->global_variable_count; i++)
     {
         if (DVM_STRING_TYPE == pExecutable->global_variable[i].type->basic_type)
         {
-            pVirtualMachine->static_v.variable[i].object = nullptr;
+            m_pVirtualMachine->static_v.variable[i].object = nullptr;
         }
     }
 
     for (int i = 0; i < pExecutable->global_variable_count; i++)
     {
-        InitializeValue(pVirtualMachine, pExecutable->global_variable[i].type->basic_type, &pVirtualMachine->static_v.variable[i]);
+        InitializeValue(pExecutable->global_variable[i].type->basic_type, &m_pVirtualMachine->static_v.variable[i]);
     }
+}
+
+DVM_Object* Execute::ChainString(DVM_Object *str1, DVM_Object *str2)
+{
+    int iLen = str1->u.string.string ? std::wstring(str1->u.string.string).length() : 0
+        + str2->u.string.string ? std::wstring(str2->u.string.string).length() : 0;
+    DVM_Char *str = (DVM_Char*)EXECUTE_MEM_Malloc(sizeof(DVM_Char) * (iLen + 1));
+
+    int i = 0;
+    int iLen1 = str1->u.string.string ? std::wstring(str1->u.string.string).length() : 0;
+    int iLen2 = str1->u.string.string ? std::wstring(str2->u.string.string).length() : 0;
+
+    for (i = 0; i < iLen1; i++)
+    {
+        str[i] = str1->u.string.string[i];
+    }
+
+    for (i = iLen1; i < iLen1 + iLen2; i++)
+    {
+        str[i] = str2->u.string.string[i - iLen1];
+    }
+
+    str[i] = 0;
+
+    DVM_Object *ret = m_GarbageCollect.CreateString(m_pVirtualMachine, str);
+
+    return ret;
+}
+
+void Execute::InitializeLocalVariables(DVM_Function *pFunction, int iFromSP)
+{
+    for (int i = 0, idx = iFromSP; i < pFunction->local_variable_count; i++, idx++)
+    {
+        m_pVirtualMachine->stack.pointer_flags[i] = DVM_FALSE;
+    }
+
+    for (int i = 0, idx = iFromSP; i < pFunction->local_variable_count; i++, idx++)
+    {
+        InitializeValue(pFunction->local_variable[i].type->basic_type, &m_pVirtualMachine->stack.stack[idx]);
+
+        if (DVM_STRING_TYPE == pFunction->local_variable[i].type->basic_type)
+        {
+            m_pVirtualMachine->stack.pointer_flags[i] = DVM_TRUE;
+        }
+    }
+}
+
+void Execute::ExpandStack(int iNeedStackSize)
+{
+    int iRest = m_pVirtualMachine->stack.alloc_size - m_pVirtualMachine->stack.stack_pointer;
+
+    if (iRest > iNeedStackSize)
+        return;
+
+    int iRevalueUp = ((iRest / STACK_ALLOC_SIZE) + 1) * STACK_ALLOC_SIZE;
+
+    m_pVirtualMachine->stack.alloc_size += iRevalueUp;
+    m_pVirtualMachine->stack.stack = (DVM_Value*)EXECUTE_MEM_Realloc(m_pVirtualMachine->stack.stack, sizeof(DVM_Value) * m_pVirtualMachine->stack.alloc_size);
+    m_pVirtualMachine->stack.pointer_flags = (DVM_Boolean*)EXECUTE_MEM_Realloc(m_pVirtualMachine->stack.pointer_flags, sizeof(DVM_Boolean) * m_pVirtualMachine->stack.alloc_size);
+}
+
+void Execute::InvokeNativeFunction(Function *pFunction, int *pSP)
+{
+    EXECUTE_DBG_Assert(NATIVE_FUNCTION == pFunction->kind, ("pFunction->kind..", pFunction->kind));
+
+    DVM_Value *stack = m_pVirtualMachine->stack.stack;
+    int sp = *pSP;
+    DVM_Value ret = pFunction->u.native_f.proc(m_pVirtualMachine,
+        pFunction->u.native_f.arg_count,
+        &stack[sp - pFunction->u.native_f.arg_count - 1]);
+
+    stack[sp - pFunction->u.native_f.arg_count - 1] = ret;
+    *pSP = sp - (pFunction->u.native_f.arg_count);
 }
 
 void Execute::CreateVirtualMachine()

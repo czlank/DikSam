@@ -84,6 +84,9 @@
     <ClInclude Include="DVM\GarbageCollect.h">
       <Filter>DVM</Filter>
     </ClInclude>
+    <ClInclude Include="DVM\Native.h">
+      <Filter>DVM</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -135,6 +138,9 @@
       <Filter>Share</Filter>
     </ClCompile>
     <ClCompile Include="DVM\GarbageCollect.cpp">
+      <Filter>DVM</Filter>
+    </ClCompile>
+    <ClCompile Include="DVM\Native.cpp">
       <Filter>DVM</Filter>
     </ClCompile>
   </ItemGroup>

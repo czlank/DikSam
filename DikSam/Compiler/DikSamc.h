@@ -3,7 +3,6 @@
 
 #include "DKC.h"
 #include "DVM_code.h"
-#include "share.h"
 
 #ifdef __cplusplus
 extern "C"

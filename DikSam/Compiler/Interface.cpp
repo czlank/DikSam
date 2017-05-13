@@ -70,7 +70,7 @@ void Interface::RunScript(char **ppLines)
     ResetCompiler();
 
     m_Memory.CheckAllBlocks();
-    m_Memory.DumpBlocks(std::cout);
+    m_Memory.DumpBlocks(m_MemoryDump);
 }
 
 DVM_Executable* Interface::Compile(FILE *pFile)
