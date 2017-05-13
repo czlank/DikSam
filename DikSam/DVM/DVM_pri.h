@@ -12,6 +12,9 @@ extern "C"
 #define STACK_ALLOC_SIZE    (4096)
 #define HEAP_THRESHOLD_SIZE (1024 * 256)
 
+#define TRUE_STRING (L"true")
+#define FALSE_STRING (L"false")
+
 #define NO_LINE_NUMBER_PC   (-1)
 
 typedef enum

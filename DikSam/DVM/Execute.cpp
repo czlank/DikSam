@@ -28,11 +28,11 @@ DVM_Value Execute::operator () (DVM_Executable* pExecutable)
     m_Native.AddNativeFunctions(m_pVirtualMachine);
     AddExecutable(pExecutable);
 
-    // ExecuteCode();
+    DVM_Value ret = ExecuteCode();
 
     DisposeVirtualMachine();
 
-    return DVM_Value{};
+    return ret;
 }
 
 void Execute::AddExecutable(DVM_Executable *pExecutable)
@@ -277,6 +277,242 @@ void Execute::InvokeNativeFunction(Function *pFunction, int *pSP)
 
     stack[sp - pFunction->u.native_f.arg_count - 1] = ret;
     *pSP = sp - (pFunction->u.native_f.arg_count);
+}
+
+DVM_Value Execute::ExecuteCode(Function *pFunction, DVM_Byte *pCode, int iCodeSize)
+{
+    DVM_Value *stack = m_pVirtualMachine->stack.stack;
+    DVM_Executable *exe = m_pVirtualMachine->executable;
+    DVM_Value ret{};
+    int base = 0;
+
+    for (int pc = m_pVirtualMachine->pc; pc < iCodeSize;)
+    {
+        switch (pCode[pc])
+        {
+        case DVM_PUSH_INT_1BYTE :
+            STI_WRITE(0, pCode[pc + 1]);
+            m_pVirtualMachine->stack.stack_pointer++;
+            pc += 2;
+            break;
+
+        case DVM_PUSH_INT_2BYTE :
+            STI_WRITE(0, GET_2BYTE_INT(&pCode[pc + 1]));
+            m_pVirtualMachine->stack.stack_pointer++;
+            pc += 3;
+            break;
+
+        case DVM_PUSH_INT :
+            STI_WRITE(0, exe->constant_pool[GET_2BYTE_INT(&pCode[pc + 1])].u.c_int);
+            m_pVirtualMachine->stack.stack_pointer++;
+            pc += 3;
+            break;
+
+        case DVM_PUSH_DOUBLE_0 :
+            STD_WRITE(0, 0.0);
+            m_pVirtualMachine->stack.stack_pointer++;
+            pc++;
+            break;
+
+        case DVM_PUSH_DOUBLE_1 :
+            STD_WRITE(0, 1.0);
+            m_pVirtualMachine->stack.stack_pointer++;
+            pc++;
+            break;
+
+        case DVM_PUSH_DOUBLE :
+            STD_WRITE(0, exe->constant_pool[GET_2BYTE_INT(&pCode[pc + 1])].u.c_double);
+            m_pVirtualMachine->stack.stack_pointer++;
+            pc += 3;
+            break;
+
+        case DVM_PUSH_STRING :
+            STO_WRITE(0, m_GarbageCollect.LiteralToString(m_pVirtualMachine, exe->constant_pool[GET_2BYTE_INT(&pCode[pc + 1])].u.c_string));
+            m_pVirtualMachine->stack.stack_pointer++;
+            pc += 3;
+            break;
+
+        case DVM_PUSH_STACK_INT :
+            STI_WRITE(0, STI_I(base + GET_2BYTE_INT(&pCode[pc + 1])));
+            m_pVirtualMachine->stack.stack_pointer++;
+            pc += 3;
+            break;
+
+        case DVM_PUSH_STACK_DOUBLE :
+            STD_WRITE(0, STD_I(base + GET_2BYTE_INT(&pCode[pc + 1])));
+            m_pVirtualMachine->stack.stack_pointer++;
+            pc += 3;
+            break;
+
+        case DVM_PUSH_STACK_STRING :
+            STO_WRITE(0, STO_I(base + GET_2BYTE_INT(&pCode[pc + 1])));
+            m_pVirtualMachine->stack.stack_pointer++;
+            pc += 3;
+            break;
+
+        case DVM_POP_STACK_INT :
+            STI_WRITE_I(base + GET_2BYTE_INT(&pCode[pc + 1]), STI(-1));
+            m_pVirtualMachine->stack.stack_pointer--;
+            pc += 3;
+            break;
+
+        case DVM_POP_STACK_DOUBLE :
+            STD_WRITE_I(base + GET_2BYTE_INT(&pCode[pc + 1]), STD(-1));
+            m_pVirtualMachine->stack.stack_pointer--;
+            pc += 3;
+            break;
+
+        case DVM_POP_STACK_STRING :
+            STO_WRITE_I(base + GET_2BYTE_INT(&pCode[pc + 1]), STO(-1));
+            m_pVirtualMachine->stack.stack_pointer--;
+            pc += 3;
+            break;
+
+        case DVM_PUSH_STATIC_INT :
+            STI_WRITE(0, m_pVirtualMachine->static_v.variable[GET_2BYTE_INT(&pCode[pc + 1])].int_value);
+            m_pVirtualMachine->stack.stack_pointer++;
+            pc += 3;
+            break;
+
+        case DVM_PUSH_STATIC_DOUBLE :
+            STD_WRITE(0, m_pVirtualMachine->static_v.variable[GET_2BYTE_INT(&pCode[pc + 1])].double_value);
+            m_pVirtualMachine->stack.stack_pointer++;
+            pc += 3;
+            break;
+
+        case DVM_PUSH_STATIC_STRING :
+            STO_WRITE(0, m_pVirtualMachine->static_v.variable[GET_2BYTE_INT(&pCode[pc + 1])].object);
+            m_pVirtualMachine->stack.stack_pointer++;
+            pc += 3;
+            break;
+
+        case DVM_POP_STATIC_INT :
+            m_pVirtualMachine->static_v.variable[GET_2BYTE_INT(&pCode[pc + 1])].int_value = STI(-1);
+            m_pVirtualMachine->stack.stack_pointer--;
+            pc += 3;
+            break;
+
+        case DVM_POP_STATIC_DOUBLE :
+            m_pVirtualMachine->static_v.variable[GET_2BYTE_INT(&pCode[pc + 1])].double_value = STD(-1);
+            m_pVirtualMachine->stack.stack_pointer--;
+            pc += 3;
+            break;
+
+        case DVM_POP_STATIC_STRING :
+            m_pVirtualMachine->static_v.variable[GET_2BYTE_INT(&pCode[pc + 1])].object = STO(-1);
+            m_pVirtualMachine->stack.stack_pointer--;
+            pc += 3;
+            break;
+
+        case DVM_ADD_INT :
+            STI(-2) = STI(-2) + STI(-1);
+            m_pVirtualMachine->stack.stack_pointer--;
+            pc++;
+            break;
+
+        case DVM_ADD_DOUBLE :
+            STD(-2) = STD(-2) + STD(-1);
+            m_pVirtualMachine->stack.stack_pointer--;
+            pc++;
+            break;
+
+        case DVM_ADD_STRING :
+            STO(-2) = ChainString(STO(-2), STO(-1));
+            m_pVirtualMachine->stack.stack_pointer--;
+            pc++;
+            break;
+
+        case DVM_SUB_INT :
+            STI(-2) = STI(-2) - STI(-1);
+            m_pVirtualMachine->stack.stack_pointer--;
+            pc++;
+            break;
+
+        case DVM_SUB_DOUBLE :
+            STD(-2) = STD(-2) - STD(-1);
+            m_pVirtualMachine->stack.stack_pointer--;
+            pc++;
+            break;
+
+        case DVM_MUL_INT :
+            STI(-2) = STI(-2) * STI(-1);
+            m_pVirtualMachine->stack.stack_pointer--;
+            pc++;
+            break;
+
+        case DVM_MUL_DOUBLE :
+            STD(-2) = STD(-2) * STD(-1);
+            m_pVirtualMachine->stack.stack_pointer--;
+            pc++;
+            break;
+
+        case DVM_DIV_INT :
+            STI(-2) = STI(-2) / STI(-1);
+            m_pVirtualMachine->stack.stack_pointer--;
+            pc++;
+            break;
+
+        case DVM_DIV_DOUBLE :
+            STD(-2) = STD(-2) / STD(-1);
+            m_pVirtualMachine->stack.stack_pointer--;
+            pc++;
+            break;
+
+        case DVM_MOD_INT :
+            STI(-2) = STI(-2) % STI(-1);
+            m_pVirtualMachine->stack.stack_pointer--;
+            pc++;
+            break;
+
+        case DVM_MOD_DOUBLE :
+            STD(-2) = std::fmod(STD(-2), STD(-1));
+            m_pVirtualMachine->stack.stack_pointer--;
+            pc++;
+            break;
+
+        case DVM_MINUS_INT :
+            STI(-1) = -STI(-1);
+            pc++;
+            break;
+
+        case DVM_MINUS_DOUBLE :
+            STD(-1) = -STD(-1);
+            pc++;
+            break;
+
+        case DVM_INCREMENT :
+            STI(-1)++;
+            pc++;
+            break;
+
+        case DVM_DECREMENT :
+            STI(-1)--;
+            pc++;
+            break;
+
+        case DVM_CAST_INT_TO_DOUBLE :
+            STD(-1) = (double)STI(-1);
+            pc++;
+            break;
+
+        case DVM_CAST_DOUBLE_TO_INT :
+            STI(-1) = (int)STD(-1);
+            pc++;
+            break;
+
+        case DVM_CAST_BOOLEAN_TO_STRING :
+            if (DVM_TRUE == STI(-1))
+            {
+                STO_WRITE(-1, m_GarbageCollect.LiteralToString(m_pVirtualMachine, TRUE_STRING));
+            }
+            else
+            {
+                STO_WRITE(-1, m_GarbageCollect.LiteralToString(m_pVirtualMachine, FALSE_STRING));
+            }
+            pc++;
+            break;
+        }
+    }
 }
 
 void Execute::CreateVirtualMachine()

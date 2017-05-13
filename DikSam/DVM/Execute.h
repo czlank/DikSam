@@ -65,6 +65,8 @@ private:
     void ExpandStack(int iNeedStackSize);
     void InvokeNativeFunction(Function *pFunction, int *pSP);
 
+    DVM_Value ExecuteCode(Function *pFunction, DVM_Byte *pCode, int iCodeSize);
+
     void CreateVirtualMachine();
     void DisposeVirtualMachine();
 
