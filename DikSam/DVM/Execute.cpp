@@ -281,19 +281,66 @@ void Execute::InvokeNativeFunction(Function *pFunction, int *pSP)
 
 void Execute::InvokeDikSamFunction(Function **ppCaller, Function *pCallee, DVM_Byte **ppCode, int *pCodeSize, int *pPC, int *pSP, int *pBase, DVM_Executable **ppExe)
 {
+    *ppExe = pCallee->u.diksam_f.executable;
+    DVM_Function *pCalleeFunction = &(*ppExe)->function[pCallee->u.diksam_f.index];
 
+    ExpandStack(CALL_INFO_ALIGN_SIZE + pCalleeFunction->local_variable_count + (*ppExe)->function[pCallee->u.diksam_f.index].need_stack_size);
+
+    CallInfo *pCallInfo = (CallInfo*)&m_pVirtualMachine->stack.stack[*pSP - 1];
+    pCallInfo->caller = *ppCaller;
+    pCallInfo->caller_address = *pPC;
+    pCallInfo->base = *pBase;
+
+    for (int i = 0; i < CALL_INFO_ALIGN_SIZE; i++)
+    {
+        m_pVirtualMachine->stack.pointer_flags[*pSP - 1 + i] = DVM_FALSE;
+    }
+
+    *pBase = *pSP - pCalleeFunction->parameter_count - 1;
+    *ppCaller = pCallee;
+
+    InitializeLocalVariables(pCalleeFunction, *pSP + CALL_INFO_ALIGN_SIZE - 1);
+
+    *pSP += CALL_INFO_ALIGN_SIZE + pCalleeFunction->local_variable_count - 1;
+    *pPC = 0;
+
+    *ppCode = (*ppExe)->function[pCallee->u.diksam_f.index].code;
+    *pCodeSize = (*ppExe)->function[pCallee->u.diksam_f.index].code_size;
 }
 
 void Execute::ReturnFunction(Function **ppFunction, DVM_Byte **ppCode, int *pCodeSize, int *pPC, int *pSP, int *pBase, DVM_Executable **ppExe)
 {
+    DVM_Value returnValue = m_pVirtualMachine->stack.stack[(*pSP) - 1];
+    DVM_Function *pCallee = &(*ppExe)->function[(*ppFunction)->u.diksam_f.index];
+    CallInfo *pCallInfo = (CallInfo*)&m_pVirtualMachine->stack.stack[*pSP - 1 - pCallee->local_variable_count - CALL_INFO_ALIGN_SIZE];
 
+    if (pCallInfo->caller)
+    {
+        *ppExe = pCallInfo->caller->u.diksam_f.executable;
+
+        DVM_Function *pCaller = &(*ppExe)->function[pCallInfo->caller->u.diksam_f.index];
+        *ppCode = pCaller->code;
+        *pCodeSize = pCaller->code_size;
+    }
+    else
+    {
+        *ppExe = m_pVirtualMachine->executable;
+        *ppCode = m_pVirtualMachine->executable->code;
+        *pCodeSize = m_pVirtualMachine->executable->code_size;
+    }
+
+    *ppFunction = pCallInfo->caller;
+    *pPC = pCallInfo->caller_address + 1;
+    *pBase = pCallInfo->base;
+    *pSP -= pCallee->local_variable_count + CALL_INFO_ALIGN_SIZE + pCallee->parameter_count;
+
+    m_pVirtualMachine->stack.stack[*pSP - 1] = returnValue;
 }
 
 DVM_Value Execute::ExecuteCode(Function *pFunction, DVM_Byte *pCode, int iCodeSize)
 {
     DVM_Value *stack = m_pVirtualMachine->stack.stack;
     DVM_Executable *exe = m_pVirtualMachine->executable;
-    DVM_Value ret{};
     int base = 0;
 
     for (int pc = m_pVirtualMachine->pc; pc < iCodeSize;)
@@ -775,18 +822,21 @@ DVM_Value Execute::ExecuteCode(Function *pFunction, DVM_Byte *pCode, int iCodeSi
                 }
                 else
                 {
-                    InvokeDikSamFunction(&pFunction)
+                    InvokeDikSamFunction(&pFunction, &m_pVirtualMachine->function[iFuncIndex], &pCode, &iCodeSize, &pc, &m_pVirtualMachine->stack.stack_pointer, &base, &exe);
                 }
             }
             break;
 
         case DVM_RETURN :
+            ReturnFunction(&pFunction, &pCode, &iCodeSize, &pc, &m_pVirtualMachine->stack.stack_pointer, &base, &exe);
             break;
 
         default :
             EXECUTE_DBG_Assert(0, ("pCode[pc]..", pCode[pc]));
         }
     }
+
+    return {};
 }
 
 void Execute::CreateVirtualMachine()
