@@ -64,7 +64,8 @@ private:
     void InitializeLocalVariables(DVM_Function *pFunction, int iFromSP);
     void ExpandStack(int iNeedStackSize);
     void InvokeNativeFunction(Function *pFunction, int *pSP);
-
+    void InvokeDikSamFunction(Function **ppCaller, Function *pCallee, DVM_Byte **ppCode, int *pCodeSize, int *pPC, int *pSP, int *pBase, DVM_Executable **ppExe);
+    void ReturnFunction(Function **ppFunction, DVM_Byte **ppCode, int *pCodeSize, int *pPC, int *pSP, int *pBase, DVM_Executable **ppExe);
     DVM_Value ExecuteCode(Function *pFunction, DVM_Byte *pCode, int iCodeSize);
 
     void CreateVirtualMachine();

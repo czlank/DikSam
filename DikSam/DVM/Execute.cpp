@@ -28,7 +28,7 @@ DVM_Value Execute::operator () (DVM_Executable* pExecutable)
     m_Native.AddNativeFunctions(m_pVirtualMachine);
     AddExecutable(pExecutable);
 
-    DVM_Value ret = ExecuteCode();
+    DVM_Value ret = ExecuteCode(nullptr, m_pVirtualMachine->executable->code, m_pVirtualMachine->executable->code_size);
 
     DisposeVirtualMachine();
 
@@ -279,6 +279,16 @@ void Execute::InvokeNativeFunction(Function *pFunction, int *pSP)
     *pSP = sp - (pFunction->u.native_f.arg_count);
 }
 
+void Execute::InvokeDikSamFunction(Function **ppCaller, Function *pCallee, DVM_Byte **ppCode, int *pCodeSize, int *pPC, int *pSP, int *pBase, DVM_Executable **ppExe)
+{
+
+}
+
+void Execute::ReturnFunction(Function **ppFunction, DVM_Byte **ppCode, int *pCodeSize, int *pPC, int *pSP, int *pBase, DVM_Executable **ppExe)
+{
+
+}
+
 DVM_Value Execute::ExecuteCode(Function *pFunction, DVM_Byte *pCode, int iCodeSize)
 {
     DVM_Value *stack = m_pVirtualMachine->stack.stack;
@@ -511,6 +521,270 @@ DVM_Value Execute::ExecuteCode(Function *pFunction, DVM_Byte *pCode, int iCodeSi
             }
             pc++;
             break;
+
+        case DVM_CAST_INT_TO_STRING :
+            {
+                std::wstringstream ss;
+                
+                ss << STI(-1);
+                std::wstring wstr(ss.str());
+
+                DVM_Char *str = (DVM_Char*)EXECUTE_MEM_Malloc(sizeof(DVM_Char) * (wstr.length() + 1));
+                
+                for (size_t i = 0; i < wstr.length(); i++)
+                {
+                    str[i] = wstr[i];
+                }
+
+                str[wstr.length()] = 0;
+
+                STO_WRITE(-1, m_GarbageCollect.CreateString(m_pVirtualMachine, str));
+                pc++;
+            }
+            break;
+
+        case DVM_CAST_DOUBLE_TO_STRING :
+            {
+                std::wstringstream ss;
+                
+                ss << STD(-1);
+                std::wstring wstr(ss.str());
+
+                DVM_Char *str = (DVM_Char*)EXECUTE_MEM_Malloc(sizeof(DVM_Char) * (wstr.length() + 1));
+                
+                for (size_t i = 0; i < wstr.length(); i++)
+                {
+                    str[i] = wstr[i];
+                }
+
+                str[wstr.length()] = 0;
+
+                STO_WRITE(-1, m_GarbageCollect.CreateString(m_pVirtualMachine, str));
+                pc++;
+            }
+            break;
+
+        case DVM_EQ_INT :
+            STI(-2) = (STI(-2) == STI(-1) ? DVM_TRUE : DVM_FALSE);
+            m_pVirtualMachine->stack.stack_pointer--;
+            pc++;
+            break;
+
+        case DVM_EQ_DOUBLE :
+            STI(-2) = (STD(-2) == STD(-1) ? DVM_TRUE : DVM_FALSE);
+            m_pVirtualMachine->stack.stack_pointer--;
+            pc++;
+            break;
+
+        case DVM_EQ_STRING :
+            {
+                std::basic_string<DVM_Char> str1(STO(-2)->u.string.string ? STO(-2)->u.string.string : L"");
+                std::basic_string<DVM_Char> str2(STO(-1)->u.string.string ? STO(-1)->u.string.string : L"");
+                
+                STI_WRITE(-2, str1 == str2 ? DVM_TRUE : DVM_FALSE);
+                m_pVirtualMachine->stack.stack_pointer--;
+                pc++;
+            }
+            break;
+
+        case DVM_GT_INT :
+            STI(-2) = (STI(-2) > STI(-1) ? DVM_TRUE : DVM_FALSE);
+            m_pVirtualMachine->stack.stack_pointer--;
+            pc++;
+            break;
+
+        case DVM_GT_DOUBLE :
+            STI(-2) = (STD(-2) > STD(-1) ? DVM_TRUE : DVM_FALSE);
+            m_pVirtualMachine->stack.stack_pointer--;
+            pc++;
+            break;
+
+        case DVM_GT_STRING :
+            {
+                std::basic_string<DVM_Char> str1(STO(-2)->u.string.string ? STO(-2)->u.string.string : L"");
+                std::basic_string<DVM_Char> str2(STO(-1)->u.string.string ? STO(-1)->u.string.string : L"");
+                
+                STI_WRITE(-2, str1 > str2 ? DVM_TRUE : DVM_FALSE);
+                m_pVirtualMachine->stack.stack_pointer--;
+                pc++;
+            }
+            break;
+
+        case DVM_GE_INT :
+            STI(-2) = (STI(-2) >= STI(-1) ? DVM_TRUE : DVM_FALSE);
+            m_pVirtualMachine->stack.stack_pointer--;
+            pc++;
+            break;
+
+        case DVM_GE_DOUBLE :
+            STI(-2) = (STD(-2) >= STD(-1) ? DVM_TRUE : DVM_FALSE);
+            m_pVirtualMachine->stack.stack_pointer--;
+            pc++;
+            break;
+
+        case DVM_GE_STRING :
+            {
+                std::basic_string<DVM_Char> str1(STO(-2)->u.string.string ? STO(-2)->u.string.string : L"");
+                std::basic_string<DVM_Char> str2(STO(-1)->u.string.string ? STO(-1)->u.string.string : L"");
+                
+                STI_WRITE(-2, str1 >= str2 ? DVM_TRUE : DVM_FALSE);
+                m_pVirtualMachine->stack.stack_pointer--;
+                pc++;
+            }
+            break;
+
+        case DVM_LT_INT :
+            STI(-2) = (STI(-2) < STI(-1) ? DVM_TRUE : DVM_FALSE);
+            m_pVirtualMachine->stack.stack_pointer--;
+            pc++;
+            break;
+
+        case DVM_LT_DOUBLE :
+            STI(-2) = (STD(-2) < STD(-1) ? DVM_TRUE : DVM_FALSE);
+            m_pVirtualMachine->stack.stack_pointer--;
+            pc++;
+            break;
+
+        case DVM_LT_STRING :
+            {
+                std::basic_string<DVM_Char> str1(STO(-2)->u.string.string ? STO(-2)->u.string.string : L"");
+                std::basic_string<DVM_Char> str2(STO(-1)->u.string.string ? STO(-1)->u.string.string : L"");
+                
+                STI_WRITE(-2, str1 < str2 ? DVM_TRUE : DVM_FALSE);
+                m_pVirtualMachine->stack.stack_pointer--;
+                pc++;
+            }
+            break;
+
+        case DVM_LE_INT :
+            STI(-2) = (STI(-2) <= STI(-1) ? DVM_TRUE : DVM_FALSE);
+            m_pVirtualMachine->stack.stack_pointer--;
+            pc++;
+            break;
+
+        case DVM_LE_DOUBLE :
+            STI(-2) = (STD(-2) <= STD(-1) ? DVM_TRUE : DVM_FALSE);
+            m_pVirtualMachine->stack.stack_pointer--;
+            pc++;
+            break;
+
+        case DVM_LE_STRING :
+            {
+                std::basic_string<DVM_Char> str1(STO(-2)->u.string.string ? STO(-2)->u.string.string : L"");
+                std::basic_string<DVM_Char> str2(STO(-1)->u.string.string ? STO(-1)->u.string.string : L"");
+                
+                STI_WRITE(-2, str1 <= str2 ? DVM_TRUE : DVM_FALSE);
+                m_pVirtualMachine->stack.stack_pointer--;
+                pc++;
+            }
+            break;
+
+        case DVM_NE_INT :
+            STI(-2) = (STI(-2) != STI(-1) ? DVM_TRUE : DVM_FALSE);
+            m_pVirtualMachine->stack.stack_pointer--;
+            pc++;
+            break;
+
+        case DVM_NE_DOUBLE:
+            STI(-2) = (STD(-2) != STD(-1) ? DVM_TRUE : DVM_FALSE);
+            m_pVirtualMachine->stack.stack_pointer--;
+            pc++;
+            break;
+
+        case DVM_NE_STRING :
+            {
+                std::basic_string<DVM_Char> str1(STO(-2)->u.string.string ? STO(-2)->u.string.string : L"");
+                std::basic_string<DVM_Char> str2(STO(-1)->u.string.string ? STO(-1)->u.string.string : L"");
+                
+                STI_WRITE(-2, str1 != str2 ? DVM_TRUE : DVM_FALSE);
+                m_pVirtualMachine->stack.stack_pointer--;
+                pc++;
+            }
+            break;
+
+        case DVM_LOGICAL_AND :
+            STI(-2) = (STI(-2) && STI(-1) ? DVM_TRUE : DVM_FALSE);
+            m_pVirtualMachine->stack.stack_pointer--;
+            pc++;
+            break;
+
+        case DVM_LOGICAL_OR :
+            STI(-2) = (STI(-2) || STI(-1) ? DVM_TRUE : DVM_FALSE);
+            m_pVirtualMachine->stack.stack_pointer--;
+            pc++;
+            break;
+
+        case DVM_LOGICAL_NOT :
+            STI(-1) = !STI(-1);
+            pc++;
+            break;
+
+        case DVM_POP :
+            m_pVirtualMachine->stack.stack_pointer--;
+            pc++;
+            break;
+
+        case DVM_DUPLICATE :
+            stack[m_pVirtualMachine->stack.stack_pointer] = stack[m_pVirtualMachine->stack.stack_pointer - 1];
+            m_pVirtualMachine->stack.stack_pointer++;
+            pc++;
+            break;
+
+        case DVM_JUMP :
+            pc = GET_2BYTE_INT(&pCode[pc + 1]);
+            break;
+
+        case DVM_JUMP_IF_TRUE :
+            if (DVM_TRUE == STI(-1))
+            {
+                pc = GET_2BYTE_INT(&pCode[pc + 1]);
+            }
+            else
+            {
+                pc += 3;
+            }
+            m_pVirtualMachine->stack.stack_pointer--;
+            break;
+
+        case DVM_JUMP_IF_FALSE :
+            if (DVM_FALSE == STI(-1))
+            {
+                pc = GET_2BYTE_INT(&pCode[pc + 1]);
+            }
+            else
+            {
+                pc += 3;
+            }
+            m_pVirtualMachine->stack.stack_pointer--;
+            break;
+
+        case DVM_PUSH_FUNCTION :
+            STI_WRITE(0, GET_2BYTE_INT(&pCode[pc + 1]));
+            m_pVirtualMachine->stack.stack_pointer++;
+            pc += 3;
+            break;
+
+        case DVM_INVOKE :
+            {
+                int iFuncIndex = STI(-1);
+
+                if (NATIVE_FUNCTION == m_pVirtualMachine->function[iFuncIndex].kind)
+                {
+                    InvokeNativeFunction(&m_pVirtualMachine->function[iFuncIndex], &m_pVirtualMachine->stack.stack_pointer);
+                    pc++;
+                }
+                else
+                {
+                    InvokeDikSamFunction(&pFunction)
+                }
+            }
+            break;
+
+        case DVM_RETURN :
+            break;
+
+        default :
+            EXECUTE_DBG_Assert(0, ("pCode[pc]..", pCode[pc]));
         }
     }
 }
