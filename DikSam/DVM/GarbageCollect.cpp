@@ -162,5 +162,5 @@ void GarbageCollect::DisposeObject(DVM_VirtualMachine *pVirtualMachine, DVM_Obje
     }
 
     pVirtualMachine->heap.current_heap_size -= sizeof(DVM_Object);
-    GARBAGECOLLECT_MEM_Free(pVirtualMachine);
+    GARBAGECOLLECT_MEM_Free(pObj);
 }

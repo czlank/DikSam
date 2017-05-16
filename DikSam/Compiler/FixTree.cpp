@@ -669,27 +669,27 @@ Expression* FixTree::EvalCompareExpressionDouble(Expression *pExpression, double
     switch (pExpression->kind)
     {
     case EQ_EXPRESSION :
-        pExpression->u.boolean_value = (double(std::abs(left - right)) < eps ? DVM_TRUE : DVM_FALSE);
+        pExpression->u.boolean_value = (left == right ? DVM_TRUE : DVM_FALSE);
         break;
 
     case NE_EXPRESSION :
-        pExpression->u.boolean_value = (double(std::abs(left - right)) > eps ? DVM_TRUE : DVM_FALSE);
+        pExpression->u.boolean_value = (left != right ? DVM_TRUE : DVM_FALSE);
         break;
 
     case GT_EXPRESSION :
-        pExpression->u.boolean_value = (left - right > eps ? DVM_TRUE : DVM_FALSE);
+        pExpression->u.boolean_value = (left > right ? DVM_TRUE : DVM_FALSE);
         break;
 
     case GE_EXPRESSION :
-        pExpression->u.boolean_value = (left - right >= eps ? DVM_TRUE : DVM_FALSE);
+        pExpression->u.boolean_value = (left >= right ? DVM_TRUE : DVM_FALSE);
         break;
 
     case LT_EXPRESSION :
-        pExpression->u.boolean_value = (right - left > eps ? DVM_TRUE : DVM_FALSE);
+        pExpression->u.boolean_value = (left < right ? DVM_TRUE : DVM_FALSE);
         break;
 
     case LE_EXPRESSION :
-        pExpression->u.boolean_value = (right - left >= eps ? DVM_TRUE : DVM_FALSE);
+        pExpression->u.boolean_value = (left <= right ? DVM_TRUE : DVM_FALSE);
         break;
 
     default :

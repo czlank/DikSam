@@ -208,11 +208,11 @@ void Generate::GenerateIntExpression(DVM_Executable *pExecutable, Expression *pE
 
 void Generate::GenerateDoubleExpression(DVM_Executable *pExecutable, Expression *pExpression, OpcodeBuf *pOpcode)
 {
-    if (double(std::abs(pExpression->u.double_value - 0.0)) < eps)
+    if (0.0 == pExpression->u.double_value)
     {
         GenerateCode(pOpcode, pExpression->line_number, DVM_PUSH_DOUBLE_0);
     }
-    else if (double(std::abs(pExpression->u.double_value - 1.0)) < eps)
+    else if (1.0 == pExpression->u.double_value)
     {
         GenerateCode(pOpcode, pExpression->line_number, DVM_PUSH_DOUBLE_1);
     }

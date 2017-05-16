@@ -36,8 +36,6 @@
 
 #include "DikSamc.h"
 
-#define eps 1e-8
-
 #ifdef __cplusplus
 extern "C"
 {
