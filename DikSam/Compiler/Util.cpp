@@ -143,6 +143,9 @@ DVM_Char* Util::ExpressionToString(Expression *stExpr)
 
     case STRING_EXPRESSION :
         return stExpr->u.string_value;
+
+    default :
+        return nullptr;
     }
 
     std::basic_string<DVM_Char> exprVal(dvmChar.str());
