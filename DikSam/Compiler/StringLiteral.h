@@ -11,6 +11,7 @@ class StringLiteral
 {
 #define STRING_ALLOC_SIZE                       (256)
 #define STRING_UTIL_Malloc(size)                (m_Util.Malloc(__FILE__, __LINE__, size))
+#define STRING_MEM_Malloc(size)                 (m_Memory.Malloc(__FILE__, __LINE__, size))
 #define STRING_MEM_Realloc(ptr, size)           (m_Memory.Realloc(__FILE__, __LINE__, ptr, size))
 
 public:

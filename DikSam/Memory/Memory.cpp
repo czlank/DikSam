@@ -88,7 +88,7 @@ void* Memory::Realloc(const char *lpcstrFileName, int iLine, void *ptr, size_t s
     if (ptr)
     {
 #ifdef _DEBUG
-        memcpy((char*)pNewPtr + sizeof(Header), ptr, szSize);
+        memcpy((char*)pNewPtr + sizeof(Header), ptr, szOldSize);
 #endif // _DEBUG
 
         delete[] RealPtr;

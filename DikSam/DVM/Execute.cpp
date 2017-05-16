@@ -210,8 +210,8 @@ void Execute::AddStaticVariables(DVM_Executable *pExecutable)
 
 DVM_Object* Execute::ChainString(DVM_Object *str1, DVM_Object *str2)
 {
-    int iLen = str1->u.string.string ? std::wstring(str1->u.string.string).length() : 0
-        + str2->u.string.string ? std::wstring(str2->u.string.string).length() : 0;
+    int iLen = str1->u.string.string ? std::wstring(str1->u.string.string).length() : 0;
+    iLen += str2->u.string.string ? std::wstring(str2->u.string.string).length() : 0;
     DVM_Char *str = (DVM_Char*)EXECUTE_MEM_Malloc(sizeof(DVM_Char) * (iLen + 1));
 
     int i = 0;
@@ -864,9 +864,7 @@ void Execute::CreateVirtualMachine()
 void Execute::DisposeVirtualMachine()
 {
     m_pVirtualMachine->static_v.variable_count = 0;
-
-    GarbageCollect garbageCollect(m_Debug, m_Memory);
-    garbageCollect.GC(m_pVirtualMachine);
+    m_GarbageCollect.GC(m_pVirtualMachine);
 
     EXECUTE_MEM_Free(m_pVirtualMachine->stack.stack);
     EXECUTE_MEM_Free(m_pVirtualMachine->stack.pointer_flags);
