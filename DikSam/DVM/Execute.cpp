@@ -28,6 +28,8 @@ DVM_Value Execute::operator () (DVM_Executable* pExecutable)
     m_Native.AddNativeFunctions(m_pVirtualMachine);
     AddExecutable(pExecutable);
 
+    m_pVirtualMachine->pc = 0;
+    ExpandStack(m_pVirtualMachine->executable->need_stack_size);
     DVM_Value ret = ExecuteCode(nullptr, m_pVirtualMachine->executable->code, m_pVirtualMachine->executable->code_size);
 
     DisposeVirtualMachine();
@@ -286,22 +288,23 @@ void Execute::InvokeDikSamFunction(Function **ppCaller, Function *pCallee, DVM_B
 
     ExpandStack(CALL_INFO_ALIGN_SIZE + pCalleeFunction->local_variable_count + (*ppExe)->function[pCallee->u.diksam_f.index].need_stack_size);
 
-    CallInfo *pCallInfo = (CallInfo*)&m_pVirtualMachine->stack.stack[*pSP - 1];
+    CallInfo *pCallInfo = (CallInfo*)&m_pVirtualMachine->stack.stack[(*pSP - 1)];
     pCallInfo->caller = *ppCaller;
     pCallInfo->caller_address = *pPC;
     pCallInfo->base = *pBase;
 
     for (int i = 0; i < CALL_INFO_ALIGN_SIZE; i++)
     {
-        m_pVirtualMachine->stack.pointer_flags[*pSP - 1 + i] = DVM_FALSE;
+        m_pVirtualMachine->stack.pointer_flags[(*pSP - 1) + i] = DVM_FALSE;
     }
 
-    *pBase = *pSP - pCalleeFunction->parameter_count - 1;
+    *pBase = (*pSP - 1) - pCalleeFunction->parameter_count;
     *ppCaller = pCallee;
 
-    InitializeLocalVariables(pCalleeFunction, *pSP + CALL_INFO_ALIGN_SIZE - 1);
+    InitializeLocalVariables(pCalleeFunction, (*pSP - 1) + CALL_INFO_ALIGN_SIZE);
 
-    *pSP += CALL_INFO_ALIGN_SIZE + pCalleeFunction->local_variable_count - 1;
+    *pSP = (*pSP - 1);
+    *pSP += CALL_INFO_ALIGN_SIZE + pCalleeFunction->local_variable_count;
     *pPC = 0;
 
     *ppCode = (*ppExe)->function[pCallee->u.diksam_f.index].code;
@@ -310,9 +313,9 @@ void Execute::InvokeDikSamFunction(Function **ppCaller, Function *pCallee, DVM_B
 
 void Execute::ReturnFunction(Function **ppFunction, DVM_Byte **ppCode, int *pCodeSize, int *pPC, int *pSP, int *pBase, DVM_Executable **ppExe)
 {
-    DVM_Value returnValue = m_pVirtualMachine->stack.stack[(*pSP) - 1];
+    DVM_Value returnValue = m_pVirtualMachine->stack.stack[(*pSP - 1)];
     DVM_Function *pCallee = &(*ppExe)->function[(*ppFunction)->u.diksam_f.index];
-    CallInfo *pCallInfo = (CallInfo*)&m_pVirtualMachine->stack.stack[*pSP - 1 - pCallee->local_variable_count - CALL_INFO_ALIGN_SIZE];
+    CallInfo *pCallInfo = (CallInfo*)&m_pVirtualMachine->stack.stack[(*pSP - 1) - pCallee->local_variable_count - CALL_INFO_ALIGN_SIZE];
 
     if (pCallInfo->caller)
     {
