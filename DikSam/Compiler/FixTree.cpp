@@ -856,11 +856,13 @@ Expression* FixTree::ChainString(Expression *pExpression)
         return pExpression;
     }
 
-    int iLen = std::basic_string<DVM_Char>(pLeftStr).length()
-             + std::basic_string<DVM_Char>(pRightStr).length();
+    int iLen = std::basic_string<DVM_Char>(pLeftStr).length() + std::basic_string<DVM_Char>(pRightStr).length();
 
-    DVM_Char *pNewStr = (DVM_Char*)STRING_UTIL_Malloc(sizeof(DVM_Char) * (iLen + 1));
+    DVM_Char *pNewStr = (DVM_Char*)FIXTREE_MEM_Malloc(sizeof(DVM_Char) * (iLen + 1));
     wcscpy_s(pNewStr, iLen + 1, (std::basic_string<DVM_Char>(pLeftStr) + std::basic_string<DVM_Char>(pRightStr)).c_str());
+
+    FIXTREE_MEM_Free(pLeftStr);
+    FIXTREE_MEM_Free(pRightStr);
 
     pExpression->kind = STRING_EXPRESSION;
     pExpression->type = m_Util.AllocTypeSpecifier(DVM_STRING_TYPE);

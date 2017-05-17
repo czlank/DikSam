@@ -46,7 +46,7 @@ StringLiteral::StringLiteral(Memory& memory, Storage& storage, Util& util, Error
     , m_Util(util)
     , m_Error(error)
 {
-
+    Reset();
 }
 
 StringLiteral::~StringLiteral()
@@ -56,7 +56,7 @@ StringLiteral::~StringLiteral()
 
 void StringLiteral::Open()
 {
-    Reset();
+    
 }
 
 void StringLiteral::Add(int letter)
@@ -88,6 +88,8 @@ DVM_Char* StringLiteral::Close()
         pNewStr[i] = str[i];
     }
     pNewStr[str.length()] = L'\0';
+
+    Reset();
 
     return pNewStr;
 }

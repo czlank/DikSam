@@ -150,7 +150,7 @@ DVM_Char* Util::ExpressionToString(Expression *stExpr)
 
     std::basic_string<DVM_Char> exprVal(dvmChar.str());
     int iLen = exprVal.length();
-    DVM_Char *pNewStr = (DVM_Char*)UTIL_STORAGE_MALLOC(sizeof(DVM_Char)* (iLen + 1));
+    DVM_Char *pNewStr = (DVM_Char*)UTIL_MEM_MALLOC(sizeof(DVM_Char) * (iLen + 1));
     wcscpy_s(pNewStr, iLen + 1, exprVal.c_str());
 
     return pNewStr;
