@@ -82,7 +82,7 @@ DVM_Char* StringLiteral::Close()
     std::wstring str(_Dest);
     delete [] _Dest;
 
-    DVM_Char *pNewStr = (DVM_Char*)STRING_MEM_Malloc(sizeof(DVM_Char*) * (str.length() + 1));
+    DVM_Char *pNewStr = (DVM_Char*)STRING_MEM_Malloc(sizeof(DVM_Char) * (str.length() + 1));
     for (size_t i = 0; i < str.length(); i++)
     {
         pNewStr[i] = str[i];

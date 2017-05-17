@@ -20,7 +20,7 @@ void* Memory::Malloc(const char *lpcstrFileName, int iLine, size_t szSize)
     size_t  szAllocSize;
 
 #ifdef _DEBUG
-    szAllocSize = szSize + sizeof(Header)+MARK_SIZE;
+    szAllocSize = szSize + sizeof(Header) + MARK_SIZE;
 #else
     szAllocSize = szSize;
 #endif // _DEBUG
@@ -166,7 +166,7 @@ void Memory::Free(void *ptr)
     void *RealPtr = ptr;
 #endif // _DEBUG
 
-    delete[] RealPtr;
+    delete [] RealPtr;
 }
 
 void Memory::DumpBlocks(std::ostream& out)
@@ -219,7 +219,7 @@ void Memory::CheckAllBlocks()
 
     for (pos = m_BlockHeader; pos; pos = pos->m_stHeader.m_pNext)
     {
-        CheckBlock(pos);
+        CheckMark(pos);
     }
 #endif // _DEBUG
 }
