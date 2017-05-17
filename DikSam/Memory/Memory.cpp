@@ -88,7 +88,14 @@ void* Memory::Realloc(const char *lpcstrFileName, int iLine, void *ptr, size_t s
     if (ptr)
     {
 #ifdef _DEBUG
-        memcpy((char*)pNewPtr + sizeof(Header), ptr, szOldSize);
+        if (szOldSize >= szSize)
+        {
+            memcpy((char*)pNewPtr + sizeof(Header), ptr, szSize);
+        }
+        else
+        {
+            memcpy((char*)pNewPtr + sizeof(Header), ptr, szOldSize);
+        }
 #endif // _DEBUG
 
         delete[] RealPtr;
@@ -174,6 +181,8 @@ void Memory::DumpBlocks(std::ostream& out)
 #ifdef _DEBUG
     int iCounter = 0;
 
+    out << "################################################################################" << std::endl;
+
     for (Header *pos = m_BlockHeader; pos; pos = pos->m_stHeader.m_pNext)
     {
         CheckMark(pos);
@@ -200,6 +209,8 @@ void Memory::DumpBlocks(std::ostream& out)
 
         iCounter++;
     }
+
+    out << "################################################################################" << std::endl << std::endl;
 #endif // _DEBUG
 }
 
