@@ -19,11 +19,7 @@ void* Memory::Malloc(const char *lpcstrFileName, int iLine, size_t szSize)
 {
     size_t  szAllocSize;
 
-#ifdef _DEBUG
     szAllocSize = szSize + sizeof(Header) + MARK_SIZE;
-#else
-    szAllocSize = szSize;
-#endif // _DEBUG
 
     void *ptr = new unsigned char[szAllocSize]();
     if (nullptr == ptr)
@@ -31,13 +27,11 @@ void* Memory::Malloc(const char *lpcstrFileName, int iLine, size_t szSize)
         ErrorHandler(m_Out, lpcstrFileName, iLine, "malloc");
     }
 
-#ifdef _DEBUG
     memset(ptr, INITIAL_MARK, szAllocSize);
     SetHeader((Header*)ptr, szSize, lpcstrFileName, iLine);
     SetTail(ptr, szAllocSize);
     ChainBlock((Header*)ptr);
     ptr = (char*)ptr + sizeof(Header);
-#endif // _DEBUG
 
     return ptr;
 }
@@ -47,7 +41,6 @@ void* Memory::Realloc(const char *lpcstrFileName, int iLine, void *ptr, size_t s
     size_t  szAllocSize;
     void    *RealPtr;
 
-#ifdef _DEBUG
     Header  stOldHeader;
     size_t  szOldSize;
 
@@ -66,10 +59,6 @@ void* Memory::Realloc(const char *lpcstrFileName, int iLine, void *ptr, size_t s
         RealPtr = nullptr;
         szOldSize = 0;
     }
-#else
-    szAllocSize = szSize;
-    RealPtr = ptr;
-#endif // _DEBUG
 
     void *pNewPtr = new unsigned char[szAllocSize]();
 
@@ -87,7 +76,6 @@ void* Memory::Realloc(const char *lpcstrFileName, int iLine, void *ptr, size_t s
 
     if (ptr)
     {
-#ifdef _DEBUG
         if (szOldSize >= szSize)
         {
             memcpy((char*)pNewPtr + sizeof(Header), ptr, szSize);
@@ -96,13 +84,11 @@ void* Memory::Realloc(const char *lpcstrFileName, int iLine, void *ptr, size_t s
         {
             memcpy((char*)pNewPtr + sizeof(Header), ptr, szOldSize);
         }
-#endif // _DEBUG
 
-        delete[] RealPtr;
+        delete [] RealPtr;
         RealPtr = nullptr;
     }
 
-#ifdef _DEBUG
     if (ptr)
     {
         *((Header*)pNewPtr) = stOldHeader;
@@ -123,7 +109,6 @@ void* Memory::Realloc(const char *lpcstrFileName, int iLine, void *ptr, size_t s
     {
         memset((char *)pNewPtr + szOldSize, INITIAL_MARK, szSize - szOldSize);
     }
-#endif // _DEBUG
 
     return pNewPtr;
 }
@@ -133,11 +118,7 @@ char* Memory::StrDUP(const char *lpcstrFileName, int iLine, const char *lpcstrSt
     size_t szAllocSize;
     int iSize = lpcstrStr ? (std::string(lpcstrStr).length() + 1) : 1;
 
-#ifdef _DEBUG
     szAllocSize = iSize + sizeof(Header) + MARK_SIZE;
-#else
-    szAllocSize = iSize;
-#endif // _DEBUG
 
     char *ptr = new char[szAllocSize]();
     if (nullptr == ptr)
@@ -145,13 +126,11 @@ char* Memory::StrDUP(const char *lpcstrFileName, int iLine, const char *lpcstrSt
         ErrorHandler(m_Out, lpcstrFileName, iLine, "strdup");
     }
 
-#ifdef _DEBUG
     memset(ptr, INITIAL_MARK, szAllocSize);
     SetHeader((Header*)ptr, iSize, lpcstrFileName, iLine);
     SetTail(ptr, szAllocSize);
     ChainBlock((Header*)ptr);
     ptr = (char*)ptr + sizeof(Header);
-#endif // _DEBUG
 
     strcpy_s(ptr, iSize, lpcstrStr);
 
@@ -163,22 +142,17 @@ void Memory::Free(void *ptr)
     if (nullptr == ptr)
         return;
 
-#ifdef _DEBUG
     void *RealPtr = (char*)ptr - sizeof(Header);
     CheckMark((Header*)RealPtr);
     
     int iSize = ((Header*)RealPtr)->m_stHeader.m_iSize;
     UnChainBlock((Header*)RealPtr);
-#else
-    void *RealPtr = ptr;
-#endif // _DEBUG
 
     delete [] RealPtr;
 }
 
 void Memory::DumpBlocks(std::ostream& out)
 {
-#ifdef _DEBUG
     int iCounter = 0;
 
     out << "################################################################################" << std::endl;
@@ -202,8 +176,13 @@ void Memory::DumpBlocks(std::ostream& out)
                 out << '.';
             }
 
-            if (0 == ++i % 16)
+            i++;
+            if (0 == i % 64)
                 out << std::endl;
+            else if (0 == i % 16)
+                out << "  ";
+            else if (0 == i % 8)
+                out << " ";
         }
         out << std::endl << "====" << std::endl;
 
@@ -211,31 +190,25 @@ void Memory::DumpBlocks(std::ostream& out)
     }
 
     out << "################################################################################" << std::endl << std::endl;
-#endif // _DEBUG
 }
 
 void Memory::CheckBlock(void *p)
 {
-#ifdef _DEBUG
     void *RealPtr = ((char*)p) - sizeof(Header);
 
     CheckMark((Header*)RealPtr);
-#endif // _DEBUG
 }
 
 void Memory::CheckAllBlocks()
 {
-#ifdef _DEBUG
     Header  *pos;
 
     for (pos = m_BlockHeader; pos; pos = pos->m_stHeader.m_pNext)
     {
         CheckMark(pos);
     }
-#endif // _DEBUG
 }
 
-#ifdef _DEBUG
 void Memory::ChainBlock(Header *pHeader)
 {
     if (m_BlockHeader)
@@ -322,7 +295,6 @@ void Memory::CheckMark(Header *pHeader)
     tail = ((unsigned char*)pHeader) + pHeader->m_stHeader.m_iSize + sizeof(Header);
     CheckMarkSub(tail, MARK_SIZE);
 }
-#endif // _DEBUG
 
 void Memory::ErrorHandler(std::ostream& out, const char *lpcstrFileName, int iLine, const char *lpcstrMsg)
 {

@@ -58,7 +58,6 @@ public:
     void CheckAllBlocks();
 
 private:
-#ifdef _DEBUG
     void ChainBlock(Header *pHeader);
     void ReChainBlock(Header *pHeader);
     void UnChainBlock(Header *pHeader);
@@ -66,7 +65,6 @@ private:
     void SetTail(void *ptr, int iAllocSize);
     void CheckMarkSub(unsigned char *czMark, int iSize);
     void CheckMark(Header *pHeader);
-#endif // _DEBUG
 
     void ErrorHandler(std::ostream& out, const char *lpcstrFileName, int iLine, const char *lpcstrMsg);
 

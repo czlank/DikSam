@@ -272,42 +272,41 @@ void Generate::GenerateAssignExpression(DVM_Executable *pExecutable, Block *pBlo
 
     GenerateExpression(pExecutable, pBlock, pExpression->u.assign_expression.operand, pOpcode);
 
-    DVM_Opcode code;
     switch (pExpression->u.assign_expression.op)
     {
     case NORMAL_ASSIGN :
-        code = DVM_ADD_INT;
+        break;
+
+    case ADD_ASSIGN :
+        GenerateCode(pOpcode, pExpression->line_number, DVM_Opcode(DVM_ADD_INT + GetOpcodeTypeOffset(pExpression->type->basic_type)));
         break;
 
     case SUB_ASSIGN :
-        code = DVM_SUB_INT;
+        GenerateCode(pOpcode, pExpression->line_number, DVM_Opcode(DVM_SUB_INT + GetOpcodeTypeOffset(pExpression->type->basic_type)));
         break;
 
     case MUL_ASSIGN :
-        code = DVM_MUL_INT;
+        GenerateCode(pOpcode, pExpression->line_number, DVM_Opcode(DVM_MUL_INT + GetOpcodeTypeOffset(pExpression->type->basic_type)));
         break;
 
     case DIV_ASSIGN :
-        code = DVM_DIV_INT;
+        GenerateCode(pOpcode, pExpression->line_number, DVM_Opcode(DVM_DIV_INT + GetOpcodeTypeOffset(pExpression->type->basic_type)));
         break;
 
     case MOD_ASSIGN :
-        code = DVM_MOD_INT;
+        GenerateCode(pOpcode, pExpression->line_number, DVM_Opcode(DVM_MOD_INT + GetOpcodeTypeOffset(pExpression->type->basic_type)));
         break;
 
     default :
         GENERATE_DBG_Assert(0, ("operator..", pExpression->u.assign_expression.op));
     }
 
-    GenerateCode(pOpcode, pExpression->line_number, DVM_Opcode(code + GetOpcodeTypeOffset(pExpression->type->basic_type)));
-
     if (!isTopLevel)
     {
         GenerateCode(pOpcode, pExpression->line_number, DVM_DUPLICATE);
     }
 
-    GeneratePopToIdentifier(pExpression->u.assign_expression.left->u.identifier.u.declaration,
-        pExpression->line_number, pOpcode);
+    GeneratePopToIdentifier(pExpression->u.assign_expression.left->u.identifier.u.declaration, pExpression->line_number, pOpcode);
 }
 
 void Generate::GenerateBinaryExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, DVM_Opcode opCode, OpcodeBuf *pOpcode)

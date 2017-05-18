@@ -27,6 +27,12 @@ DIKSAM_DECLARE int RunScript(int iThreadIndex, const char* lpctstrScriptFile)
     g_iCurrentThreadIndex = iThreadIndex;
 
     std::ifstream ifs(lpctstrScriptFile);
+
+    if (!ifs)
+    {
+        return 0;
+    }
+
     std::vector<std::string> vecScriptFile;
     std::string sLine;
 
