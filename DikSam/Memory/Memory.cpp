@@ -17,9 +17,7 @@ Memory::~Memory()
 
 void* Memory::Malloc(const char *lpcstrFileName, int iLine, size_t szSize)
 {
-    size_t  szAllocSize;
-
-    szAllocSize = szSize + sizeof(Header) + MARK_SIZE;
+    size_t  szAllocSize = szSize + sizeof(Header) + MARK_SIZE;
 
     void *ptr = new unsigned char[szAllocSize]();
     if (nullptr == ptr)
@@ -115,10 +113,8 @@ void* Memory::Realloc(const char *lpcstrFileName, int iLine, void *ptr, size_t s
 
 char* Memory::StrDUP(const char *lpcstrFileName, int iLine, const char *lpcstrStr)
 {
-    size_t szAllocSize;
     int iSize = lpcstrStr ? (std::string(lpcstrStr).length() + 1) : 1;
-
-    szAllocSize = iSize + sizeof(Header) + MARK_SIZE;
+    size_t szAllocSize = iSize + sizeof(Header)+MARK_SIZE;
 
     char *ptr = new char[szAllocSize]();
     if (nullptr == ptr)
@@ -144,18 +140,32 @@ void Memory::Free(void *ptr)
 
     void *RealPtr = (char*)ptr - sizeof(Header);
     CheckMark((Header*)RealPtr);
-    
-    int iSize = ((Header*)RealPtr)->m_stHeader.m_iSize;
     UnChainBlock((Header*)RealPtr);
 
     delete [] RealPtr;
+}
+
+void Memory::FreeLiteralPool()
+{
+    for (Header *pos = m_BlockHeader; pos;)
+    {
+        CheckMark(pos);
+        UnChainBlock(pos);
+
+        void *ptr = pos;
+        pos = pos->m_stHeader.m_pNext;
+        delete [] ptr;
+    }
 }
 
 void Memory::DumpBlocks(std::ostream& out)
 {
     int iCounter = 0;
 
-    out << "################################################################################" << std::endl;
+    if (m_BlockHeader)
+    {
+        out << "################################################################################" << std::endl;
+    }
 
     for (Header *pos = m_BlockHeader; pos; pos = pos->m_stHeader.m_pNext)
     {
@@ -189,7 +199,10 @@ void Memory::DumpBlocks(std::ostream& out)
         iCounter++;
     }
 
-    out << "################################################################################" << std::endl << std::endl;
+    if (m_BlockHeader)
+    {
+        out << "################################################################################" << std::endl << std::endl;
+    }
 }
 
 void Memory::CheckBlock(void *p)
@@ -201,9 +214,7 @@ void Memory::CheckBlock(void *p)
 
 void Memory::CheckAllBlocks()
 {
-    Header  *pos;
-
-    for (pos = m_BlockHeader; pos; pos = pos->m_stHeader.m_pNext)
+    for (Header *pos = m_BlockHeader; pos; pos = pos->m_stHeader.m_pNext)
     {
         CheckMark(pos);
     }

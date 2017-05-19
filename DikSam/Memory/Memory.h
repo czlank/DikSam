@@ -52,6 +52,7 @@ public:
     void* Realloc(const char *lpcstrFileName, int iLine, void *ptr, size_t szSize);
     char* StrDUP(const char *lpcstrFileName, int iLine, const char *lpcstrStr);
     void  Free(void *ptr);
+    void  FreeLiteralPool();
 
     void DumpBlocks(std::ostream& out);
     void CheckBlock(void *p);

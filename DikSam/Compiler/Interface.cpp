@@ -72,6 +72,7 @@ void Interface::RunScript(char **ppLines)
     Execute(m_Debug, m_Memory, m_Error)(pExecutable);
 
     ResetCompiler();
+    m_Memory.FreeLiteralPool();
 
     m_Memory.CheckAllBlocks();
     m_Memory.DumpBlocks(m_MemoryDump);
