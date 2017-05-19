@@ -42,17 +42,16 @@ Interface::Interface(Debug& debug, Memory& memory, Storage& storage, Util& util,
     , m_pCompiler(nullptr)
     , m_iThreadIndex(iThreadIndex)
 {
-    m_MemoryDump.open("MemoryDump.dmp", std::ofstream::out | std::ofstream::trunc);
 }
 
 Interface::~Interface()
 {
-    m_MemoryDump.flush();
-    m_MemoryDump.close();
 }
 
 void Interface::RunScript(FILE *pFile)
 {
+    m_MemoryDump.open("MemoryDump.dmp", std::ofstream::out | std::ofstream::trunc);
+    
     DVM_Executable *pExecutable = Compile(pFile);
     Execute(m_Debug, m_Memory, m_Error)(pExecutable);
 
@@ -60,10 +59,15 @@ void Interface::RunScript(FILE *pFile)
 
     m_Memory.CheckAllBlocks();
     m_Memory.DumpBlocks(m_MemoryDump);
+
+    m_MemoryDump.flush();
+    m_MemoryDump.close();
 }
 
 void Interface::RunScript(char **ppLines)
 {
+    m_MemoryDump.open("MemoryDump.dmp", std::ofstream::out | std::ofstream::trunc);
+
     DVM_Executable *pExecutable = Compile(ppLines);
     Execute(m_Debug, m_Memory, m_Error)(pExecutable);
 
@@ -71,6 +75,9 @@ void Interface::RunScript(char **ppLines)
 
     m_Memory.CheckAllBlocks();
     m_Memory.DumpBlocks(m_MemoryDump);
+
+    m_MemoryDump.flush();
+    m_MemoryDump.close();
 }
 
 DVM_Executable* Interface::Compile(FILE *pFile)
