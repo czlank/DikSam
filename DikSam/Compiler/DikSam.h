@@ -17,6 +17,8 @@ public:
 
     static DikSam* GetClassObject(int iThreadIndex);
 
+    char** Translate(const char* lpctstrScriptFile);
+
     Debug* GetDebug() { return &m_Debug; }
     Memory* GetMemory() { return &m_Memory; }
     Storage* GetStorage() { return &m_Storage; }
@@ -28,6 +30,8 @@ public:
 
 private:
     static std::map<int, std::auto_ptr<DikSam>> m_DikSamObject;
+    std::vector<std::string>                    m_vecScriptFile;
+    std::auto_ptr<char*>                        m_ppLines;
 
     int             m_iThreadIndex;
     Debug           m_Debug;

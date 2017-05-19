@@ -26,51 +26,11 @@ DIKSAM_DECLARE int RunScript(int iThreadIndex, const char* lpctstrScriptFile)
     setlocale(LC_CTYPE, "");
     g_iCurrentThreadIndex = iThreadIndex;
 
-    std::ifstream ifs(lpctstrScriptFile);
+    DikSam *pDikSam = DikSam::GetClassObject(g_iCurrentThreadIndex);
 
-    if (!ifs)
+    if (char **ppLines = pDikSam->Translate(lpctstrScriptFile))
     {
-        return 0;
-    }
-
-    std::vector<std::string> vecScriptFile;
-    std::string sLine;
-
-    while (std::getline(ifs, sLine))
-    {
-        sLine += "\n";
-        vecScriptFile.push_back(sLine);
-    }
-
-    vecScriptFile.push_back("");
-
-    std::auto_ptr<char*> ppLines(new char*[vecScriptFile.size()]());
-    for (size_t i = 0; i < vecScriptFile.size(); i++)
-    {
-#pragma message ("*** WARNING : force const char* cast to char* is dangerous ***")
-#pragma message ("这里进行强制转换时，已经确定const char*中的内容不会改变，转换的目的仅用于能够完全编译")
-        ppLines.get()[i] = const_cast<char*>(vecScriptFile[i].c_str());
-    }
-
-    try
-    {
-        DikSam::GetClassObject(iThreadIndex)->GetInterface()->RunScript(ppLines.get());
-    }
-    catch (const PanicException& e)
-    {
-        std::cout << e.what();
-    }
-    catch (const AssertException& e)
-    {
-        std::cout << e.what();
-    }
-    catch (const MemoryException& e)
-    {
-        std::cout << e.what();
-    }
-    catch (const ErrorException& e)
-    {
-        std::cout << e.what();
+        pDikSam->GetInterface()->RunScript(ppLines);
     }
 
 	return 0;

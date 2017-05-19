@@ -50,35 +50,73 @@ Interface::~Interface()
 
 void Interface::RunScript(FILE *pFile)
 {
-    m_MemoryDump.open("MemoryDump.dmp", std::ofstream::out | std::ofstream::trunc);
+    try
+    {
+        m_MemoryDump.open("MemoryDump.dmp", std::ofstream::out | std::ofstream::trunc);
     
-    DVM_Executable *pExecutable = Compile(pFile);
-    Execute(m_Debug, m_Memory, m_Error)(pExecutable);
+        DVM_Executable *pExecutable = Compile(pFile);
+        Execute(m_Debug, m_Memory, m_Error)(pExecutable);
 
-    ResetCompiler();
+        ResetCompiler();
 
-    m_Memory.CheckAllBlocks();
-    m_Memory.DumpBlocks(m_MemoryDump);
+        m_Memory.CheckAllBlocks();
+        m_Memory.DumpBlocks(m_MemoryDump);
 
-    m_MemoryDump.flush();
-    m_MemoryDump.close();
+        m_MemoryDump.flush();
+        m_MemoryDump.close();
+    }
+    catch (const PanicException& e)
+    {
+        std::cout << e.what();
+    }
+    catch (const AssertException& e)
+    {
+        std::cout << e.what();
+    }
+    catch (const MemoryException& e)
+    {
+        std::cout << e.what();
+    }
+    catch (const ErrorException& e)
+    {
+        std::cout << e.what();
+    }
 }
 
 void Interface::RunScript(char **ppLines)
 {
-    m_MemoryDump.open("MemoryDump.dmp", std::ofstream::out | std::ofstream::trunc);
+    try
+    {
+        m_MemoryDump.open("MemoryDump.dmp", std::ofstream::out | std::ofstream::trunc);
 
-    DVM_Executable *pExecutable = Compile(ppLines);
-    Execute(m_Debug, m_Memory, m_Error)(pExecutable);
+        DVM_Executable *pExecutable = Compile(ppLines);
+        Execute(m_Debug, m_Memory, m_Error)(pExecutable);
 
-    ResetCompiler();
-    m_Memory.FreeLiteralPool();
+        ResetCompiler();
+        m_Memory.FreeLiteralPool();
 
-    m_Memory.CheckAllBlocks();
-    m_Memory.DumpBlocks(m_MemoryDump);
+        m_Memory.CheckAllBlocks();
+        m_Memory.DumpBlocks(m_MemoryDump);
 
-    m_MemoryDump.flush();
-    m_MemoryDump.close();
+        m_MemoryDump.flush();
+        m_MemoryDump.close();
+    }
+    catch (const PanicException& e)
+    {
+        std::cout << e.what();
+    }
+    catch (const AssertException& e)
+    {
+        std::cout << e.what();
+    }
+    catch (const MemoryException& e)
+    {
+        std::cout << e.what();
+    }
+    catch (const ErrorException& e)
+    {
+        std::cout << e.what();
+    }
 }
 
 DVM_Executable* Interface::Compile(FILE *pFile)
