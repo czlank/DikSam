@@ -85,6 +85,7 @@ void Execute::AddFunctions(DVM_Executable *pExecutable)
             continue;
 
         m_pVirtualMachine->function[iDestIdx].name = EXECUTE_MEM_StrDUP(pExecutable->function[iSrcIdx].name);
+        m_pVirtualMachine->function[iDestIdx].kind = DIKSAM_FUNCTION;
         m_pVirtualMachine->function[iDestIdx].u.diksam_f.executable = pExecutable;
         m_pVirtualMachine->function[iDestIdx].u.diksam_f.index = iSrcIdx;
 
