@@ -23,8 +23,6 @@ typedef enum
     DIKSAM_FUNCTION
 } FunctionKind;
 
-class Native;
-
 typedef struct 
 {
     DVM_NativeFunctionProc  *proc;
