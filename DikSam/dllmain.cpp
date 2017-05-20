@@ -33,5 +33,5 @@ DIKSAM_DECLARE int RunScript(int iThreadIndex, const char* lpctstrScriptFile)
         pDikSam->GetInterface()->RunScript(ppLines);
     }
 
-	return 0;
+    return 0;
 }

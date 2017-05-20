@@ -26,11 +26,22 @@ void Native::AddNativeFunction(DVM_VirtualMachine *pVirtualMachine, const char *
     pVirtualMachine->function[pVirtualMachine->function_count].name = NATIVE_MEM_StrDUP(lpcstrFuncName);
     pVirtualMachine->function[pVirtualMachine->function_count].kind = NATIVE_FUNCTION;
     pVirtualMachine->function[pVirtualMachine->function_count].u.native_f.proc = pProc;
+    pVirtualMachine->function[pVirtualMachine->function_count].u.native_f.pThis = this;
     pVirtualMachine->function[pVirtualMachine->function_count].u.native_f.arg_count = iArgCount;
     pVirtualMachine->function_count++;
 }
 
-DVM_Value Native::PrintProc(DVM_VirtualMachine *pVirtualMachine, int iArgCount, DVM_Value *pArgs)
+DVM_Value Native::PrintProc(Native *pThis, DVM_VirtualMachine *pVirtualMachine, int iArgCount, DVM_Value *pArgs)
+{
+    return pThis->Print(pVirtualMachine, iArgCount, pArgs);
+}
+
+DVM_Value Native::SleepProc(Native *pThis, DVM_VirtualMachine *pVirtualMachine, int iArgCount, DVM_Value *pArgs)
+{
+    return pThis->Sleep(pVirtualMachine, iArgCount, pArgs);
+}
+
+DVM_Value Native::Print(DVM_VirtualMachine *pVirtualMachine, int iArgCount, DVM_Value *pArgs)
 {
     DVM_Value ret;
 
@@ -48,7 +59,7 @@ DVM_Value Native::PrintProc(DVM_VirtualMachine *pVirtualMachine, int iArgCount, 
     return ret;
 }
 
-DVM_Value Native::SleepProc(DVM_VirtualMachine *pVirtualMachine, int iArgCount, DVM_Value *pArgs)
+DVM_Value Native::Sleep(DVM_VirtualMachine *pVirtualMachine, int iArgCount, DVM_Value *pArgs)
 {
     DVM_Value ret;
 
@@ -59,7 +70,7 @@ DVM_Value Native::SleepProc(DVM_VirtualMachine *pVirtualMachine, int iArgCount, 
         return ret;
     }
 
-    Sleep(pArgs[0].int_value);
+    ::Sleep(pArgs[0].int_value);
 
     ret.int_value = 0;
 

@@ -8,7 +8,8 @@ extern "C"
 {
 #endif  // __cplusplus
 
-typedef DVM_Value DVM_NativeFunctionProc(DVM_VirtualMachine *dvm, int arg_count, DVM_Value *args);
+class Native;
+typedef DVM_Value DVM_NativeFunctionProc(Native *pThis, DVM_VirtualMachine *dvm, int arg_count, DVM_Value *args);
 
 #ifdef __cplusplus
 }

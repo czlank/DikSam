@@ -274,7 +274,8 @@ void Execute::InvokeNativeFunction(Function *pFunction, int *pSP)
 
     DVM_Value *stack = m_pVirtualMachine->stack.stack;
     int sp = *pSP;
-    DVM_Value ret = pFunction->u.native_f.proc(m_pVirtualMachine,
+    DVM_Value ret = pFunction->u.native_f.proc(pFunction->u.native_f.pThis,
+        m_pVirtualMachine,
         pFunction->u.native_f.arg_count,
         &stack[sp - pFunction->u.native_f.arg_count - 1]);
 
