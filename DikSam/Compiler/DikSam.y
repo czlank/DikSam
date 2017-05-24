@@ -24,7 +24,7 @@
 %token <expression>     STRING_LITERAL
 %token <identifier>     IDENTIFIER
 
-%token IF ELSE ELSIF WHILE FOR RETURN_T BREAK CONTINUE
+%token IF ELSE WHILE FOR RETURN_T BREAK CONTINUE
        LEFTP RIGHTP LC RC SEMICOLON COLON COMMA ASSIGN_T LOGICAL_AND LOGICAL_OR
        EQ NE GT GE LT LE ADD SUB MUL DIV MOD TRUE_T FALSE_T EXCLAMATION DOT
        ADD_ASSIGN_T SUB_ASSIGN_T MUL_ASSIGN_T DIV_ASSIGN_T MOD_ASSIGN_T
@@ -119,9 +119,9 @@ elsif_list
         ;
 
 elsif
-        : ELSIF LEFTP expression RIGHTP block
+        : ELSE IF LEFTP expression RIGHTP block
         {
-            $$ = dkc_create_elsif($3, $5);
+            $$ = dkc_create_elsif($4, $6);
         }
         ;
 

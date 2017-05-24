@@ -44,52 +44,51 @@
      IDENTIFIER = 261,
      IF = 262,
      ELSE = 263,
-     ELSIF = 264,
-     WHILE = 265,
-     FOR = 266,
-     RETURN_T = 267,
-     BREAK = 268,
-     CONTINUE = 269,
-     LEFTP = 270,
-     RIGHTP = 271,
-     LC = 272,
-     RC = 273,
-     SEMICOLON = 274,
-     COLON = 275,
-     COMMA = 276,
-     ASSIGN_T = 277,
-     LOGICAL_AND = 278,
-     LOGICAL_OR = 279,
-     EQ = 280,
-     NE = 281,
-     GT = 282,
-     GE = 283,
-     LT = 284,
-     LE = 285,
-     ADD = 286,
-     SUB = 287,
-     MUL = 288,
-     DIV = 289,
-     MOD = 290,
-     TRUE_T = 291,
-     FALSE_T = 292,
-     EXCLAMATION = 293,
-     DOT = 294,
-     ADD_ASSIGN_T = 295,
-     SUB_ASSIGN_T = 296,
-     MUL_ASSIGN_T = 297,
-     DIV_ASSIGN_T = 298,
-     MOD_ASSIGN_T = 299,
-     INCREMENT = 300,
-     DECREMENT = 301,
-     TRY = 302,
-     CATCH = 303,
-     FINALLY = 304,
-     THROW = 305,
-     BOOLEAN_T = 306,
-     INT_T = 307,
-     DOUBLE_T = 308,
-     STRING_T = 309
+     WHILE = 264,
+     FOR = 265,
+     RETURN_T = 266,
+     BREAK = 267,
+     CONTINUE = 268,
+     LEFTP = 269,
+     RIGHTP = 270,
+     LC = 271,
+     RC = 272,
+     SEMICOLON = 273,
+     COLON = 274,
+     COMMA = 275,
+     ASSIGN_T = 276,
+     LOGICAL_AND = 277,
+     LOGICAL_OR = 278,
+     EQ = 279,
+     NE = 280,
+     GT = 281,
+     GE = 282,
+     LT = 283,
+     LE = 284,
+     ADD = 285,
+     SUB = 286,
+     MUL = 287,
+     DIV = 288,
+     MOD = 289,
+     TRUE_T = 290,
+     FALSE_T = 291,
+     EXCLAMATION = 292,
+     DOT = 293,
+     ADD_ASSIGN_T = 294,
+     SUB_ASSIGN_T = 295,
+     MUL_ASSIGN_T = 296,
+     DIV_ASSIGN_T = 297,
+     MOD_ASSIGN_T = 298,
+     INCREMENT = 299,
+     DECREMENT = 300,
+     TRY = 301,
+     CATCH = 302,
+     FINALLY = 303,
+     THROW = 304,
+     BOOLEAN_T = 305,
+     INT_T = 306,
+     DOUBLE_T = 307,
+     STRING_T = 308
    };
 #endif
 /* Tokens.  */
@@ -99,52 +98,51 @@
 #define IDENTIFIER 261
 #define IF 262
 #define ELSE 263
-#define ELSIF 264
-#define WHILE 265
-#define FOR 266
-#define RETURN_T 267
-#define BREAK 268
-#define CONTINUE 269
-#define LEFTP 270
-#define RIGHTP 271
-#define LC 272
-#define RC 273
-#define SEMICOLON 274
-#define COLON 275
-#define COMMA 276
-#define ASSIGN_T 277
-#define LOGICAL_AND 278
-#define LOGICAL_OR 279
-#define EQ 280
-#define NE 281
-#define GT 282
-#define GE 283
-#define LT 284
-#define LE 285
-#define ADD 286
-#define SUB 287
-#define MUL 288
-#define DIV 289
-#define MOD 290
-#define TRUE_T 291
-#define FALSE_T 292
-#define EXCLAMATION 293
-#define DOT 294
-#define ADD_ASSIGN_T 295
-#define SUB_ASSIGN_T 296
-#define MUL_ASSIGN_T 297
-#define DIV_ASSIGN_T 298
-#define MOD_ASSIGN_T 299
-#define INCREMENT 300
-#define DECREMENT 301
-#define TRY 302
-#define CATCH 303
-#define FINALLY 304
-#define THROW 305
-#define BOOLEAN_T 306
-#define INT_T 307
-#define DOUBLE_T 308
-#define STRING_T 309
+#define WHILE 264
+#define FOR 265
+#define RETURN_T 266
+#define BREAK 267
+#define CONTINUE 268
+#define LEFTP 269
+#define RIGHTP 270
+#define LC 271
+#define RC 272
+#define SEMICOLON 273
+#define COLON 274
+#define COMMA 275
+#define ASSIGN_T 276
+#define LOGICAL_AND 277
+#define LOGICAL_OR 278
+#define EQ 279
+#define NE 280
+#define GT 281
+#define GE 282
+#define LT 283
+#define LE 284
+#define ADD 285
+#define SUB 286
+#define MUL 287
+#define DIV 288
+#define MOD 289
+#define TRUE_T 290
+#define FALSE_T 291
+#define EXCLAMATION 292
+#define DOT 293
+#define ADD_ASSIGN_T 294
+#define SUB_ASSIGN_T 295
+#define MUL_ASSIGN_T 296
+#define DIV_ASSIGN_T 297
+#define MOD_ASSIGN_T 298
+#define INCREMENT 299
+#define DECREMENT 300
+#define TRY 301
+#define CATCH 302
+#define FINALLY 303
+#define THROW 304
+#define BOOLEAN_T 305
+#define INT_T 306
+#define DOUBLE_T 307
+#define STRING_T 308
 
 
 
@@ -170,7 +168,7 @@ typedef union YYSTYPE
 
 
 /* Line 1685 of yacc.c  */
-#line 174 "y.tab.h"
+#line 172 "y.tab.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
