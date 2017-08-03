@@ -109,6 +109,7 @@ int yywrap(void)
 <INITIAL>"return"       return RETURN_T;
 <INITIAL>"break"        return BREAK;
 <INITIAL>"continue"     return CONTINUE;
+<INITIAL>"null"         return NULL_T;
 <INITIAL>"true"         return TRUE_T;
 <INITIAL>"false"        return FALSE_T;
 <INITIAL>"try"          return TRY;
@@ -119,10 +120,13 @@ int yywrap(void)
 <INITIAL>"int"          return INT_T;
 <INITIAL>"double"       return DOUBLE_T;
 <INITIAL>"string"       return STRING_T;
+<INITIAL>"new"          return NEW;
 <INITIAL>"("            return LEFTP;
 <INITIAL>")"            return RIGHTP;
 <INITIAL>"{"            return LC;
 <INITIAL>"}"            return RC;
+<INITIAL>"["            return LB;
+<INITIAL>"]"            return RB;
 <INITIAL>";"            return SEMICOLON;
 <INITIAL>":"            return COLON;
 <INITIAL>","            return COMMA;
@@ -186,21 +190,10 @@ int yywrap(void)
 <INITIAL>"/*"      BEGIN C_COMMENT;
 <INITIAL>"//"      BEGIN CC_COMMENT;
 <INITIAL>. {
-    char buf[LINE_BUF_SIZE];
-    
-    if (isprint(yytext[0]))
-    {
-        buf[0] = yytext[0];
-        buf[1] = '\0';
-    }
-    else
-    {
-        sprintf_s(buf, "0x%02x", (unsigned char)yytext[0]);
-    }
-    
     dkc_compile_error(dkc_get_current_compiler()->current_line_number,
                       CHARACTER_INVALID_ERR,
-                      (STRING_MESSAGE_ARGUMENT, "bad_char", buf, MESSAGE_ARGUMENT_END));
+                      CHARACTER_MESSAGE_ARGUMENT, "bad_char", yytext[0], 
+                      MESSAGE_ARGUMENT_END);
 }
 
 <C_COMMENT>\n   increment_line_number();
