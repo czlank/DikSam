@@ -15,17 +15,17 @@ int yyerror(char const *str)
     return 0;
 }
 
-void dkc_function_define(DVM_BasicType type, char *identifier, ParameterList *parameter_list, Block *block)
+void dkc_function_define(TypeSpecifier *type, char *identifier, ParameterList *parameter_list, Block *block)
 {
     DikSam::GetClassObject(g_iCurrentThreadIndex)->GetCreate()->FunctionDefine(type, identifier, parameter_list, block);
 }
 
-ParameterList* dkc_create_parameter(DVM_BasicType type, char *identifier)
+ParameterList* dkc_create_parameter(TypeSpecifier *type, char *identifier)
 {
     return DikSam::GetClassObject(g_iCurrentThreadIndex)->GetCreate()->CreateParameter(type, identifier);
 }
 
-ParameterList* dkc_chain_parameter(ParameterList *list, DVM_BasicType type, char *identifier)
+ParameterList* dkc_chain_parameter(ParameterList *list, TypeSpecifier *type, char *identifier)
 {
     return DikSam::GetClassObject(g_iCurrentThreadIndex)->GetCreate()->ChainParameter(list, type, identifier);
 }
@@ -33,6 +33,16 @@ ParameterList* dkc_chain_parameter(ParameterList *list, DVM_BasicType type, char
 ArgumentList* dkc_create_argument_list(Expression *expression)
 {
     return DikSam::GetClassObject(g_iCurrentThreadIndex)->GetCreate()->CreateArgumentList(expression);
+}
+
+ExpressionList* dkc_create_expression_list(Expression *expression)
+{
+    return DikSam::GetClassObject(g_iCurrentThreadIndex)->GetCreate()->CreateExpressionList(expression);
+}
+
+ExpressionList* dkc_chain_expression_list(ExpressionList *list, Expression *expression)
+{
+    return DikSam::GetClassObject(g_iCurrentThreadIndex)->GetCreate()->ChainExpressionList(list, expression);
 }
 
 ArgumentList* dkc_chain_argument_list(ArgumentList *list, Expression *expr)
@@ -48,6 +58,16 @@ StatementList* dkc_create_statement_list(Statement *statement)
 StatementList* dkc_chain_statement_list(StatementList *list, Statement *statement)
 {
     return DikSam::GetClassObject(g_iCurrentThreadIndex)->GetCreate()->ChainStatementList(list, statement);
+}
+
+TypeSpecifier* dkc_create_type_specifier(DVM_BasicType basic_type)
+{
+    return DikSam::GetClassObject(g_iCurrentThreadIndex)->GetCreate()->CreateTypeSpecifier(basic_type);
+}
+
+TypeSpecifier* dkc_create_array_type_specifier(TypeSpecifier *base)
+{
+    return DikSam::GetClassObject(g_iCurrentThreadIndex)->GetCreate()->CreateArrayTypeSpecifier(base);
 }
 
 Expression* dkc_alloc_expression(ExpressionKind kind)
@@ -98,6 +118,31 @@ Expression* dkc_create_function_call_expression(Expression *function, ArgumentLi
 Expression* dkc_create_boolean_expression(DVM_Boolean value)
 {
     return DikSam::GetClassObject(g_iCurrentThreadIndex)->GetCreate()->CreateBooleanExpression(value);
+}
+
+Expression* dkc_create_null_expression(void)
+{
+    return DikSam::GetClassObject(g_iCurrentThreadIndex)->GetCreate()->CreateNullExpression();
+}
+
+Expression* dkc_create_array_literal_expression(ExpressionList *list)
+{
+    return DikSam::GetClassObject(g_iCurrentThreadIndex)->GetCreate()->CreateArrayLiteralExpression(list);
+}
+
+Expression* dkc_create_array_creation(DVM_BasicType basic_type, ArrayDimension *dim_expr_list, ArrayDimension *dim_list)
+{
+    return DikSam::GetClassObject(g_iCurrentThreadIndex)->GetCreate()->CreateArrayCreation(basic_type, dim_expr_list, dim_list);
+}
+
+ArrayDimension* dkc_create_array_dimension(Expression *expr)
+{
+    return DikSam::GetClassObject(g_iCurrentThreadIndex)->GetCreate()->CreateArrayDimension(expr);
+}
+
+ArrayDimension* dkc_chain_array_dimension(ArrayDimension *list, ArrayDimension *dim)
+{
+    return DikSam::GetClassObject(g_iCurrentThreadIndex)->GetCreate()->ChainArrayDimension(list, dim);
 }
 
 Statement* dkc_create_if_statement(Expression *condition, Block *then_block, Elsif *elsif_list, Block *else_block)
@@ -165,7 +210,7 @@ Statement* dkc_create_throw_statement(Expression *expression)
     return DikSam::GetClassObject(g_iCurrentThreadIndex)->GetCreate()->CreateThrowStatement(expression);
 }
 
-Statement* dkc_create_declaration_statement(DVM_BasicType type, char *identifier, Expression *initializer)
+Statement* dkc_create_declaration_statement(TypeSpecifier *type, char *identifier, Expression *initializer)
 {
     return DikSam::GetClassObject(g_iCurrentThreadIndex)->GetCreate()->CreateDeclarationStatement(type, identifier, initializer);
 }

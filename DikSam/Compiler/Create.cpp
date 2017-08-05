@@ -53,7 +53,7 @@ DeclarationList* Create::ChainDeclaration(DeclarationList *pList, Declaration *p
     return pList;
 }
 
-void Create::FunctionDefine(DVM_BasicType enType, char *lpstrIdentifier, ParameterList *pParameterList, Block *pBlock)
+void Create::FunctionDefine(TypeSpecifier *pType, char *lpstrIdentifier, ParameterList *pParameterList, Block *pBlock)
 {
     if (m_Util.SearchFunction(lpstrIdentifier) || m_Util.SearchDeclaration(lpstrIdentifier, nullptr))
     {
@@ -86,7 +86,7 @@ void Create::FunctionDefine(DVM_BasicType enType, char *lpstrIdentifier, Paramet
     }
 }
 
-ParameterList* Create::CreateParameter(DVM_BasicType enType, char *lpstrIdentifier)
+ParameterList* Create::CreateParameter(TypeSpecifier *pType, char *lpstrIdentifier)
 {
     ParameterList *p = (ParameterList*)CREATE_UTIL_Malloc(sizeof(ParameterList));
 
@@ -98,7 +98,7 @@ ParameterList* Create::CreateParameter(DVM_BasicType enType, char *lpstrIdentifi
     return p;
 }
 
-ParameterList* Create::ChainParameter(ParameterList *pList, DVM_BasicType enType, char *lpstrIdentifier)
+ParameterList* Create::ChainParameter(ParameterList *pList, TypeSpecifier *pType, char *lpstrIdentifier)
 {
     ParameterList *pos = pList;
 
@@ -130,6 +130,16 @@ ArgumentList* Create::ChainArgumentList(ArgumentList *pList, Expression *pExpres
     return pList;
 }
 
+ExpressionList* Create::CreateExpressionList(Expression *pExpression)
+{
+
+}
+
+ExpressionList* Create::ChainExpressionList(ExpressionList *pList, Expression *pExpression)
+{
+
+}
+
 StatementList* Create::CreateStatementList(Statement *pStatement)
 {
     StatementList *pStatementList = (StatementList*)CREATE_UTIL_Malloc(sizeof(StatementList));
@@ -152,6 +162,16 @@ StatementList* Create::ChainStatementList(StatementList *pList, Statement *pStat
     pos->next = CreateStatementList(pStatement);
 
     return pList;
+}
+
+TypeSpecifier* Create::CreateTypeSpecifier(DVM_BasicType enType)
+{
+
+}
+
+TypeSpecifier* Create::CreateArrayTypeSpecifier(TypeSpecifier *pBase)
+{
+
 }
 
 Expression* Create::AllocExpression(ExpressionKind enKind)
@@ -265,6 +285,31 @@ Expression* Create::CreateBooleanExpression(DVM_Boolean enValue)
     pExpression->u.boolean_value = enValue;
 
     return pExpression;
+}
+
+Expression* Create::CreateNullExpression(void)
+{
+
+}
+
+Expression* Create::CreateArrayLiteralExpression(ExpressionList *pList)
+{
+
+}
+
+Expression* Create::CreateArrayCreation(DVM_BasicType enType, ArrayDimension *pArrayDimensionExpressionList, ArrayDimension *pArrayDimension)
+{
+
+}
+
+ArrayDimension* Create::CreateArrayDimension(Expression *pExpression)
+{
+
+}
+
+ArrayDimension* Create::ChainArrayDimension(ArrayDimension *pList, ArrayDimension *pArrayDimension)
+{
+
 }
 
 Statement* Create::CreateIfStatement(Expression *pCondition, Block *pThenBlock, Elsif *pElsifList, Block *pElseBlock)
@@ -408,7 +453,7 @@ Statement* Create::CreateThrowStatement(Expression *pExpression)
     return pStatement;
 }
 
-Statement* Create::CreateDeclarationStatement(DVM_BasicType enType, char *lpstrIdentifier, Expression *pInitializer)
+Statement* Create::CreateDeclarationStatement(TypeSpecifier *pType, char *lpstrIdentifier, Expression *pInitializer)
 {
     Statement *pStatement = AllocStatement(DECLARATION_STATEMENT);
     Declaration *pDeclaration = AllocDeclaration(m_Util.AllocTypeSpecifier(enType), lpstrIdentifier);

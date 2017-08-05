@@ -20,18 +20,26 @@ public:
     Declaration* AllocDeclaration(TypeSpecifier *pType, char *lpstrIdentifier);
     DeclarationList* ChainDeclaration(DeclarationList *pList, Declaration *pDecl);
     // 函数定义
-    void FunctionDefine(DVM_BasicType enType, char *lpstrIdentifier, ParameterList *pParameterList, Block *pBlock);
+    void FunctionDefine(TypeSpecifier *pType, char *lpstrIdentifier, ParameterList *pParameterList, Block *pBlock);
 
     // 形参表
-    ParameterList* CreateParameter(DVM_BasicType enType, char *lpstrIdentifier);
-    ParameterList* ChainParameter(ParameterList *pList, DVM_BasicType enType, char *lpstrIdentifier);
+    ParameterList* CreateParameter(TypeSpecifier *pType, char *lpstrIdentifier);
+    ParameterList* ChainParameter(ParameterList *pList, TypeSpecifier *pType, char *lpstrIdentifier);
     // 实参表
     ArgumentList* CreateArgumentList(Expression *pExpression);
     ArgumentList* ChainArgumentList(ArgumentList *pList, Expression *pExpression);
 
+    // 表达式表
+    ExpressionList* CreateExpressionList(Expression *pExpression);
+    ExpressionList* ChainExpressionList(ExpressionList *pList, Expression *pExpression);
+
     // 语句表
     StatementList* CreateStatementList(Statement *pStatement);
     StatementList* ChainStatementList(StatementList *pList, Statement *pStatement);
+
+    // 类型
+    TypeSpecifier* CreateTypeSpecifier(DVM_BasicType enType);
+    TypeSpecifier* CreateArrayTypeSpecifier(TypeSpecifier *pBase);
 
     // 表达式
     Expression* AllocExpression(ExpressionKind enKind);
@@ -44,6 +52,13 @@ public:
     Expression* CreateIdentifierExpression(char *lpstrIdentifier);
     Expression* CreateFunctionCallExpression(Expression *pFunction, ArgumentList *pArgument);
     Expression* CreateBooleanExpression(DVM_Boolean enValue);
+    Expression* CreateNullExpression(void);
+    Expression* CreateArrayLiteralExpression(ExpressionList *pList);
+    Expression* CreateArrayCreation(DVM_BasicType enType, ArrayDimension *pArrayDimensionExpressionList, ArrayDimension *pArrayDimension);
+
+    // 数组
+    ArrayDimension* CreateArrayDimension(Expression *pExpression);
+    ArrayDimension* ChainArrayDimension(ArrayDimension *pList, ArrayDimension *pArrayDimension);
 
     // 语句
     Statement* CreateIfStatement(Expression *pCondition, Block *pThenBlock, Elsif *pElsifList, Block *pElseBlock);
@@ -59,7 +74,7 @@ public:
     Statement* CreateContinueStatement(char *lpstrLabel);
     Statement* CreateTryStatement(Block *pTryBlock, char *lpstrException, Block *pCatchBlock, Block *pFinallyBlock);
     Statement* CreateThrowStatement(Expression *pExpression);
-    Statement* CreateDeclarationStatement(DVM_BasicType enType, char *lpstrIdentifier, Expression *pInitializer);
+    Statement* CreateDeclarationStatement(TypeSpecifier *pType, char *lpstrIdentifier, Expression *pInitializer);
 
 private:
     FunctionDefinition* CreateFunctionDefinition(DVM_BasicType enType, char *lpstrIdentifier, ParameterList *pParameterList, Block *pBlock);
