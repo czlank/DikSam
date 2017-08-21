@@ -220,6 +220,7 @@ int yywrap(void)
 }
 
 <STRING_LITERAL_STATE>\\\"  dkc_add_string_literal('"');
+<STRING_LITERAL_STATE>\\r   dkc_add_string_literal('\r');
 <STRING_LITERAL_STATE>\\n   dkc_add_string_literal('\n');
 <STRING_LITERAL_STATE>\\t   dkc_add_string_literal('\t');
 <STRING_LITERAL_STATE>\\\\  dkc_add_string_literal('\\');

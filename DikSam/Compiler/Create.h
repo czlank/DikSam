@@ -19,6 +19,7 @@ public:
     // 声明
     Declaration* AllocDeclaration(TypeSpecifier *pType, char *lpstrIdentifier);
     DeclarationList* ChainDeclaration(DeclarationList *pList, Declaration *pDecl);
+
     // 函数定义
     void FunctionDefine(TypeSpecifier *pType, char *lpstrIdentifier, ParameterList *pParameterList, Block *pBlock);
 
@@ -53,6 +54,7 @@ public:
     Expression* CreateFunctionCallExpression(Expression *pFunction, ArgumentList *pArgument);
     Expression* CreateBooleanExpression(DVM_Boolean enValue);
     Expression* CreateNullExpression(void);
+    Expression* CreateIndexExpression(Expression *pArrayExpression, Expression* pIndex);
     Expression* CreateArrayLiteralExpression(ExpressionList *pList);
     Expression* CreateArrayCreation(DVM_BasicType enType, ArrayDimension *pArrayDimensionExpressionList, ArrayDimension *pArrayDimension);
 
@@ -77,7 +79,7 @@ public:
     Statement* CreateDeclarationStatement(TypeSpecifier *pType, char *lpstrIdentifier, Expression *pInitializer);
 
 private:
-    FunctionDefinition* CreateFunctionDefinition(DVM_BasicType enType, char *lpstrIdentifier, ParameterList *pParameterList, Block *pBlock);
+    FunctionDefinition* CreateFunctionDefinition(TypeSpecifier *pType, char *lpstrIdentifier, ParameterList *pParameterList, Block *pBlock);
     Statement* AllocStatement(StatementType enType);
 
 private:

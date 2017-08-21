@@ -20,6 +20,9 @@ public:
 
     void* Malloc(const char *lpcstrFileName, int iLine, size_t szSize);
     TypeSpecifier* AllocTypeSpecifier(DVM_BasicType enType);
+    TypeDerive* AllocTypeDerive(DeriveTag enTag);
+    bool CompareParameter(ParameterList *param1, ParameterList *param2);
+    bool CompareType(TypeSpecifier *type1, TypeSpecifier *type2);
     
     FunctionDefinition* SearchFunction(const char *lpcstrName);
     Declaration* SearchDeclaration(const char *lpcstrIdentifier, Block *pBlock);
@@ -29,6 +32,7 @@ public:
     void VStrAppandCharacter(VString *vStr, DVM_Char ch);
 
     char* GetBasicTypeName(DVM_BasicType enType);
+    char* GetTypeName(TypeSpecifier *type);
     DVM_Char* ExpressionToString(Expression *stExpr);
 
 private:

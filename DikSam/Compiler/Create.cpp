@@ -91,7 +91,7 @@ ParameterList* Create::CreateParameter(TypeSpecifier *pType, char *lpstrIdentifi
     ParameterList *p = (ParameterList*)CREATE_UTIL_Malloc(sizeof(ParameterList));
 
     p->name = lpstrIdentifier;
-    p->type = m_Util.AllocTypeSpecifier(enType);
+    p->type = pType;
     p->line_number = m_Interface.GetCompiler()->current_line_number;
     p->next = nullptr;
 
@@ -104,7 +104,7 @@ ParameterList* Create::ChainParameter(ParameterList *pList, TypeSpecifier *pType
 
     for (; pos->next; pos = pos->next)
         ;
-    pos->next = CreateParameter(enType, lpstrIdentifier);
+    pos->next = CreateParameter(pType, lpstrIdentifier);
 
     return pList;
 }
@@ -132,12 +132,23 @@ ArgumentList* Create::ChainArgumentList(ArgumentList *pList, Expression *pExpres
 
 ExpressionList* Create::CreateExpressionList(Expression *pExpression)
 {
+    ExpressionList *pExpressionList = (ExpressionList*)CREATE_UTIL_Malloc(sizeof(ExpressionList));
 
+    pExpressionList->expression = pExpression;
+    pExpressionList->next = nullptr;
+
+    return pExpressionList;
 }
 
 ExpressionList* Create::ChainExpressionList(ExpressionList *pList, Expression *pExpression)
 {
+    ExpressionList *pos;
 
+    for (pos = pList; pos->next; pos = pos->next)
+        ;
+    pos->next = CreateExpressionList(pExpression);
+
+    return pList;
 }
 
 StatementList* Create::CreateStatementList(Statement *pStatement)
@@ -166,12 +177,31 @@ StatementList* Create::ChainStatementList(StatementList *pList, Statement *pStat
 
 TypeSpecifier* Create::CreateTypeSpecifier(DVM_BasicType enType)
 {
+    TypeSpecifier *pTypeSpecifier = (TypeSpecifier*)CREATE_UTIL_Malloc(sizeof(TypeSpecifier));
 
+    pTypeSpecifier->basic_type = enType;
+    pTypeSpecifier->derive = nullptr;
+
+    return pTypeSpecifier;
 }
 
 TypeSpecifier* Create::CreateArrayTypeSpecifier(TypeSpecifier *pBase)
 {
+    TypeDerive *pTypeDerive = m_Util.AllocTypeDerive(ARRAY_DERIVE);
 
+    if (nullptr == pBase->derive)
+    {
+        pBase->derive = pTypeDerive;
+    }
+    else
+    {
+        TypeDerive *pos;
+        for (pos = pBase->derive; pos->next != nullptr; pos = pos->next)
+            ;
+        pos->next = pTypeDerive;
+    }
+
+    return pBase;
 }
 
 Expression* Create::AllocExpression(ExpressionKind enKind)
@@ -290,6 +320,16 @@ Expression* Create::CreateBooleanExpression(DVM_Boolean enValue)
 Expression* Create::CreateNullExpression(void)
 {
 
+}
+
+Expression* Create::CreateIndexExpression(Expression *pArrayExpression, Expression* pIndex)
+{
+    Expression *pExpression = AllocExpression(INDEX_EXPRESSION);
+
+    pExpression->u.index_expression.array = pArrayExpression;
+    pExpression->u.index_expression.index = pIndex;
+
+    return pArrayExpression;
 }
 
 Expression* Create::CreateArrayLiteralExpression(ExpressionList *pList)
@@ -464,18 +504,19 @@ Statement* Create::CreateDeclarationStatement(TypeSpecifier *pType, char *lpstrI
     return pStatement;
 }
 
-FunctionDefinition* Create::CreateFunctionDefinition(DVM_BasicType enType, char *lpstrIdentifier, ParameterList *pParameterList, Block *pBlock)
+FunctionDefinition* Create::CreateFunctionDefinition(TypeSpecifier *pType, char *lpstrIdentifier, ParameterList *pParameterList, Block *pBlock)
 {
     DKC_Compiler *pCompiler = m_Interface.GetCompiler();
     FunctionDefinition *pFD = (FunctionDefinition*)CREATE_UTIL_Malloc(sizeof(FunctionDefinition));
 
-    pFD->type = m_Util.AllocTypeSpecifier(enType);
+    pFD->type = pType;
     pFD->name = lpstrIdentifier;
     pFD->parameter = pParameterList;
     pFD->block = pBlock;
     pFD->index = pCompiler->function_count++;
     pFD->local_variable_count = 0;
     pFD->local_variable = nullptr;
+    pFD->end_line_number = pCompiler->current_line_number;
     pFD->next = nullptr;
 
     return pFD;

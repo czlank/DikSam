@@ -36,6 +36,21 @@ TypeSpecifier* Util::AllocTypeSpecifier(DVM_BasicType enType)
     return ts;
 }
 
+TypeDerive* Util::AllocTypeDerive(DeriveTag enTag)
+{
+
+}
+
+bool Util::CompareParameter(ParameterList *param1, ParameterList *param2)
+{
+
+}
+
+bool Util::CompareType(TypeSpecifier *type1, TypeSpecifier *type2)
+{
+
+}
+
 FunctionDefinition* Util::SearchFunction(const char *lpcstrName)
 {
     FunctionDefinition  *pos = nullptr;
@@ -121,6 +136,11 @@ char* Util::GetBasicTypeName(DVM_BasicType enType)
     }
 
     return nullptr;
+}
+
+char* Util::GetTypeName(TypeSpecifier *type)
+{
+
 }
 
 DVM_Char* Util::ExpressionToString(Expression *stExpr)

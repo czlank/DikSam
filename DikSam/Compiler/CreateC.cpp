@@ -125,6 +125,11 @@ Expression* dkc_create_null_expression(void)
     return DikSam::GetClassObject(g_iCurrentThreadIndex)->GetCreate()->CreateNullExpression();
 }
 
+Expression* dkc_create_index_expression(Expression *array, Expression *index)
+{
+    return DikSam::GetClassObject(g_iCurrentThreadIndex)->GetCreate()->CreateIndexExpression(array, index);
+}
+
 Expression* dkc_create_array_literal_expression(ExpressionList *list)
 {
     return DikSam::GetClassObject(g_iCurrentThreadIndex)->GetCreate()->CreateArrayLiteralExpression(list);
