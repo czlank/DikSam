@@ -500,6 +500,7 @@ Expression* dkc_create_logical_not_expression(Expression *operand);
 Expression* dkc_create_incdec_expression(Expression *operand, ExpressionKind inc_or_dec);
 Expression* dkc_create_identifier_expression(char *identifier);
 Expression* dkc_create_function_call_expression(Expression *function, ArgumentList *argument);
+Expression* dkc_create_member_expression(Expression *expression, char *member_name);
 Expression* dkc_create_boolean_expression(DVM_Boolean value);
 Expression* dkc_create_null_expression(void);
 Expression* dkc_create_array_literal_expression(ExpressionList *list);

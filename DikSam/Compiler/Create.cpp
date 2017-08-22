@@ -63,7 +63,7 @@ void Create::FunctionDefine(TypeSpecifier *pType, char *lpstrIdentifier, Paramet
             MESSAGE_ARGUMENT_END);
     }
 
-    FunctionDefinition  *pFD = CreateFunctionDefinition(enType, lpstrIdentifier, pParameterList, pBlock);
+    FunctionDefinition  *pFD = CreateFunctionDefinition(pType, lpstrIdentifier, pParameterList, pBlock);
 
     if (pBlock)
     {
@@ -308,6 +308,16 @@ Expression* Create::CreateFunctionCallExpression(Expression *pFunction, Argument
     return pExpression;
 }
 
+Expression* Create::CreateMemberExpression(Expression *pMemberExpression, char *lpstrMemberName)
+{
+    Expression *pExpression = AllocExpression(MEMBER_EXPRESSION);
+
+    pExpression->u.member_expression.expression = pMemberExpression;
+    pExpression->u.member_expression.member_name = lpstrMemberName;
+
+    return pExpression;
+}
+
 Expression* Create::CreateBooleanExpression(DVM_Boolean enValue)
 {
     Expression *pExpression = AllocExpression(BOOLEAN_EXPRESSION);
@@ -319,7 +329,9 @@ Expression* Create::CreateBooleanExpression(DVM_Boolean enValue)
 
 Expression* Create::CreateNullExpression(void)
 {
+    Expression *pExpression = AllocExpression(NULL_EXPRESSION);
 
+    return pExpression;
 }
 
 Expression* Create::CreateIndexExpression(Expression *pArrayExpression, Expression* pIndex)
@@ -329,27 +341,47 @@ Expression* Create::CreateIndexExpression(Expression *pArrayExpression, Expressi
     pExpression->u.index_expression.array = pArrayExpression;
     pExpression->u.index_expression.index = pIndex;
 
-    return pArrayExpression;
+    return pExpression;
 }
 
 Expression* Create::CreateArrayLiteralExpression(ExpressionList *pList)
 {
+    Expression *pExpression = AllocExpression(ARRAY_LITERAL_EXPRESSION);
 
+    pExpression->u.array_literal = pList;
+
+    return pExpression;
 }
 
 Expression* Create::CreateArrayCreation(DVM_BasicType enType, ArrayDimension *pArrayDimensionExpressionList, ArrayDimension *pArrayDimension)
 {
+    Expression *pExpression = AllocExpression(ARRAY_CREATION_EXPRESSION);
 
+    pExpression->u.array_creation.type = CreateTypeSpecifier(enType);
+    pExpression->u.array_creation.dimension = ChainArrayDimension(pArrayDimensionExpressionList, pArrayDimension);
+
+    return pExpression;
 }
 
 ArrayDimension* Create::CreateArrayDimension(Expression *pExpression)
 {
+    ArrayDimension *pArrayDimension = (ArrayDimension*)CREATE_UTIL_Malloc(sizeof(ArrayDimension));
 
+    pArrayDimension->expression = pExpression;
+    pArrayDimension->next = nullptr;
+
+    return pArrayDimension;
 }
 
 ArrayDimension* Create::ChainArrayDimension(ArrayDimension *pList, ArrayDimension *pArrayDimension)
 {
+    ArrayDimension *pos;
 
+    for (pos = pList; pos->next != nullptr; pos = pos->next)
+        ;
+    pos->next = pArrayDimension;
+
+    return pList;
 }
 
 Statement* Create::CreateIfStatement(Expression *pCondition, Block *pThenBlock, Elsif *pElsifList, Block *pElseBlock)
@@ -496,7 +528,7 @@ Statement* Create::CreateThrowStatement(Expression *pExpression)
 Statement* Create::CreateDeclarationStatement(TypeSpecifier *pType, char *lpstrIdentifier, Expression *pInitializer)
 {
     Statement *pStatement = AllocStatement(DECLARATION_STATEMENT);
-    Declaration *pDeclaration = AllocDeclaration(m_Util.AllocTypeSpecifier(enType), lpstrIdentifier);
+    Declaration *pDeclaration = AllocDeclaration(pType, lpstrIdentifier);
 
     pDeclaration->initializer = pInitializer;
     pStatement->u.declaration_s = pDeclaration;

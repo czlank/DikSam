@@ -49,46 +49,50 @@
      RETURN_T = 266,
      BREAK = 267,
      CONTINUE = 268,
-     LEFTP = 269,
-     RIGHTP = 270,
-     LC = 271,
-     RC = 272,
-     SEMICOLON = 273,
-     COLON = 274,
-     COMMA = 275,
-     ASSIGN_T = 276,
-     LOGICAL_AND = 277,
-     LOGICAL_OR = 278,
-     EQ = 279,
-     NE = 280,
-     GT = 281,
-     GE = 282,
-     LT = 283,
-     LE = 284,
-     ADD = 285,
-     SUB = 286,
-     MUL = 287,
-     DIV = 288,
-     MOD = 289,
-     TRUE_T = 290,
-     FALSE_T = 291,
-     EXCLAMATION = 292,
-     DOT = 293,
-     ADD_ASSIGN_T = 294,
-     SUB_ASSIGN_T = 295,
-     MUL_ASSIGN_T = 296,
-     DIV_ASSIGN_T = 297,
-     MOD_ASSIGN_T = 298,
-     INCREMENT = 299,
-     DECREMENT = 300,
-     TRY = 301,
-     CATCH = 302,
-     FINALLY = 303,
-     THROW = 304,
-     BOOLEAN_T = 305,
-     INT_T = 306,
-     DOUBLE_T = 307,
-     STRING_T = 308
+     NULL_T = 269,
+     LEFTP = 270,
+     RIGHTP = 271,
+     LC = 272,
+     RC = 273,
+     LB = 274,
+     RB = 275,
+     SEMICOLON = 276,
+     COLON = 277,
+     COMMA = 278,
+     ASSIGN_T = 279,
+     LOGICAL_AND = 280,
+     LOGICAL_OR = 281,
+     EQ = 282,
+     NE = 283,
+     GT = 284,
+     GE = 285,
+     LT = 286,
+     LE = 287,
+     ADD = 288,
+     SUB = 289,
+     MUL = 290,
+     DIV = 291,
+     MOD = 292,
+     TRUE_T = 293,
+     FALSE_T = 294,
+     EXCLAMATION = 295,
+     DOT = 296,
+     ADD_ASSIGN_T = 297,
+     SUB_ASSIGN_T = 298,
+     MUL_ASSIGN_T = 299,
+     DIV_ASSIGN_T = 300,
+     MOD_ASSIGN_T = 301,
+     INCREMENT = 302,
+     DECREMENT = 303,
+     TRY = 304,
+     CATCH = 305,
+     FINALLY = 306,
+     THROW = 307,
+     BOOLEAN_T = 308,
+     INT_T = 309,
+     DOUBLE_T = 310,
+     STRING_T = 311,
+     NEW = 312
    };
 #endif
 /* Tokens.  */
@@ -103,46 +107,50 @@
 #define RETURN_T 266
 #define BREAK 267
 #define CONTINUE 268
-#define LEFTP 269
-#define RIGHTP 270
-#define LC 271
-#define RC 272
-#define SEMICOLON 273
-#define COLON 274
-#define COMMA 275
-#define ASSIGN_T 276
-#define LOGICAL_AND 277
-#define LOGICAL_OR 278
-#define EQ 279
-#define NE 280
-#define GT 281
-#define GE 282
-#define LT 283
-#define LE 284
-#define ADD 285
-#define SUB 286
-#define MUL 287
-#define DIV 288
-#define MOD 289
-#define TRUE_T 290
-#define FALSE_T 291
-#define EXCLAMATION 292
-#define DOT 293
-#define ADD_ASSIGN_T 294
-#define SUB_ASSIGN_T 295
-#define MUL_ASSIGN_T 296
-#define DIV_ASSIGN_T 297
-#define MOD_ASSIGN_T 298
-#define INCREMENT 299
-#define DECREMENT 300
-#define TRY 301
-#define CATCH 302
-#define FINALLY 303
-#define THROW 304
-#define BOOLEAN_T 305
-#define INT_T 306
-#define DOUBLE_T 307
-#define STRING_T 308
+#define NULL_T 269
+#define LEFTP 270
+#define RIGHTP 271
+#define LC 272
+#define RC 273
+#define LB 274
+#define RB 275
+#define SEMICOLON 276
+#define COLON 277
+#define COMMA 278
+#define ASSIGN_T 279
+#define LOGICAL_AND 280
+#define LOGICAL_OR 281
+#define EQ 282
+#define NE 283
+#define GT 284
+#define GE 285
+#define LT 286
+#define LE 287
+#define ADD 288
+#define SUB 289
+#define MUL 290
+#define DIV 291
+#define MOD 292
+#define TRUE_T 293
+#define FALSE_T 294
+#define EXCLAMATION 295
+#define DOT 296
+#define ADD_ASSIGN_T 297
+#define SUB_ASSIGN_T 298
+#define MUL_ASSIGN_T 299
+#define DIV_ASSIGN_T 300
+#define MOD_ASSIGN_T 301
+#define INCREMENT 302
+#define DECREMENT 303
+#define TRY 304
+#define CATCH 305
+#define FINALLY 306
+#define THROW 307
+#define BOOLEAN_T 308
+#define INT_T 309
+#define DOUBLE_T 310
+#define STRING_T 311
+#define NEW 312
 
 
 
@@ -158,17 +166,20 @@ typedef union YYSTYPE
     ParameterList       *parameter_list;
     ArgumentList        *argument_list;
     Expression          *expression;
+    ExpressionList      *expression_list;
     Statement           *statement;
     StatementList       *statement_list;
     Block               *block;
     Elsif               *elsif;
     AssignmentOperator   assignment_operator;
-    DVM_BasicType        type_specifier;
+    TypeSpecifier       *type_specifier;
+    DVM_BasicType        basic_type_specifier;
+    ArrayDimension      *array_dimension;
 
 
 
 /* Line 1685 of yacc.c  */
-#line 172 "y.tab.h"
+#line 183 "y.tab.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

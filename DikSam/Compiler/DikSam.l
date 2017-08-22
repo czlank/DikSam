@@ -192,8 +192,8 @@ int yywrap(void)
 <INITIAL>. {
     dkc_compile_error(dkc_get_current_compiler()->current_line_number,
                       CHARACTER_INVALID_ERR,
-                      CHARACTER_MESSAGE_ARGUMENT, "bad_char", yytext[0], 
-                      MESSAGE_ARGUMENT_END);
+                      (CHARACTER_MESSAGE_ARGUMENT, "bad_char", yytext[0], 
+                      MESSAGE_ARGUMENT_END));
 }
 
 <C_COMMENT>\n   increment_line_number();

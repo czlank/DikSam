@@ -353,7 +353,7 @@ primary_expression
         ;
         
 primary_no_new_array
-        | primary_no_new_array LB expression RB
+        : primary_no_new_array LB expression RB
         {
             $$ = dkc_create_index_expression($1, $3);
         }

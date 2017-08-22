@@ -52,6 +52,7 @@ public:
     Expression* CreateIncDecExpression(Expression *pOperand, ExpressionKind enKind);
     Expression* CreateIdentifierExpression(char *lpstrIdentifier);
     Expression* CreateFunctionCallExpression(Expression *pFunction, ArgumentList *pArgument);
+    Expression* CreateMemberExpression(Expression *pMemberExpression, char *lpstrMemberName);
     Expression* CreateBooleanExpression(DVM_Boolean enValue);
     Expression* CreateNullExpression(void);
     Expression* CreateIndexExpression(Expression *pArrayExpression, Expression* pIndex);
