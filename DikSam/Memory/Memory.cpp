@@ -114,7 +114,7 @@ void* Memory::Realloc(const char *lpcstrFileName, int iLine, void *ptr, size_t s
 char* Memory::StrDUP(const char *lpcstrFileName, int iLine, const char *lpcstrStr)
 {
     int iSize = lpcstrStr ? (std::string(lpcstrStr).length() + 1) : 1;
-    size_t szAllocSize = iSize + sizeof(Header)+MARK_SIZE;
+    size_t szAllocSize = iSize + sizeof(Header) + MARK_SIZE;
 
     char *ptr = new char[szAllocSize]();
     if (nullptr == ptr)

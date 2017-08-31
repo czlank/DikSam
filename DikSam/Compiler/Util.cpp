@@ -28,27 +28,82 @@ void* Util::Malloc(const char *lpcstrFileName, int iLine, size_t szSize)
 
 TypeSpecifier* Util::AllocTypeSpecifier(DVM_BasicType enType)
 {
-    TypeSpecifier *ts = (TypeSpecifier*)UTIL_STORAGE_MALLOC(sizeof(TypeSpecifier));
+    TypeSpecifier *pTypeSpecifier = (TypeSpecifier*)UTIL_STORAGE_MALLOC(sizeof(TypeSpecifier));
 
-    ts->basic_type = enType;
-    ts->derive = nullptr;
+    pTypeSpecifier->basic_type = enType;
+    pTypeSpecifier->derive = nullptr;
 
-    return ts;
+    return pTypeSpecifier;
 }
 
 TypeDerive* Util::AllocTypeDerive(DeriveTag enTag)
 {
+    TypeDerive *pTypeDerive = (TypeDerive*)UTIL_STORAGE_MALLOC(sizeof(TypeDerive));
 
+    pTypeDerive->tag = enTag;
+    pTypeDerive->next = nullptr;
+
+    return pTypeDerive;
 }
 
 bool Util::CompareParameter(ParameterList *param1, ParameterList *param2)
 {
+    ParameterList *pos1;
+    ParameterList *pos2;
 
+    for (pos1 = param1, pos2 = param2; pos1 && pos2; pos1 = pos1->next, pos2 = pos2->next)
+    {
+        if (std::string(pos1->name) != pos2->name)
+        {
+            return false;
+        }
+
+        if (!CompareType(pos1->type, pos2->type))
+        {
+            return false;
+        }
+    }
+
+    if (pos1 || pos2)
+    {
+        return false;
+    }
+
+    return true;
 }
 
 bool Util::CompareType(TypeSpecifier *type1, TypeSpecifier *type2)
 {
+    if (type1->basic_type != type2->basic_type)
+    {
+        return false;
+    }
 
+    TypeDerive *d1;
+    TypeDerive *d2;
+
+    for (d1 = type1->derive, d2 = type2->derive; d1 && d2; d1 = d1->next, d2 = d2->next)
+    {
+        if (d1->tag != d2->tag)
+        {
+            return false;
+        }
+
+        if (FUNCTION_DERIVE == d1->tag)
+        {
+            if (!CompareParameter(d1->u.function_d.parameter_list, d2->u.function_d.parameter_list))
+            {
+                return false;
+            }
+        }
+    }
+
+    if (d1 || d2)
+    {
+        return false;
+    }
+
+    return true;
 }
 
 FunctionDefinition* Util::SearchFunction(const char *lpcstrName)
@@ -140,7 +195,40 @@ char* Util::GetBasicTypeName(DVM_BasicType enType)
 
 char* Util::GetTypeName(TypeSpecifier *type)
 {
+    char *pTypeName = GetBasicTypeName(type->basic_type);
+    char *pFinalTypeName = nullptr;
 
+    for (TypeDerive *pos = type->derive; pos; pos = pos->next)
+    {
+        switch (pos->tag)
+        {
+        case FUNCTION_DERIVE :
+            UTIL_DBG_Assert(0, ("derive_ta..%d\n", pos->tag));
+            break;
+
+        case ARRAY_DERIVE :
+            {
+                int iLen = std::string(pTypeName).length();
+
+                pFinalTypeName = (char *)UTIL_MEM_MALLOC(iLen + 3);
+                for (int i = 0; i < iLen; i++)
+                {
+                    pFinalTypeName[i] = pTypeName[i];
+                }
+
+                pFinalTypeName[iLen] = '[';
+                pFinalTypeName[iLen + 1] = ']';
+                pFinalTypeName[iLen + 2] = '\0';
+            }
+            
+            break;
+
+        default :
+            UTIL_DBG_Assert(0, ("derive_ta..%d\n", pos->tag));
+        }
+    }
+
+    return pFinalTypeName ? pFinalTypeName : pTypeName;
 }
 
 DVM_Char* Util::ExpressionToString(Expression *stExpr)

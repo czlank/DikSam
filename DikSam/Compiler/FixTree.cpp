@@ -47,7 +47,7 @@ void FixTree::operator () (DKC_Compiler *pCompiler)
     }
 }
 
-Expression* FixTree::FixExpression(Block *pBlock, Expression *pExpression)
+Expression* FixTree::FixExpression(Block *pBlock, Expression *pExpression, Expression *pParentExpression)
 {
     if (nullptr == pExpression)
     {
@@ -118,9 +118,31 @@ Expression* FixTree::FixExpression(Block *pBlock, Expression *pExpression)
         pExpression = FixFunctionCallExpression(pBlock, pExpression);
         break;
 
+    case MEMBER_EXPRESSION :
+        break;
+
+    case NULL_EXPRESSION :
+        pExpression->type = m_Util.AllocTypeSpecifier(DVM_NULL_TYPE);
+        break;
+
+    case ARRAY_LITERAL_EXPRESSION :
+        pExpression = FixArrayLiteralExpression(pBlock, pExpression);
+        break;
+
+    case INDEX_EXPRESSION :
+        pExpression = FixIndexExpression(pBlock, pExpression);
+        break;
+
     case INCREMENT_EXPRESSION :
     case DECREMENT_EXPRESSION :
         pExpression = FixIncDecExpression(pBlock, pExpression);
+        break;
+
+    case CAST_EXPRESSION :
+        break;
+
+    case ARRAY_CREATION_EXPRESSION :
+        pExpression = FixArrayCreationExpression(pBlock, pExpression);
         break;
 
     default :
@@ -135,7 +157,7 @@ void FixTree::FixStatement(Block *pBlock, Statement *pStatement, FunctionDefinit
     switch (pStatement->type)
     {
     case EXPRESSION_STATEMENT :
-        FixExpression(pBlock, pStatement->u.expression_s);
+        FixExpression(pBlock, pStatement->u.expression_s, nullptr);
         break;
 
     case IF_STATEMENT :
@@ -143,14 +165,14 @@ void FixTree::FixStatement(Block *pBlock, Statement *pStatement, FunctionDefinit
         break;
 
     case WHILE_STATEMENT :
-        FixExpression(pBlock, pStatement->u.while_s.condition);
+        FixExpression(pBlock, pStatement->u.while_s.condition, nullptr);
         FixStatementList(pStatement->u.while_s.block, pStatement->u.while_s.block->statement_list, pFunctionDefinition);
         break;
 
     case FOR_STATEMENT :
-        FixExpression(pBlock, pStatement->u.for_s.init);
-        FixExpression(pBlock, pStatement->u.for_s.condition);
-        FixExpression(pBlock, pStatement->u.for_s.post);
+        FixExpression(pBlock, pStatement->u.for_s.init, nullptr);
+        FixExpression(pBlock, pStatement->u.for_s.condition, nullptr);
+        FixExpression(pBlock, pStatement->u.for_s.post, nullptr);
         FixStatementList(pStatement->u.for_s.block, pStatement->u.for_s.block->statement_list, pFunctionDefinition);
         break;
 
@@ -168,7 +190,7 @@ void FixTree::FixStatement(Block *pBlock, Statement *pStatement, FunctionDefinit
         break;
 
     case THROW_STATEMENT :
-        FixExpression(pBlock, pStatement->u.throw_s.exception);
+        FixExpression(pBlock, pStatement->u.throw_s.exception, nullptr);
         break;
 
     case DECLARATION_STATEMENT :
@@ -194,7 +216,7 @@ void FixTree::FixStatement(Block *pBlock, Statement *pStatement, FunctionDefinit
             }
         } while (0);
 
-        FixExpression(pBlock, pStatement->u.declaration_s->initializer);
+        FixExpression(pBlock, pStatement->u.declaration_s->initializer, nullptr);
 
         if (pStatement->u.declaration_s->initializer)
         {
@@ -239,8 +261,8 @@ Expression* FixTree::FixIdentifierExpression(Block *pBlock, Expression *pExpress
 
 Expression* FixTree::FixCommaExpression(Block *pBlock, Expression *pExpression)
 {
-    pExpression->u.comma.left = FixExpression(pBlock, pExpression->u.comma.left);
-    pExpression->u.comma.right->u.declaration_s->initializer = FixExpression(pBlock, pExpression->u.comma.right->u.declaration_s->initializer);
+    pExpression->u.comma.left = FixExpression(pBlock, pExpression->u.comma.left, pExpression);
+    pExpression->u.comma.right->u.declaration_s->initializer = FixExpression(pBlock, pExpression->u.comma.right->u.declaration_s->initializer, pExpression);
     pExpression->u.comma.right->u.declaration_s->type = m_Util.AllocTypeSpecifier(pExpression->u.comma.right->u.declaration_s->initializer->type->basic_type);
     pExpression->type = pExpression->u.comma.right->u.declaration_s->type;
 
@@ -249,14 +271,15 @@ Expression* FixTree::FixCommaExpression(Block *pBlock, Expression *pExpression)
 
 Expression* FixTree::FixAssignExpression(Block *pBlock, Expression *pExpression)
 {
-    if (pExpression->u.assign_expression.left->kind != IDENTIFIER_EXPRESSION)
+    if (pExpression->u.assign_expression.left->kind != IDENTIFIER_EXPRESSION
+        && pExpression->u.assign_expression.left->kind != INDEX_EXPRESSION)
     {
         m_Error.CompileError(pExpression->u.assign_expression.left->line_number,
             NOT_LVALUE_ERR, MESSAGE_ARGUMENT_END);
     }
 
-    pExpression->u.assign_expression.left = FixExpression(pBlock, pExpression->u.assign_expression.left);
-    Expression *pOperand = FixExpression(pBlock, pExpression->u.assign_expression.operand);
+    pExpression->u.assign_expression.left = FixExpression(pBlock, pExpression->u.assign_expression.left, pExpression);
+    Expression *pOperand = FixExpression(pBlock, pExpression->u.assign_expression.operand, pExpression);
     pExpression->u.assign_expression.operand = CreateAssignCast(pOperand, pExpression->u.assign_expression.left->type);
     pExpression->type = pExpression->u.assign_expression.left->type;
 
@@ -265,8 +288,8 @@ Expression* FixTree::FixAssignExpression(Block *pBlock, Expression *pExpression)
 
 Expression* FixTree::FixMathBinaryExpression(Block *pBlock, Expression *pExpression)
 {
-    pExpression->u.binary_expression.left = FixExpression(pBlock, pExpression->u.binary_expression.left);
-    pExpression->u.binary_expression.right = FixExpression(pBlock, pExpression->u.binary_expression.right);
+    pExpression->u.binary_expression.left = FixExpression(pBlock, pExpression->u.binary_expression.left, pExpression);
+    pExpression->u.binary_expression.right = FixExpression(pBlock, pExpression->u.binary_expression.right, pExpression);
 
     pExpression = EvalMathExpression(pBlock, pExpression);
     if (INT_EXPRESSION == pExpression->kind || DOUBLE_EXPRESSION == pExpression->kind || STRING_EXPRESSION == pExpression->kind)
@@ -284,7 +307,9 @@ Expression* FixTree::FixMathBinaryExpression(Block *pBlock, Expression *pExpress
     {
         pExpression->type = m_Util.AllocTypeSpecifier(DVM_DOUBLE_TYPE);
     }
-    else if (IsString(pExpression->u.binary_expression.left->type) && IsString(pExpression->u.binary_expression.right->type))
+    else if (ADD_EXPRESSION == pExpression->kind
+        && (IsString(pExpression->u.binary_expression.left->type) && IsString(pExpression->u.binary_expression.right->type)
+            || IsString(pExpression->u.binary_expression.left->type) && NULL_EXPRESSION == pExpression->u.binary_expression.right->kind))
     {
         pExpression->type = m_Util.AllocTypeSpecifier(DVM_STRING_TYPE);
     }
@@ -299,8 +324,8 @@ Expression* FixTree::FixMathBinaryExpression(Block *pBlock, Expression *pExpress
 
 Expression* FixTree::FixCompareExpression(Block *pBlock, Expression *pExpression)
 {
-    pExpression->u.binary_expression.left = FixExpression(pBlock, pExpression->u.binary_expression.left);
-    pExpression->u.binary_expression.right = FixExpression(pBlock, pExpression->u.binary_expression.right);
+    pExpression->u.binary_expression.left = FixExpression(pBlock, pExpression->u.binary_expression.left, pExpression);
+    pExpression->u.binary_expression.right = FixExpression(pBlock, pExpression->u.binary_expression.right, pExpression);
     
     pExpression = EvalCompareExpression(pExpression);
     if (BOOLEAN_EXPRESSION == pExpression->kind)
@@ -310,12 +335,11 @@ Expression* FixTree::FixCompareExpression(Block *pBlock, Expression *pExpression
 
     pExpression = CastBinaryExpression(pExpression);
 
-    if ((pExpression->u.binary_expression.left->type->basic_type != pExpression->u.binary_expression.right->type->basic_type)
-        || pExpression->u.binary_expression.left->type->derive
-        || pExpression->u.binary_expression.right->type->derive)
+    if (!(m_Util.CompareType(pExpression->u.binary_expression.left->type, pExpression->u.binary_expression.right->type)
+        || (IsObject(pExpression->u.binary_expression.left->type) && NULL_EXPRESSION == pExpression->u.binary_expression.right->kind)
+        || (IsObject(pExpression->u.binary_expression.right->type) && NULL_EXPRESSION == pExpression->u.binary_expression.left->kind)))
     {
-        m_Error.CompileError(pExpression->line_number,
-            COMPARE_TYPE_MISMATCH_ERR, MESSAGE_ARGUMENT_END);
+        m_Error.CompileError(pExpression->line_number, COMPARE_TYPE_MISMATCH_ERR, MESSAGE_ARGUMENT_END);
     }
 
     pExpression->type = m_Util.AllocTypeSpecifier(DVM_BOOLEAN_TYPE);
@@ -325,8 +349,8 @@ Expression* FixTree::FixCompareExpression(Block *pBlock, Expression *pExpression
 
 Expression* FixTree::FixLogicalAndOrExpression(Block *pBlock, Expression *pExpression)
 {
-    pExpression->u.binary_expression.left = FixExpression(pBlock, pExpression->u.binary_expression.left);
-    pExpression->u.binary_expression.right = FixExpression(pBlock, pExpression->u.binary_expression.right);
+    pExpression->u.binary_expression.left = FixExpression(pBlock, pExpression->u.binary_expression.left, pExpression);
+    pExpression->u.binary_expression.right = FixExpression(pBlock, pExpression->u.binary_expression.right, pExpression);
 
     if (IsBoolean(pExpression->u.binary_expression.left->type) && IsBoolean(pExpression->u.binary_expression.right->type))
     {
@@ -343,7 +367,7 @@ Expression* FixTree::FixLogicalAndOrExpression(Block *pBlock, Expression *pExpre
 
 Expression* FixTree::FixMinusExpression(Block *pBlock, Expression *pExpression)
 {
-    pExpression->u.minus_expression = FixExpression(pBlock, pExpression->u.minus_expression);
+    pExpression->u.minus_expression = FixExpression(pBlock, pExpression->u.minus_expression, pExpression);
 
     if (!IsInt(pExpression->u.minus_expression->type) && !IsDouble(pExpression->u.minus_expression->type))
     {
@@ -369,7 +393,7 @@ Expression* FixTree::FixMinusExpression(Block *pBlock, Expression *pExpression)
 
 Expression* FixTree::FixLogicalNotExpression(Block *pBlock, Expression *pExpression)
 {
-    pExpression->u.logical_not = FixExpression(pBlock, pExpression->u.logical_not);
+    pExpression->u.logical_not = FixExpression(pBlock, pExpression->u.logical_not, pExpression);
 
     if (BOOLEAN_EXPRESSION == pExpression->u.logical_not->kind)
     {
@@ -392,7 +416,7 @@ Expression* FixTree::FixLogicalNotExpression(Block *pBlock, Expression *pExpress
 
 Expression* FixTree::FixFunctionCallExpression(Block *pBlock, Expression *pExpression)
 {
-    Expression *pFunctionExpression = FixExpression(pBlock, pExpression->u.function_call_expression.function);
+    Expression *pFunctionExpression = FixExpression(pBlock, pExpression->u.function_call_expression.function, pExpression);
 
     if (pFunctionExpression->kind != IDENTIFIER_EXPRESSION)
     {
@@ -419,7 +443,7 @@ Expression* FixTree::FixFunctionCallExpression(Block *pBlock, Expression *pExpre
 
 Expression* FixTree::FixIncDecExpression(Block *pBlock, Expression *pExpression)
 {
-    pExpression->u.inc_dec.operand = FixExpression(pBlock, pExpression->u.inc_dec.operand);
+    pExpression->u.inc_dec.operand = FixExpression(pBlock, pExpression->u.inc_dec.operand, pExpression);
 
     if (!IsInt(pExpression->u.inc_dec.operand->type))
     {
@@ -432,14 +456,89 @@ Expression* FixTree::FixIncDecExpression(Block *pBlock, Expression *pExpression)
     return pExpression;
 }
 
+Expression* FixTree::FixArrayLiteralExpression(Block *pBlock, Expression *pExpression)
+{
+    ExpressionList *pExpressionList = pExpression->u.array_literal;
+
+    if (nullptr == pExpressionList)
+    {
+        m_Error.CompileError(pExpression->line_number, ARRAY_LITERAL_EMPTY_ERR, MESSAGE_ARGUMENT_END);
+    }
+
+    pExpressionList->expression = FixExpression(pBlock, pExpressionList->expression, pExpression);
+
+    TypeSpecifier *pTypeSpecifier = pExpressionList->expression->type;
+
+    for (ExpressionList *pos = pExpressionList->next; pos; pos = pos->next)
+    {
+        pos->expression = FixExpression(pBlock, pos->expression, pExpression);
+        pos->expression = CreateAssignCast(pos->expression, pTypeSpecifier);
+    }
+
+    pExpression->type = m_Util.AllocTypeSpecifier(pTypeSpecifier->basic_type);
+    pExpression->type->derive = m_Util.AllocTypeDerive(ARRAY_DERIVE);
+    pExpression->type->derive->next = pTypeSpecifier->derive;
+
+    return pExpression;
+}
+
+Expression* FixTree::FixIndexExpression(Block *pBlock, Expression *pExpression)
+{
+    IndexExpression *pIndexExpression = &pExpression->u.index_expression;
+
+    pIndexExpression->array = FixExpression(pBlock, pIndexExpression->array, pExpression);
+    pIndexExpression->index = FixExpression(pBlock, pIndexExpression->index, pExpression);
+
+    if (nullptr == pIndexExpression->array->type->derive || pIndexExpression->array->type->derive->tag != ARRAY_DERIVE)
+    {
+        m_Error.CompileError(pExpression->line_number, INDEX_LEFT_OPERAND_NOT_ARRAY_ERR, MESSAGE_ARGUMENT_END);
+    }
+
+    if (!IsInt(pIndexExpression->index->type))
+    {
+        m_Error.CompileError(pExpression->line_number, INDEX_NOT_INT_ERR, MESSAGE_ARGUMENT_END);
+    }
+
+    pExpression->type = m_Util.AllocTypeSpecifier(pIndexExpression->array->type->basic_type);
+    pExpression->type->derive = pIndexExpression->array->type->derive->next;
+
+    return pExpression;
+}
+
+Expression* FixTree::FixArrayCreationExpression(Block *pBlock, Expression *pExpression)
+{
+    TypeDerive *pHeadTypeDerive = nullptr;
+
+    for (ArrayDimension *pos = pExpression->u.array_creation.dimension; pos; pos = pos->next)
+    {
+        if (pos->expression)
+        {
+            pos->expression = FixExpression(pBlock, pos->expression, pExpression);
+            if (!IsInt(pos->expression->type))
+            {
+                m_Error.CompileError(pExpression->line_number, ARRAY_SIZE_NOT_INT_ERR, MESSAGE_ARGUMENT_END);
+            }
+        }
+
+        TypeDerive *pTypeDerive = m_Util.AllocTypeDerive(ARRAY_DERIVE);
+        pTypeDerive->next = pHeadTypeDerive;
+        pHeadTypeDerive = pTypeDerive;
+    }
+
+    pExpression->type = m_Util.AllocTypeSpecifier(pExpression->u.array_creation.type->basic_type);
+    pExpression->type->derive = pHeadTypeDerive;
+
+    return pExpression;
+}
+
 void FixTree::FixIfStatement(Block *pBlock, IfStatement *pIfStatement, FunctionDefinition *pFunctionDefinition)
 {
-    FixExpression(pBlock, pIfStatement->condition);
+    FixExpression(pBlock, pIfStatement->condition, nullptr);
     FixStatementList(pIfStatement->then_block, pIfStatement->then_block->statement_list, pFunctionDefinition);
 
     for (Elsif *pos = pIfStatement->elsif_list; pos; pos = pos->next)
     {
-        FixExpression(pBlock, pos->condition);
+        FixExpression(pBlock, pos->condition, nullptr);
 
         if (pos->block)
         {
@@ -455,33 +554,48 @@ void FixTree::FixIfStatement(Block *pBlock, IfStatement *pIfStatement, FunctionD
 
 void FixTree::FixReturnStatement(Block *pBlock, ReturnStatement *pReturnStatement, FunctionDefinition *pFunctionDefinition)
 {
-    Expression *pReturnValue = FixExpression(pBlock, pReturnStatement->return_value);
+    Expression *pReturnValue = FixExpression(pBlock, pReturnStatement->return_value, nullptr);
 
     if (nullptr == pReturnValue)
     {
-        FIXTREE_DBG_Assert(nullptr == pFunctionDefinition->type->derive, ("closure is not supported."));
-
-        switch (pFunctionDefinition->type->basic_type)
+        if (pFunctionDefinition->type->derive)
         {
-        case DVM_BOOLEAN_TYPE :
-            pReturnValue = m_Create.AllocExpression(BOOLEAN_EXPRESSION);
-            pReturnValue->u.boolean_value = DVM_FALSE;
-            break;
+            if (ARRAY_DERIVE == pFunctionDefinition->type->derive->tag)
+            {
+                pReturnValue = m_Create.AllocExpression(NULL_EXPRESSION);
+            }
+            else
+            {
+                UTIL_DBG_Assert(0, ("pFunctionDefinition->type->derive..", pFunctionDefinition->type->derive));
+            }
+        }
+        else
+        {
+            switch (pFunctionDefinition->type->basic_type)
+            {
+            case DVM_BOOLEAN_TYPE :
+                pReturnValue = m_Create.AllocExpression(BOOLEAN_EXPRESSION);
+                pReturnValue->u.boolean_value = DVM_FALSE;
+                break;
 
-        case DVM_INT_TYPE :
-            pReturnValue = m_Create.AllocExpression(INT_EXPRESSION);
-            pReturnValue->u.int_value = 0;
-            break;
+            case DVM_INT_TYPE :
+                pReturnValue = m_Create.AllocExpression(INT_EXPRESSION);
+                pReturnValue->u.int_value = 0;
+                break;
 
-        case DVM_DOUBLE_TYPE :
-            pReturnValue = m_Create.AllocExpression(DOUBLE_EXPRESSION);
-            pReturnValue->u.double_value = 0.0;
-            break;
+            case DVM_DOUBLE_TYPE :
+                pReturnValue = m_Create.AllocExpression(DOUBLE_EXPRESSION);
+                pReturnValue->u.double_value = 0.0;
+                break;
 
-        case DVM_STRING_TYPE :
-            pReturnValue = m_Create.AllocExpression(STRING_EXPRESSION);
-            pReturnValue->u.string_value = L"";
-            break;
+            case DVM_STRING_TYPE :
+                pReturnValue = m_Create.AllocExpression(NULL_EXPRESSION);
+                pReturnValue->u.string_value = L"";
+                break;
+
+            default :
+                UTIL_DBG_Assert(0, ("basic_type..", pFunctionDefinition->type->basic_type));
+            }
         }
 
         pReturnStatement->return_value = pReturnValue;
@@ -517,6 +631,11 @@ Expression* FixTree::EvalMathExpressionInt(Expression *pExpression, int left, in
         break;
 
     case DIV_EXPRESSION :
+        if (0 == right)
+        {
+            m_Error.CompileError(pExpression->line_number, DIVISION_BY_ZERO_IN_COMPILE_ERR, MESSAGE_ARGUMENT_END);
+        }
+
         pExpression->u.int_value = left / right;
         break;
 
@@ -784,6 +903,13 @@ Expression* FixTree::EvalCompareExpression(Expression *pExpression)
             pExpression->u.binary_expression.left->u.string_value,
             pExpression->u.binary_expression.right->u.string_value);
     }
+    else if (NULL_EXPRESSION == pExpression->u.binary_expression.left->kind
+        && NULL_EXPRESSION == pExpression->u.binary_expression.right->kind)
+    {
+        pExpression->kind = BOOLEAN_EXPRESSION;
+        pExpression->type = m_Util.AllocTypeSpecifier(DVM_BOOLEAN_TYPE);
+        pExpression->u.boolean_value = DVM_TRUE;
+    }
 
     return pExpression;
 }
@@ -818,13 +944,14 @@ Expression* FixTree::AllocCastExpression(CastType enType, Expression *pOperand)
 
 Expression* FixTree::CreateAssignCast(Expression *pSrc, TypeSpecifier *pDest)
 {
-    if (pSrc->type->derive != nullptr || pDest->derive != nullptr)
+    if (m_Util.CompareType(pSrc->type, pDest))
     {
-        m_Error.CompileError(pSrc->line_number, DERIVE_TYPE_CAST_ERR, MESSAGE_ARGUMENT_END);
+        return pSrc;
     }
 
-    if (pSrc->type->basic_type == pDest->basic_type)
+    if (DVM_NULL_TYPE == pSrc->type->basic_type && IsObject(pDest))
     {
+        UTIL_DBG_Assert(nullptr == pSrc->type->derive, ("pSrc derive != nullptr"));
         return pSrc;
     }
 
@@ -840,7 +967,7 @@ Expression* FixTree::CreateAssignCast(Expression *pSrc, TypeSpecifier *pDest)
     }
     else
     {
-        CastMismatchError(pSrc->line_number, pSrc->type->basic_type, pDest->basic_type);
+        CastMismatchError(pSrc->line_number, pSrc->type, pDest);
     }
 
     return nullptr;
@@ -909,7 +1036,7 @@ void FixTree::CheckArgument(Block *pBlock, FunctionDefinition *pFunctionDefiniti
 
     for (; pParameter && pArgument; pParameter = pParameter->next, pArgument = pArgument->next)
     {
-        pArgument->expression = FixExpression(pBlock, pArgument->expression);
+        pArgument->expression = FixExpression(pBlock, pArgument->expression, pExpression);
         pArgument->expression = CreateAssignCast(pArgument->expression, pParameter->type);
     }
 
@@ -993,14 +1120,21 @@ void FixTree::AddReturnFunction(FunctionDefinition *pFunctionDefinition)
     }
 
     Statement *pRetStatement = m_Create.CreateReturnStatement(nullptr);
+    pRetStatement->line_number = pFunctionDefinition->end_line_number;
+
+    if (pRetStatement->u.return_s.return_value)
+    {
+        pRetStatement->u.return_s.return_value->line_number = pFunctionDefinition->end_line_number;
+    }
+
     FixReturnStatement(pFunctionDefinition->block, &pRetStatement->u.return_s, pFunctionDefinition);
     *ppLastStatementList = m_Create.CreateStatementList(pRetStatement);
 }
 
-void FixTree::CastMismatchError(int iLine, DVM_BasicType enSrc, DVM_BasicType enDest)
+void FixTree::CastMismatchError(int iLine, TypeSpecifier *pSrc, TypeSpecifier *pDest)
 {
-    char *pSrcName = m_Util.GetBasicTypeName(enSrc);
-    char *pDestName = m_Util.GetBasicTypeName(enDest);
+    char *pSrcName = m_Util.GetTypeName(pSrc);
+    char *pDestName = m_Util.GetTypeName(pDest);
 
     m_Error.CompileError(iLine,
         CAST_MISMATCH_ERR,

@@ -24,7 +24,7 @@ public:
     void operator () (DKC_Compiler *pCompiler);
 
 private:
-    Expression* FixExpression(Block *pBlock, Expression *pExpression);
+    Expression* FixExpression(Block *pBlock, Expression *pExpression, Expression *pParentExpression);
     void FixStatement(Block *pBlock, Statement *pStatement, FunctionDefinition *pFunctionDefinition);
 
     Expression* FixIdentifierExpression(Block *pBlock, Expression *pExpression);
@@ -37,6 +37,9 @@ private:
     Expression* FixLogicalNotExpression(Block *pBlock, Expression *pExpression);
     Expression* FixFunctionCallExpression(Block *pBlock, Expression *pExpression);
     Expression* FixIncDecExpression(Block *pBlock, Expression *pExpression);
+    Expression* FixArrayLiteralExpression(Block *pBlock, Expression *pExpression);
+    Expression* FixIndexExpression(Block *pBlock, Expression *pExpression);
+    Expression* FixArrayCreationExpression(Block *pBlock, Expression *pExpression);
     
     void FixIfStatement(Block *pBlock, IfStatement *pIfStatement, FunctionDefinition *pFunctionDefinition);
     void FixReturnStatement(Block *pBlock, ReturnStatement *pReturnStatement, FunctionDefinition *pFunctionDefinition);
@@ -62,7 +65,7 @@ private:
     void AddParameterAsDeclaration(FunctionDefinition *pFunctionDefinition);
     void AddReturnFunction(FunctionDefinition *pFunctionDefinition);
 
-    void CastMismatchError(int iLine, DVM_BasicType enSrc, DVM_BasicType enDest);
+    void CastMismatchError(int iLine, TypeSpecifier *pSrc, TypeSpecifier *pDest);
 
     inline bool IsInt(TypeSpecifier *pType) { return (DVM_INT_TYPE == pType->basic_type && nullptr == pType->derive); }
     inline bool IsDouble(TypeSpecifier *pType) { return (DVM_DOUBLE_TYPE == pType->basic_type && nullptr == pType->derive); }
