@@ -88,7 +88,8 @@ void Error::InitMessageFormat()
     m_ErrorMessageFormat[27] = TEXT("数组的下标不是int类型。");
     m_ErrorMessageFormat[28] = TEXT("数组的大小不是int类型。");
     m_ErrorMessageFormat[29] = TEXT("整数值不能被0除。");
-    m_ErrorMessageFormat[30] = TEXT("dummy");
+    m_ErrorMessageFormat[30] = L"不能在顶层代码中使用定义局部变量$(name)。";
+    m_ErrorMessageFormat[31] = TEXT("dummy");
 }
 
 void Error::SelfCheck()

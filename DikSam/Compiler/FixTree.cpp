@@ -1069,6 +1069,14 @@ void FixTree::AddDeclaration(Block *pBlock, Declaration *pDeclaration, FunctionD
     if (pBlock)
     {
         pBlock->declaration_list = m_Create.ChainDeclaration(pBlock->declaration_list, pDeclaration);
+
+        if (nullptr == pFunctionDefinition)
+        {
+            m_Error.CompileError(iLine, LOCAL_VARIABLE_IN_TOP_ERR,
+                STRING_MESSAGE_ARGUMENT, "name", pDeclaration->name,
+                MESSAGE_ARGUMENT_END);
+        }
+
         AddLocalVariable(pFunctionDefinition, pDeclaration);
         pDeclaration->is_local = DVM_TRUE;
     }
