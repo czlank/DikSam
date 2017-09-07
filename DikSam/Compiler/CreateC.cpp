@@ -115,6 +115,11 @@ Expression* dkc_create_function_call_expression(Expression *function, ArgumentLi
     return DikSam::GetClassObject(g_iCurrentThreadIndex)->GetCreate()->CreateFunctionCallExpression(function, argument);
 }
 
+Expression* dkc_create_member_expression(Expression *expression, char *member_name)
+{
+    return DikSam::GetClassObject(g_iCurrentThreadIndex)->GetCreate()->CreateMemberExpression(expression, member_name);
+}
+
 Expression* dkc_create_boolean_expression(DVM_Boolean value)
 {
     return DikSam::GetClassObject(g_iCurrentThreadIndex)->GetCreate()->CreateBooleanExpression(value);

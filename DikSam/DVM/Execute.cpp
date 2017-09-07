@@ -118,10 +118,10 @@ void Execute::ConvertCode(DVM_Executable *pExecutable, DVM_Byte *pCode, int iCod
     {
         if (DVM_PUSH_STACK_INT == pCode[i]
             || DVM_PUSH_STACK_DOUBLE == pCode[i]
-            || DVM_PUSH_STACK_STRING == pCode[i]
+            || DVM_PUSH_STACK_OBJECT == pCode[i]
             || DVM_POP_STACK_INT == pCode[i]
             || DVM_POP_STACK_DOUBLE == pCode[i]
-            || DVM_POP_STACK_STRING == pCode[i])
+            || DVM_POP_STACK_OBJECT == pCode[i])
         {
             EXECUTE_DBG_Assert(pFunction != nullptr, ("pFunction == nullptr"));
 
@@ -406,7 +406,7 @@ DVM_Value Execute::ExecuteCode(Function *pFunction, DVM_Byte *pCode, int iCodeSi
             pc += 3;
             break;
 
-        case DVM_PUSH_STACK_STRING :
+        case DVM_PUSH_STACK_OBJECT :
             STO_WRITE(0, STO_I(base + GET_2BYTE_INT(&pCode[pc + 1])));
             m_pVirtualMachine->stack.stack_pointer++;
             pc += 3;
@@ -424,7 +424,7 @@ DVM_Value Execute::ExecuteCode(Function *pFunction, DVM_Byte *pCode, int iCodeSi
             pc += 3;
             break;
 
-        case DVM_POP_STACK_STRING :
+        case DVM_POP_STACK_OBJECT :
             STO_WRITE_I(base + GET_2BYTE_INT(&pCode[pc + 1]), STO(-1));
             m_pVirtualMachine->stack.stack_pointer--;
             pc += 3;
@@ -442,7 +442,7 @@ DVM_Value Execute::ExecuteCode(Function *pFunction, DVM_Byte *pCode, int iCodeSi
             pc += 3;
             break;
 
-        case DVM_PUSH_STATIC_STRING :
+        case DVM_PUSH_STATIC_OBJECT :
             STO_WRITE(0, m_pVirtualMachine->static_v.variable[GET_2BYTE_INT(&pCode[pc + 1])].object);
             m_pVirtualMachine->stack.stack_pointer++;
             pc += 3;
@@ -460,7 +460,7 @@ DVM_Value Execute::ExecuteCode(Function *pFunction, DVM_Byte *pCode, int iCodeSi
             pc += 3;
             break;
 
-        case DVM_POP_STATIC_STRING :
+        case DVM_POP_STATIC_OBJECT :
             m_pVirtualMachine->static_v.variable[GET_2BYTE_INT(&pCode[pc + 1])].object = STO(-1);
             m_pVirtualMachine->stack.stack_pointer--;
             pc += 3;
