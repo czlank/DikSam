@@ -57,6 +57,7 @@ public:
 private:
     int AddConstantPool(DVM_Executable *pExecutable, DVM_ConstantPool *pConstantPool);
     void AddGlobalVariable(DKC_Compiler *pCompiler, DVM_Executable *pExecutable);
+    int AddTypeSpecifier(TypeSpecifier *pTypeSpecifier, DVM_Executable *pExecutable);
     void AddLineNumber(OpcodeBuf *pOpcode, int iLine, int iStartPC);
     void AddFunctions(DKC_Compiler *pCompiler, DVM_Executable *pExecutable);
     void AddTopLevel(DKC_Compiler *pCompiler, DVM_Executable *pExecutable);
@@ -68,13 +69,18 @@ private:
     void GenerateStringExpression(DVM_Executable *pExecutable, Expression *pExpression, OpcodeBuf *pOpcode);
     void GenerateIdentifierExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode);
     void GeneratePopToIdentifier(Declaration *pDeclaration, int iLine, OpcodeBuf *pOpcode);
+    void GeneratePopToLValue(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode);
     void GenerateAssignExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode, bool isTopLevel);
     void GenerateBinaryExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, DVM_Opcode opCode, OpcodeBuf *pOpcode);
     void GenerateLogicalAndExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode);
     void GenerateLogicalOrExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode);
     void GenerateCastExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode);
+    void GenerateArrayLiteralExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode);
+    void GenerateIndexExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode);
     void GenerateIncDecExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, ExpressionKind kind, OpcodeBuf *pOpcode, bool isTopLevel);
     void GenerateFunctionCallExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode);
+    void GenerateNullExpression(DVM_Executable *pExecutable, Expression *pExpression, OpcodeBuf *pOpcode);
+    void GenerateArrayCreationExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode);
     void GenerateExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode);
 
     void GenerateExpressionStatement(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode);
@@ -91,8 +97,9 @@ private:
     DVM_Executable* AllocExecutable();
     DVM_LocalVariable* CopyParameterList(ParameterList *pParameterList, int *pParameterCount);
     DVM_LocalVariable* CopyLocalVariables(FunctionDefinition *pFunctionDefinition, int iParameterCount);
+    void CopyTypeSpecifierNoAlloc(TypeSpecifier *pSrc, DVM_TypeSpecifier *pDest);
     DVM_TypeSpecifier* CopyTypeSpecifier(TypeSpecifier *pTypeSpecifier);
-    int GetOpcodeTypeOffset(DVM_BasicType enType);
+    int GetOpcodeTypeOffset(TypeSpecifier *pTypeSpecifier);
     int GetLabel(OpcodeBuf *pOpcode);
     void SetLabel(OpcodeBuf *pOpcode, int ilabel);
     void InitOpcodeBuf(OpcodeBuf *pOpcode);
@@ -100,6 +107,8 @@ private:
     DVM_Byte* FixOpcodeBuf(OpcodeBuf *pOpcode);
     int CalcNeedStackSize(DVM_Byte *pCode, int iCodeSize);
     void CopyFunction(FunctionDefinition *pFunctionDefinition, DVM_Function *pFunction);
+
+    inline bool IsString(TypeSpecifier *pType) { return (DVM_STRING_TYPE == pType->basic_type && nullptr == pType->derive); }
 
 private:
     Debug   &m_Debug;
