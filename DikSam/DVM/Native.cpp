@@ -1,10 +1,11 @@
 #include "StdAfx.h"
 #include "Native.h"
 #include "DVM_pri.h"
+#include "Debug.h"
 #include "Memory.h"
 
-Native::Native(Memory& memory)
-    : m_Memory(memory)
+Native::Native(Debug& debug, Memory& memory)
+    : m_Debug(debug), m_Memory(memory)
 {
 
 }
@@ -43,17 +44,14 @@ DVM_Value Native::SleepProc(Native *pThis, DVM_VirtualMachine *pVirtualMachine, 
 
 DVM_Value Native::Print(DVM_VirtualMachine *pVirtualMachine, int iArgCount, DVM_Value *pArgs)
 {
-    DVM_Value ret;
+    NATIVE_DBG_Assert(iArgCount == 1, ("iArgCount..", iArgCount));
 
-    ret.int_value = -1;
-
-    if (iArgCount != 1)
+    if (pArgs[0].object)
     {
-        return ret;
+        std::wcout << pArgs[0].object->u.string.string << std::endl;
     }
 
-    std::wcout << pArgs[0].object->u.string.string << std::endl;
-
+    DVM_Value ret;
     ret.int_value = 0;
 
     return ret;
@@ -61,17 +59,11 @@ DVM_Value Native::Print(DVM_VirtualMachine *pVirtualMachine, int iArgCount, DVM_
 
 DVM_Value Native::Sleep(DVM_VirtualMachine *pVirtualMachine, int iArgCount, DVM_Value *pArgs)
 {
-    DVM_Value ret;
-
-    ret.int_value = -1;
-
-    if (iArgCount != 1)
-    {
-        return ret;
-    }
+    NATIVE_DBG_Assert(iArgCount == 1, ("iArgCount..", iArgCount));
 
     ::Sleep(pArgs[0].int_value);
 
+    DVM_Value ret;
     ret.int_value = 0;
 
     return ret;

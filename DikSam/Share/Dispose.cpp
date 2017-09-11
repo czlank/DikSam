@@ -48,20 +48,30 @@ void Dispose::operator () (DVM_Executable *pExecutable)
     }
 
     DISPOSE_MEM_Free(pExecutable->function);
+    
+    for (int i = 0; i < pExecutable->type_specifier_count; i++)
+    {
+        DisposeTypeDerive(&pExecutable->type_specifier[i]);
+    }
+
+    DISPOSE_MEM_Free(pExecutable->type_specifier);
+
     DISPOSE_MEM_Free(pExecutable->code);
     DISPOSE_MEM_Free(pExecutable->line_number);
     DISPOSE_MEM_Free(pExecutable);
 }
 
-void Dispose::DisposeTypeSpecifier(DVM_TypeSpecifier *pType)
+void Dispose::DisposeTypeDerive(DVM_TypeSpecifier *pType)
 {
     for (int i = 0; i < pType->derive_count; i++)
     {
         switch (pType->derive[i].tag)
         {
         case DVM_FUNCTION_DERIVE :
-            DisposeLocalVariable(pType->derive[i].u.function_d.parameter_count,
-                pType->derive[i].u.function_d.parameter);
+            DisposeLocalVariable(pType->derive[i].u.function_d.parameter_count, pType->derive[i].u.function_d.parameter);
+            break;
+
+        case DVM_ARRAY_DERIVE :
             break;
 
         default:
@@ -70,6 +80,12 @@ void Dispose::DisposeTypeSpecifier(DVM_TypeSpecifier *pType)
     }
 
     DISPOSE_MEM_Free(pType->derive);
+}
+
+void Dispose::DisposeTypeSpecifier(DVM_TypeSpecifier *pType)
+{
+    DisposeTypeDerive(pType);
+
     DISPOSE_MEM_Free(pType);
 }
 

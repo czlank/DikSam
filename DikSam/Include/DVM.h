@@ -11,6 +11,7 @@ typedef struct DVM_VirtualMachine_tag   DVM_VirtualMachine;
 
 typedef struct DVM_Object_tag           DVM_Object;
 typedef struct DVM_String_tag           DVM_String;
+typedef struct DVM_Array_tag            DVM_Array;
 
 typedef enum
 {

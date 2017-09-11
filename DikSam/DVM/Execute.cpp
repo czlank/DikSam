@@ -11,7 +11,7 @@ Execute::Execute(Debug& debug, Memory& memory, Error& error)
     : m_Debug(debug)
     , m_Memory(memory)
     , m_Error(error)
-    , m_Native(memory)
+    , m_Native(debug, memory)
     , m_GarbageCollect(debug, memory)
     , m_pVirtualMachine(nullptr)
 {

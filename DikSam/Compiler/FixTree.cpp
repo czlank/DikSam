@@ -633,7 +633,7 @@ Expression* FixTree::EvalMathExpressionInt(Expression *pExpression, int left, in
     case DIV_EXPRESSION :
         if (0 == right)
         {
-            m_Error.CompileError(pExpression->line_number, DIVISION_BY_ZERO_IN_COMPILE_ERR, MESSAGE_ARGUMENT_END);
+            m_Error.CompileError(pExpression->line_number, DIVISION_BY_ZERO_ERR, MESSAGE_ARGUMENT_END);
         }
 
         pExpression->u.int_value = left / right;

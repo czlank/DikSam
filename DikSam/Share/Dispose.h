@@ -17,6 +17,7 @@ public:
     void operator () (DVM_Executable *pExecutable);
 
 private:
+    void DisposeTypeDerive(DVM_TypeSpecifier *pType);
     void DisposeTypeSpecifier(DVM_TypeSpecifier *pType);
     void DisposeLocalVariable(int iCount, DVM_LocalVariable *pLocalVariable);
 

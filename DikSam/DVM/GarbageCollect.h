@@ -17,6 +17,7 @@ public:
     ~GarbageCollect();
 
     void GC(DVM_VirtualMachine *pVirtualMachine);
+
     DVM_Object* LiteralToString(DVM_VirtualMachine *pVirtualMachine, DVM_Char *str);
     DVM_Object* CreateString(DVM_VirtualMachine *pVirtualMachine, DVM_Char *str);
 

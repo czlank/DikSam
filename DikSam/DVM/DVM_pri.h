@@ -12,8 +12,9 @@ extern "C"
 #define STACK_ALLOC_SIZE    (4096)
 #define HEAP_THRESHOLD_SIZE (1024 * 256)
 
-#define TRUE_STRING (L"true")
-#define FALSE_STRING (L"false")
+#define NULL_STRING         (TEXT("null"))
+#define TRUE_STRING         (TEXT("true"))
+#define FALSE_STRING        (TEXT("false"))
 
 #define NO_LINE_NUMBER_PC   (-1)
 
@@ -68,6 +69,7 @@ typedef struct
 typedef enum
 {
     STRING_OBJECT = 1,
+    ARRAY_OBJECT,
     OBJECT_TYPE_COUNT_PLUS_1
 } ObjectType;
 
@@ -77,6 +79,26 @@ struct DVM_String_tag
     DVM_Char    *string;
 };
 
+typedef enum
+{
+    INT_ARRAY = 1,
+    DOUBLE_ARRAY,
+    OBJECT_ARRAY
+} ArrayType;
+
+struct DVM_Array_tag
+{
+    ArrayType       type;
+    int             size;
+    int             alloc_size;
+    union
+    {
+        int         *int_array;
+        double      *double_array;
+        DVM_Object  **object;
+    } u;
+};
+
 struct DVM_Object_tag
 {
     ObjectType      type;
@@ -84,6 +106,7 @@ struct DVM_Object_tag
     union
     {
         DVM_String  string;
+        DVM_Array   array;
     } u;
 
     struct DVM_Object_tag   *prev;
@@ -108,6 +131,8 @@ struct DVM_VirtualMachine_tag
     Stack           stack;
     Heap            heap;
     Static          static_v;
+    DVM_Executable  *current_executable;
+    Function        *current_function;
     int             pc;
     Function        *function;
     int             function_count;
