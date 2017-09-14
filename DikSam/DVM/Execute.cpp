@@ -37,6 +37,63 @@ DVM_Value Execute::operator () (DVM_Executable* pExecutable)
     return ret;
 }
 
+int Execute::ArrayGetInt(DVM_Object *pArray, int iIndex)
+{
+    CheckArray(pArray, iIndex, m_pVirtualMachine->current_executable, m_pVirtualMachine->current_function, m_pVirtualMachine->pc);
+
+    return pArray->u.array.u.int_array[iIndex];
+}
+
+double Execute::ArrayGetDouble(DVM_Object *pArray, int iIndex)
+{
+    CheckArray(pArray, iIndex, m_pVirtualMachine->current_executable, m_pVirtualMachine->current_function, m_pVirtualMachine->pc);
+
+    return pArray->u.array.u.double_array[iIndex];
+}
+
+DVM_Object* Execute::ArrayGetObject(DVM_Object *pArray, int iIndex)
+{
+    CheckArray(pArray, iIndex, m_pVirtualMachine->current_executable, m_pVirtualMachine->current_function, m_pVirtualMachine->pc);
+
+    return pArray->u.array.u.object[iIndex];
+}
+
+void Execute::ArraySetInt(DVM_Object* pArray, int iIndex, int value)
+{
+    CheckArray(pArray, iIndex, m_pVirtualMachine->current_executable, m_pVirtualMachine->current_function, m_pVirtualMachine->pc);
+
+    pArray->u.array.u.int_array[iIndex] = value;
+}
+
+void Execute::ArraySetDouble(DVM_Object* pArray, int iIndex, double value)
+{
+    CheckArray(pArray, iIndex, m_pVirtualMachine->current_executable, m_pVirtualMachine->current_function, m_pVirtualMachine->pc);
+
+    pArray->u.array.u.double_array[iIndex] = value;
+}
+
+void Execute::ArraySetObject(DVM_Object* pArray, int iIndex, DVM_Object *value)
+{
+    CheckArray(pArray, iIndex, m_pVirtualMachine->current_executable, m_pVirtualMachine->current_function, m_pVirtualMachine->pc);
+
+    pArray->u.array.u.object[iIndex] = value;
+}
+
+void Execute::CheckArray(DVM_Object *pArray, int iIndex, DVM_Executable *pExecutable, Function *pFunction, int iPC)
+{
+    if (nullptr == pArray)
+    {
+        m_Error.DVMError(pExecutable, pFunction, iPC, NULL_POINTER_ERR, MESSAGE_ARGUMENT_END);
+    }
+
+    if (iIndex < 0 || iIndex >= pArray->u.array.size)
+    {
+        m_Error.DVMError(pExecutable, pFunction, iPC,
+            INDEX_OUT_OF_BOUNDS_ERR, INT_MESSAGE_ARGUMENT, "index", iIndex, INT_MESSAGE_ARGUMENT, "size", pArray->u.array.size,
+            MESSAGE_ARGUMENT_END);
+    }
+}
+
 void Execute::AddExecutable(DVM_Executable *pExecutable)
 {
     m_pVirtualMachine->executable = pExecutable;

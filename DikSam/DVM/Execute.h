@@ -54,6 +54,13 @@ public:
     DVM_Value operator () (DVM_Executable* pExecutable);
 
 private:
+    int ArrayGetInt(DVM_Object *pArray, int iIndex);
+    double ArrayGetDouble(DVM_Object *pArray, int iIndex);
+    DVM_Object* ArrayGetObject(DVM_Object *pArray, int iIndex);
+    void ArraySetInt(DVM_Object* pArray, int iIndex, int value);
+    void ArraySetDouble(DVM_Object* pArray, int iIndex, double value);
+    void ArraySetObject(DVM_Object* pArray, int iIndex, DVM_Object *value);
+    void CheckArray(DVM_Object *pArray, int iIndex, DVM_Executable *pExecutable, Function *pFunction, int iPC);
     void AddExecutable(DVM_Executable *pExecutable);
     void AddFunctions(DVM_Executable *pExecutable);
     int SearchFunction(char *lpstrName);
