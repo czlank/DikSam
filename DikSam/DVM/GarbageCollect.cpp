@@ -45,6 +45,72 @@ DVM_Object* GarbageCollect::CreateString(DVM_VirtualMachine *pVirtualMachine, DV
     return pObj;
 }
 
+DVM_Object* GarbageCollect::CreateArrayIntI(DVM_VirtualMachine *pVirtualMachine, int iSize)
+{
+    DVM_Object *pObject = AllocArray(pVirtualMachine, INT_ARRAY, iSize);
+
+    pObject->u.array.u.int_array = (int *)GARBAGECOLLECT_MEM_Malloc(sizeof(int) * iSize);
+    pVirtualMachine->heap.current_heap_size += sizeof(int) * iSize;
+
+    return pObject;
+}
+
+DVM_Object* GarbageCollect::CreateArrayInt(DVM_VirtualMachine *pVirtualMachine, int iSize)
+{
+    DVM_Object *pObject = CreateArrayIntI(pVirtualMachine, iSize);
+
+    for (int i = 0; i < iSize; i++)
+    {
+        pObject->u.array.u.int_array[i] = 0;
+    }
+
+    return pObject;
+}
+
+DVM_Object* GarbageCollect::CreateArrayDoubleI(DVM_VirtualMachine *pVirtualMachine, int iSize)
+{
+    DVM_Object *pObject = AllocArray(pVirtualMachine, DOUBLE_ARRAY, iSize);
+
+    pObject->u.array.u.double_array = (double *)GARBAGECOLLECT_MEM_Malloc(sizeof(double) * iSize);
+    pVirtualMachine->heap.current_heap_size += sizeof(double) * iSize;
+
+    return pObject;
+}
+
+DVM_Object* GarbageCollect::CreateArrayDouble(DVM_VirtualMachine *pVirtualMachine, int iSize)
+{
+    DVM_Object *pObject = CreateArrayDoubleI(pVirtualMachine, iSize);
+
+    for (int i = 0; i < iSize; i++)
+    {
+        pObject->u.array.u.double_array[i] = 0.0;
+    }
+
+    return pObject;
+}
+
+DVM_Object* GarbageCollect::CreateArrayObjectI(DVM_VirtualMachine *pVirtualMachine, int iSize)
+{
+    DVM_Object *pObject = AllocArray(pVirtualMachine, OBJECT_ARRAY, iSize);
+
+    pObject->u.array.u.object = (DVM_Object **)GARBAGECOLLECT_MEM_Malloc(sizeof(DVM_Object*) * iSize);
+    pVirtualMachine->heap.current_heap_size += sizeof(DVM_Object*) * iSize;
+
+    return pObject;
+}
+
+DVM_Object* GarbageCollect::CreateArrayObject(DVM_VirtualMachine *pVirtualMachine, int iSize)
+{
+    DVM_Object *pObject = CreateArrayObjectI(pVirtualMachine, iSize);
+
+    for (int i = 0; i < iSize; i++)
+    {
+        pObject->u.array.u.object[i] = nullptr;
+    }
+
+    return pObject;
+}
+
 void GarbageCollect::CheckGC(DVM_VirtualMachine *pVirtualMachine)
 {
     if (pVirtualMachine->heap.current_heap_size > pVirtualMachine->heap.current_threshold)
@@ -76,6 +142,17 @@ DVM_Object* GarbageCollect::AllocObject(DVM_VirtualMachine *pVirtualMachine, Obj
     return pObj;
 }
 
+DVM_Object* GarbageCollect::AllocArray(DVM_VirtualMachine *pVirtualMachine, ArrayType enType, int iSize)
+{
+    DVM_Object *pObject = AllocObject(pVirtualMachine, ARRAY_OBJECT);
+
+    pObject->u.array.type = enType;
+    pObject->u.array.size = iSize;
+    pObject->u.array.alloc_size = iSize;
+
+    return pObject;
+}
+
 void GarbageCollect::MarkObjects(DVM_VirtualMachine *pVirtualMachine)
 {
     for (DVM_Object *pObj = pVirtualMachine->heap.header; pObj; pObj = pObj->next)
@@ -85,7 +162,9 @@ void GarbageCollect::MarkObjects(DVM_VirtualMachine *pVirtualMachine)
 
     for (int i = 0; i < pVirtualMachine->static_v.variable_count; i++)
     {
-        if (DVM_STRING_TYPE == pVirtualMachine->executable->global_variable[i].type->basic_type)
+        if (DVM_STRING_TYPE == pVirtualMachine->executable->global_variable[i].type->basic_type
+            || (pVirtualMachine->executable->global_variable[i].type->derive != nullptr
+                && DVM_ARRAY_DERIVE == pVirtualMachine->executable->global_variable[i].type->derive[0].tag))
         {
             Mark(pVirtualMachine->static_v.variable[i].object);
         }
@@ -141,7 +220,18 @@ void GarbageCollect::Mark(DVM_Object *pObj)
     if (nullptr == pObj)
         return;
 
+    if (pObj->marked)
+        return;
+
     pObj->marked = DVM_TRUE;
+
+    if (ARRAY_OBJECT == pObj->type && OBJECT_ARRAY == pObj->u.array.type)
+    {
+        for (int i = 0; i < pObj->u.array.size; i++)
+        {
+            Mark(pObj->u.array.u.object[i]);
+        }
+    }
 }
 
 void GarbageCollect::DisposeObject(DVM_VirtualMachine *pVirtualMachine, DVM_Object *pObj)
@@ -154,6 +244,29 @@ void GarbageCollect::DisposeObject(DVM_VirtualMachine *pVirtualMachine, DVM_Obje
             int iLen = pObj->u.string.string == nullptr ? 0 : std::basic_string<DVM_Char>(pObj->u.string.string).length();
             pVirtualMachine->heap.current_heap_size -= sizeof(DVM_Char) * (iLen + 1);
             GARBAGECOLLECT_MEM_Free(pObj->u.string.string);
+        }
+        break;
+
+    case ARRAY_OBJECT :
+        switch (pObj->u.array.type)
+        {
+        case INT_ARRAY :
+            pVirtualMachine->heap.current_heap_size -= sizeof(int) * pObj->u.array.alloc_size;
+            GARBAGECOLLECT_MEM_Free(pObj->u.array.u.int_array);
+            break;
+
+        case DOUBLE_ARRAY :
+            pVirtualMachine->heap.current_heap_size -= sizeof(double) * pObj->u.array.alloc_size;
+            GARBAGECOLLECT_MEM_Free(pObj->u.array.u.double_array);
+            break;
+
+        case OBJECT_ARRAY :
+            pVirtualMachine->heap.current_heap_size -= sizeof(DVM_Object*) * pObj->u.array.alloc_size;
+            GARBAGECOLLECT_MEM_Free(pObj->u.array.u.object);
+            break;
+
+        default :
+            GARBAGECOLLECT_DBG_Assert(0, ("array.type..", pObj->u.array.type));
         }
         break;
 
