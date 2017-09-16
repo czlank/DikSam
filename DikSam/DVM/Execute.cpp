@@ -225,25 +225,39 @@ void Execute::ConvertCode(DVM_Executable *pExecutable, DVM_Byte *pCode, int iCod
     }
 }
 
-void Execute::InitializeValue(DVM_BasicType enType, DVM_Value *pValue)
+void Execute::InitializeValue(DVM_TypeSpecifier *pTypeSpecifier, DVM_Value *pValue)
 {
-    switch (enType)
+    if (pTypeSpecifier->derive_count > 0)
     {
-    case DVM_BOOLEAN_TYPE :
-    case DVM_INT_TYPE :
-        pValue->int_value = 0;
-        break;
+        if (DVM_ARRAY_DERIVE == pTypeSpecifier->derive[0].tag)
+        {
+            pValue->object = nullptr;
+        }
+        else
+        {
+            EXECUTE_DBG_Assert(0, ("tag..", pTypeSpecifier->derive[0].tag));
+        }
+    }
+    else
+    {
+        switch (pTypeSpecifier->basic_type)
+        {
+        case DVM_BOOLEAN_TYPE:
+        case DVM_INT_TYPE:
+            pValue->int_value = 0;
+            break;
 
-    case DVM_DOUBLE_TYPE :
-        pValue->double_value = 0.0;
-        break;
+        case DVM_DOUBLE_TYPE:
+            pValue->double_value = 0.0;
+            break;
 
-    case DVM_STRING_TYPE :
-        pValue->object = m_GarbageCollect.LiteralToString(m_pVirtualMachine, L"");
-        break;
+        case DVM_STRING_TYPE:
+            pValue->object = nullptr;
+            break;
 
-    default :
-        EXECUTE_DBG_Assert(0, ("enType..", enType));
+        default:
+            EXECUTE_DBG_Assert(0, ("enType..", pTypeSpecifier->basic_type));
+        }
     }
 }
 
@@ -913,6 +927,8 @@ void Execute::CreateVirtualMachine()
     m_pVirtualMachine->heap.current_heap_size = 0;
     m_pVirtualMachine->heap.header = nullptr;
     m_pVirtualMachine->heap.current_threshold = HEAP_THRESHOLD_SIZE;
+
+    m_pVirtualMachine->current_executable = nullptr;
 
     m_pVirtualMachine->function = nullptr;
     m_pVirtualMachine->function_count = 0;
