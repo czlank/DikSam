@@ -276,7 +276,7 @@ void Execute::AddStaticVariables(DVM_Executable *pExecutable)
 
     for (int i = 0; i < pExecutable->global_variable_count; i++)
     {
-        InitializeValue(pExecutable->global_variable[i].type->basic_type, &m_pVirtualMachine->static_v.variable[i]);
+        InitializeValue(pExecutable->global_variable[i].type, &m_pVirtualMachine->static_v.variable[i]);
     }
 }
 
@@ -316,7 +316,7 @@ void Execute::InitializeLocalVariables(DVM_Function *pFunction, int iFromSP)
 
     for (int i = 0, idx = iFromSP; i < pFunction->local_variable_count; i++, idx++)
     {
-        InitializeValue(pFunction->local_variable[i].type->basic_type, &m_pVirtualMachine->stack.stack[idx]);
+        InitializeValue(pFunction->local_variable[i].type, &m_pVirtualMachine->stack.stack[idx]);
 
         if (DVM_STRING_TYPE == pFunction->local_variable[i].type->basic_type)
         {
@@ -413,9 +413,108 @@ void Execute::ReturnFunction(Function **ppFunction, DVM_Byte **ppCode, int *pCod
     m_pVirtualMachine->stack.stack[*pSP - 1] = returnValue;
 }
 
+DVM_Object* Execute::CreateArraySub(int iDim, int iDimIndex, DVM_TypeSpecifier *pType)
+{
+    DVM_Object *ret = nullptr;
+    int size = STI(-iDim);
+
+    if (iDimIndex == pType->derive_count - 1)
+    {
+        switch (pType->basic_type)
+        {
+        case DVM_BOOLEAN_TYPE :
+        case DVM_INT_TYPE :
+            ret = m_GarbageCollect.CreateArrayInt(m_pVirtualMachine, size);
+            break;
+
+        case DVM_DOUBLE_TYPE :
+            ret = m_GarbageCollect.CreateArrayDouble(m_pVirtualMachine, size);
+            break;
+
+        case DVM_STRING_TYPE :
+            ret = m_GarbageCollect.CreateArrayObject(m_pVirtualMachine, size);
+            break;
+
+        case DVM_NULL_TYPE :
+        default :
+            EXECUTE_DBG_Assert(0, ("pType->basic_type..", pType->basic_type));
+        }
+    }
+    else if (DVM_FUNCTION_DERIVE == pType->derive[iDimIndex].tag)
+    {
+        ret = nullptr;
+    }
+    else
+    {
+        ret = m_GarbageCollect.CreateArrayObject(m_pVirtualMachine, size);
+
+        if (iDimIndex < iDim - 1)
+        {
+            STO_WRITE(0, ret);
+            m_pVirtualMachine->stack.stack_pointer++;
+
+            for (int i = 0; i < size; i++) {
+                DVM_Object *child = CreateArraySub(iDim, iDimIndex + 1, pType);
+                ArraySetObject(ret, i, child);
+            }
+
+            m_pVirtualMachine->stack.stack_pointer--;
+        }
+    }
+
+    return ret;
+}
+
+DVM_Object* Execute::CreateArray(int iDim, DVM_TypeSpecifier *pType)
+{
+    return CreateArraySub(iDim, 0, pType);
+}
+
+DVM_Object* Execute::CreateArrayLiteralInt(int iSize)
+{
+    DVM_Object *pArray = m_GarbageCollect.CreateArrayIntI(m_pVirtualMachine, iSize);
+
+    for (int i = 0; i < iSize; i++)
+    {
+        pArray->u.array.u.int_array[i] = STI(-iSize + i);
+    }
+
+    return pArray;
+}
+
+DVM_Object* Execute::CreateArrayLiteralDouble(int iSize)
+{
+    DVM_Object *pArray = m_GarbageCollect.CreateArrayDoubleI(m_pVirtualMachine, iSize);
+
+    for (int i = 0; i < iSize; i++)
+    {
+        pArray->u.array.u.double_array[i] = STD(-iSize + i);
+    }
+
+    return pArray;
+}
+
+DVM_Object* Execute::CreateArrayLiteralObject(int iSize)
+{
+    DVM_Object *pArray = m_GarbageCollect.CreateArrayObjectI(m_pVirtualMachine, iSize);
+
+    for (int i = 0; i < iSize; i++)
+    {
+        pArray->u.array.u.object[i] = STO(-iSize + i);
+    }
+
+    return pArray;
+}
+
+void Execute::RestorePC(DVM_Executable *pExecutable, Function *pFunction, int iPC)
+{
+    m_pVirtualMachine->current_executable = pExecutable;
+    m_pVirtualMachine->current_function = pFunction;
+    m_pVirtualMachine->pc = iPC;
+}
+
 DVM_Value Execute::ExecuteCode(Function *pFunction, DVM_Byte *pCode, int iCodeSize)
 {
-    DVM_Value *stack = m_pVirtualMachine->stack.stack;
     DVM_Executable *exe = m_pVirtualMachine->executable;
     int base = 0;
 
@@ -848,7 +947,7 @@ DVM_Value Execute::ExecuteCode(Function *pFunction, DVM_Byte *pCode, int iCodeSi
             break;
 
         case DVM_DUPLICATE :
-            stack[m_pVirtualMachine->stack.stack_pointer] = stack[m_pVirtualMachine->stack.stack_pointer - 1];
+            m_pVirtualMachine->stack.stack[m_pVirtualMachine->stack.stack_pointer] = m_pVirtualMachine->stack.stack[m_pVirtualMachine->stack.stack_pointer - 1];
             m_pVirtualMachine->stack.stack_pointer++;
             pc++;
             break;

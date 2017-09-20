@@ -73,6 +73,12 @@ private:
     void InvokeNativeFunction(Function *pFunction, int *pSP);
     void InvokeDikSamFunction(Function **ppCaller, Function *pCallee, DVM_Byte **ppCode, int *pCodeSize, int *pPC, int *pSP, int *pBase, DVM_Executable **ppExe);
     void ReturnFunction(Function **ppFunction, DVM_Byte **ppCode, int *pCodeSize, int *pPC, int *pSP, int *pBase, DVM_Executable **ppExe);
+    DVM_Object* CreateArraySub(int iDim, int iDimIndex, DVM_TypeSpecifier *pType);
+    DVM_Object* CreateArray(int iDim, DVM_TypeSpecifier *pType);
+    DVM_Object* CreateArrayLiteralInt(int iSize);
+    DVM_Object* CreateArrayLiteralDouble(int iSize);
+    DVM_Object* CreateArrayLiteralObject(int iSize);
+    void RestorePC(DVM_Executable *pExecutable, Function *pFunction, int iPC);
     DVM_Value ExecuteCode(Function *pFunction, DVM_Byte *pCode, int iCodeSize);
 
     void CreateVirtualMachine();
