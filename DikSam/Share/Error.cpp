@@ -26,7 +26,7 @@ void Error::CompileError(int iLine, DikSamError id, ...)
     va_start(ap, id);
     FormatMessage(m_ErrorMessageFormat[id], &vStrMessage, ap);
     std::wstringstream ss;
-    ss << iLine << TEXT(" ") << vStrMessage.string;
+    ss << TEXT("ÐÐ") << iLine << TEXT(": ") << vStrMessage.string;
     va_end(ap);
 
     m_Util.VStrClear(&vStrMessage);
@@ -46,7 +46,7 @@ void Error::DVMError(DVM_Executable *pExe, Function *pFunc, int pc, DikSamError 
     std::wstringstream ss;
     if (pc != NO_LINE_NUMBER_PC)
     {
-        ss << ConvertPCToLineNumber(pExe, pFunc, pc) << TEXT(" ");
+        ss << TEXT("ÐÐ") << ConvertPCToLineNumber(pExe, pFunc, pc) << TEXT(": ");
     }
 
     ss << vStrMessage.string;

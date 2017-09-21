@@ -1058,12 +1058,25 @@ void FixTree::AddLocalVariable(FunctionDefinition *pFunctionDefinition, Declarat
 
 void FixTree::AddDeclaration(Block *pBlock, Declaration *pDeclaration, FunctionDefinition *pFunctionDefinition, int iLine)
 {
-    if (m_Util.SearchDeclaration(pDeclaration->name, pBlock))
+    if (pFunctionDefinition)
     {
-        m_Error.CompileError(iLine,
-            VARIABLE_MULTIPLE_DEFINE_ERR,
-            STRING_MESSAGE_ARGUMENT, "name", pDeclaration->name,
-            MESSAGE_ARGUMENT_END);
+        if (m_Util.FunctionSearchDeclaration(pDeclaration->name, pBlock))
+        {
+            m_Error.CompileError(iLine,
+                VARIABLE_MULTIPLE_DEFINE_ERR,
+                STRING_MESSAGE_ARGUMENT, "name", pDeclaration->name,
+                MESSAGE_ARGUMENT_END);
+        }
+    }
+    else
+    {
+        if (m_Util.SearchDeclaration(pDeclaration->name, pBlock))
+        {
+            m_Error.CompileError(iLine,
+                VARIABLE_MULTIPLE_DEFINE_ERR,
+                STRING_MESSAGE_ARGUMENT, "name", pDeclaration->name,
+                MESSAGE_ARGUMENT_END);
+        }
     }
 
     if (pBlock)
@@ -1092,7 +1105,7 @@ void FixTree::AddParameterAsDeclaration(FunctionDefinition *pFunctionDefinition)
 {
     for (ParameterList *pParam = pFunctionDefinition->parameter; pParam; pParam = pParam->next)
     {
-        if (m_Util.SearchDeclaration(pParam->name, pFunctionDefinition->block))
+        if (m_Util.FunctionSearchDeclaration(pParam->name, pFunctionDefinition->block))
         {
             m_Error.CompileError(pParam->line_number,
                 PARAMETER_MULTIPLE_DEFINE_ERR,

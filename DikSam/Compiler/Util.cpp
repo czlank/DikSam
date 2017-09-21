@@ -143,6 +143,22 @@ Declaration* Util::SearchDeclaration(const char *lpcstrIdentifier, Block *pBlock
     return nullptr;
 }
 
+Declaration* Util::FunctionSearchDeclaration(const char *lpcstrIdentifier, Block *pBlock)
+{
+    for (Block *bPos = pBlock; bPos; bPos = bPos->outer_block)
+    {
+        for (DeclarationList *dPos = bPos->declaration_list; dPos; dPos = dPos->next)
+        {
+            if (std::string(lpcstrIdentifier) == dPos->declaration->name)
+            {
+                return dPos->declaration;
+            }
+        }
+    }
+
+    return nullptr;
+}
+
 void Util::VStrClear(VString *vStr)
 {
     if (nullptr == vStr->string)
