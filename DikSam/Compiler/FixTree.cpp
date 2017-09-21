@@ -949,7 +949,7 @@ Expression* FixTree::CreateAssignCast(Expression *pSrc, TypeSpecifier *pDest)
         return pSrc;
     }
 
-    if (DVM_NULL_TYPE == pSrc->type->basic_type && IsObject(pDest))
+    if (IsObject(pDest) && DVM_NULL_TYPE == pSrc->type->basic_type)
     {
         UTIL_DBG_Assert(nullptr == pSrc->type->derive, ("pSrc derive != nullptr"));
         return pSrc;
