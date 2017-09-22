@@ -285,14 +285,33 @@ void Execute::AddStaticVariables(DVM_Executable *pExecutable)
 
 DVM_Object* Execute::ChainString(DVM_Object *str1, DVM_Object *str2)
 {
-    int iLen = str1->u.string.string ? std::wstring(str1->u.string.string).length() : 0;
-    iLen += str2->u.string.string ? std::wstring(str2->u.string.string).length() : 0;
+    int iLen = 0;
+
+    if (str1)
+    {
+        iLen = str1->u.string.string ? std::wstring(str1->u.string.string).length() : 0;
+    }
+
+    if (str2)
+    {
+        iLen += str2->u.string.string ? std::wstring(str2->u.string.string).length() : 0;
+    }
+    
     DVM_Char *str = (DVM_Char*)EXECUTE_MEM_Malloc(sizeof(DVM_Char) * (iLen + 1));
 
-    int i = 0;
-    int iLen1 = str1->u.string.string ? std::wstring(str1->u.string.string).length() : 0;
-    int iLen2 = str1->u.string.string ? std::wstring(str2->u.string.string).length() : 0;
+    int iLen1 = 0;
+    if (str1)
+    {
+        iLen1 = str1->u.string.string ? std::wstring(str1->u.string.string).length() : 0;
+    }
 
+    int iLen2 = 0;
+    if (str2)
+    {
+        iLen2 = str2->u.string.string ? std::wstring(str2->u.string.string).length() : 0;
+    }
+
+    int i = 0;
     for (i = 0; i < iLen1; i++)
     {
         str[i] = str1->u.string.string[i];
@@ -570,6 +589,7 @@ DVM_Value Execute::ExecuteCode(Function *pFunction, DVM_Byte *pCode, int iCodeSi
         case DVM_PUSH_NULL :
             STO_WRITE(0, nullptr);
             m_pVirtualMachine->stack.stack_pointer++;
+            pc++;
             break;
 
         case DVM_PUSH_STACK_INT :
