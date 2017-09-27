@@ -32,6 +32,8 @@ static char **st_source_string;
 static int st_current_source_line;
 static int st_current_char_index;
 
+static DVM_Boolean st_character_literal_state;
+
 void dkc_set_source_string(char **source)
 {
     st_source_string = source;
@@ -46,10 +48,15 @@ static int string_input(char *buf, int max_size)
     if (NULL == st_source_string[st_current_source_line])
         return 0;
         
-    if ('\0' == st_source_string[st_current_source_line][st_current_char_index])
+    while ('\0' == st_source_string[st_current_source_line][st_current_char_index])
     {
         st_current_source_line++;
         st_current_char_index = 0;
+        
+        if (NULL == st_source_string[st_current_source_line]))
+        {
+            return 0;
+        }
     }
     
     if (NULL == st_source_string[st_current_source_line])
@@ -72,17 +79,16 @@ static int DikSam_yyinput(char *buf, int max_size)
     
     switch (dkc_get_current_compiler()->input_mode)
     {
-    case DKC_FILE_INPUT_MODE :
+    case FILE_INPUT_MODE :
         result = file_input(buf, max_size);
         break;
         
-    case DKC_STRING_INPUT_MODE :
+    case STRING_INPUT_MODE :
         result = string_input(buf, max_size);
         break;
     
     /*default :
-        DBG_panic(("bad default. input_mode..",
-                   dkc_get_current_compiler()->input_mode));*/
+        DBG_panic(("bad default. input_mode..", dkc_get_current_compiler()->input_mode));*/
     }
     
     return result;
@@ -105,6 +111,7 @@ int yywrap(void)
 <INITIAL>"if"           return IF;
 <INITIAL>"else"         return ELSE;
 <INITIAL>"while"        return WHILE;
+<INITIAL>"do"           return DO_T;
 <INITIAL>"for"          return FOR;
 <INITIAL>"return"       return RETURN_T;
 <INITIAL>"break"        return BREAK;
@@ -117,10 +124,24 @@ int yywrap(void)
 <INITIAL>"finally"      return FINALLY;
 <INITIAL>"throw"        return THROW;
 <INITIAL>"boolean"      return BOOLEAN_T;
+<INITIAL>"void"         return VOID_T;
 <INITIAL>"int"          return INT_T;
 <INITIAL>"double"       return DOUBLE_T;
 <INITIAL>"string"       return STRING_T;
 <INITIAL>"new"          return NEW;
+<INITIAL>"require"      return REQUIRE;
+<INITIAL>"rename"       return RENAME;
+<INITIAL>"class"        return CLASS_T;
+<INITIAL>"interface"    return INTERFACE_T;
+<INITIAL>"public"       return PUBLIC_T;
+<INITIAL>"private"      return PRIVATE_T;
+<INITIAL>"virtual"      return VIRTUAL_T;
+<INITIAL>"override"     return OVERRIDE_T;
+<INITIAL>"abstract"     return ABSTRACT_T;
+<INITIAL>"this"         return THIS_T;
+<INITIAL>"super"        return SUPER_T;
+<INITIAL>"constructor"  return CONSTRUCTOR;
+<INITIAL>"instanceof"   return INSTANCEOF;
 <INITIAL>"("            return LEFTP;
 <INITIAL>")"            return RIGHTP;
 <INITIAL>"{"            return LC;
@@ -153,6 +174,8 @@ int yywrap(void)
 <INITIAL>"--"           return DECREMENT;
 <INITIAL>"!"            return EXCLAMATION;
 <INITIAL>"."            return DOT;
+<INITIAL>"::"           return DOWN_CAST_BEGIN;
+<INITIAL>":>"           return DOWN_CAST_END;
 
 <INITIAL>[A-Za-z_][A-Za-z_0-9]* {
     yylval.identifier = dkc_create_identifier(yytext);
@@ -160,8 +183,15 @@ int yywrap(void)
 }
 
 <INITIAL>[1-9][0-9]* {
-    Expression  *expression = dkc_alloc_expression(INT_EXPRESSION);
+    Expression *expression = dkc_alloc_expression(INT_EXPRESSION);
     sscanf_s(yytext, "%d", &expression->u.int_value);
+    yylval.expression = expression;
+    return INT_LITERAL;
+}
+
+<INITIAL>"0"[xX][0-9a-fA-F]+ {
+    Expression *expression = dkc_alloc_expression(INT_EXPRESSION);
+    sscanf_s(yytext, "%x", &expression->u.int_value);
     yylval.expression = expression;
     return INT_LITERAL;
 }
@@ -182,36 +212,64 @@ int yywrap(void)
 
 <INITIAL>\" {
     dkc_open_string_literal();
+    st_character_literal_state = DVM_FALSE;
     BEGIN STRING_LITERAL_STATE;
 }
 
-<INITIAL>[ \t]     ;
-<INITIAL>[ \t\r\n] { increment_line_number(); }
+<INITIAL>\' {
+    dkc_open_string_literal();
+    st_character_literal_state = DVM_TRUE;
+    BEGIN STRING_LITERAL_STATE;
+}
+
+<INITIAL>[\t]   ;
+<INITIAL>[\r\n] { increment_line_number(); }
 <INITIAL>"/*"      BEGIN C_COMMENT;
 <INITIAL>"//"      BEGIN CC_COMMENT;
 <INITIAL>. {
     dkc_compile_error(dkc_get_current_compiler()->current_line_number,
                       CHARACTER_INVALID_ERR,
-                      (CHARACTER_MESSAGE_ARGUMENT, "bad_char", yytext[0], 
-                      MESSAGE_ARGUMENT_END));
+                      (CHARACTER_MESSAGE_ARGUMENT, "bad_char", yytext[0], MESSAGE_ARGUMENT_END));
 }
 
 <C_COMMENT>\n   increment_line_number();
 <C_COMMENT>"*/" BEGIN INITIAL;
+<C_COMMENT><<EOF>> {
+    dkc_compile_error(dkc_get_current_compiler()->current_line_number,
+                      EOF_IN_C_COMMENT_ERR,
+                      (MESSAGE_ARGUMENT_END));
+}
 <C_COMMENT>.    ;
 
 <CC_COMMENT>\n {
     increment_line_number();
     BEGIN INITIAL;
 }
+<CC_COMMENT><<EOF>> BEGIN INITIAL;
 <CC_COMMENT>.   ;
 
 <STRING_LITERAL_STATE>\" {
-    Expression *expression = dkc_alloc_expression(STRING_EXPRESSION);
-    expression->u.string_value = dkc_close_string_literal();
-    yylval.expression = expression;
-    BEGIN INITIAL;
-    return STRING_LITERAL;
+    if (DVM_TRUE == st_character_literal_state) {
+        dkc_add_string_literal('\"');
+    } else {
+        Expression *expression = dkc_alloc_expression(STRING_EXPRESSION);
+        expression->u.string_value = dkc_close_string_literal();
+        yylval.expression = expression;
+        BEGIN INITIAL;
+        return STRING_LITERAL;
+    }
+}
+
+<STRING_LITERAL_STATE>\' {
+    if (DVM_TRUE == st_character_literal_state) {
+        Expression *expression = dkc_alloc_expression(INT_EXPRESSION);
+        expression->u.int_value = dkc_close_character_literal();
+        yylval.expression = expression;
+        BEGIN INITIAL;
+        return INT_LITERAL;
+    } else {
+        dkc_add_string_literal('\'');
+    }
 }
 
 <STRING_LITERAL_STATE>\n {
@@ -233,6 +291,12 @@ int yywrap(void)
         && ((unsigned char*)yytext)[0] <= 0xFE) {
         BEGIN GB2312_2ND_CHAR;
     }
+}
+
+<STRING_LITERAL_STATE><<EOF>> {
+    dkc_compiler_error(dkc_get_current_compiler()->current_line_number,
+                       EOF_IN_STRING_LITERAL_ERR,
+                       (MESSAGE_ARGUMENT_END));
 }
 
 <GB2312_2ND_CHAR>. {
