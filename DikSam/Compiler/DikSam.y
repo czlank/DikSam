@@ -7,19 +7,27 @@
 
 %union
 {
-    char                *identifier;
-    ParameterList       *parameter_list;
-    ArgumentList        *argument_list;
-    Expression          *expression;
-    ExpressionList      *expression_list;
-    Statement           *statement;
-    StatementList       *statement_list;
-    Block               *block;
-    Elsif               *elsif;
-    AssignmentOperator   assignment_operator;
-    TypeSpecifier       *type_specifier;
-    DVM_BasicType        basic_type_specifier;
-    ArrayDimension      *array_dimension;
+    char                        *identifier;
+    PackageName                 *package_name;
+    RequireList                 *require_list;
+    RenameList                  *rename_list;
+    ParameterList               *parameter_list;
+    ArgumentList                *argument_list;
+    Expression                  *expression;
+    ExpressionList              *expression_list;
+    Statement                   *statement;
+    StatementList               *statement_list;
+    Block                       *block;
+    Elsif                       *elsif;
+    AssignmentOperator           assignment_operator;
+    TypeSpecifier               *type_specifier;
+    DVM_BasicType                basic_type_specifier;
+    ArrayDimension              *array_dimension;
+    ClassOrMemberModifierList    class_or_member_modifier;
+    DVM_ClassOrInterface         class_or_interface;
+    ExtendsList                 *extends_list;
+    MemberDeclaration           *member_declaration;
+    FunctionDefinition          *function_definition;
 }
 
 %token <expression>     INT_LITERAL
@@ -27,43 +35,115 @@
 %token <expression>     STRING_LITERAL
 %token <identifier>     IDENTIFIER
 
-%token IF ELSE WHILE FOR RETURN_T BREAK CONTINUE NULL_T
+%token IF ELSE WHILE DO_T FOR RETURN_T BREAK CONTINUE NULL_T
        LEFTP RIGHTP LC RC LB RB SEMICOLON COLON COMMA ASSIGN_T LOGICAL_AND LOGICAL_OR
        EQ NE GT GE LT LE ADD SUB MUL DIV MOD TRUE_T FALSE_T EXCLAMATION DOT
        ADD_ASSIGN_T SUB_ASSIGN_T MUL_ASSIGN_T DIV_ASSIGN_T MOD_ASSIGN_T
        INCREMENT DECREMENT TRY CATCH FINALLY THROW
-       BOOLEAN_T INT_T DOUBLE_T STRING_T NEW
+       VOID_T BOOLEAN_T INT_T DOUBLE_T STRING_T NEW
+       REQUIRE RENAME CLASS_T INTERFACE_T PUBLIC_T PRIVATE_T VIRTUAL_T OVERRIDE_T
+       ABSTRACT_T THIS_T SUPER_T CONSTRUCTOR INSTANCEOF
+       DOWN_CAST_BEGIN DOWN_CAST_END
 
-%type  <parameter_list>         parameter_list
-%type  <argument_list>          argument_list
-%type  <expression>             expression expression_opt
-                                assignment_expression logical_and_expression logical_or_expression
-                                equality_expression relational_expression
-                                additive_expression multiplicative_expression
-                                unary_expression primary_expression primary_no_new_array
-                                array_literal array_creation
-%type  <expression_list>        expression_list
-%type  <statement>              statement
-                                if_statement while_statement for_statement
-                                return_statement break_statement continue_statement
-                                declaration_statement
-%type  <statement_list>         statement_list
-%type  <block>                  block
-%type  <elsif>                  elsif elsif_list
-%type  <assignment_operator>    assignment_operator
-%type  <identifier>             identifier_opt label_opt
-%type  <type_specifier>         type_specifier
-%type  <basic_type_specifier>   basic_type_specifier
-%type  <array_dimension>        dimension_expression dimension_expression_list dimension_list
+%type  <package_name>               package_name
+%type  <require_list>               require_list require_declaration
+%type  <rename_list>                rename_list rename_declaration
+%type  <parameter_list>             parameter_list
+%type  <argument_list>              argument_list
+%type  <expression>                 expression expression_opt
+                                    assignment_expression logical_and_expression logical_or_expression
+                                    equality_expression relational_expression
+                                    additive_expression multiplicative_expression
+                                    unary_expression postfix_expression primary_expression
+                                    primary_no_new_array array_literal array_creation
+%type  <expression_list>            expression_list
+%type  <statement>                  statement
+                                    if_statement while_statement for_statement do_while_statement
+                                    return_statement break_statement continue_statement
+                                    declaration_statement
+%type  <statement_list>             statement_list
+%type  <block>                      block
+%type  <elsif>                      elsif elsif_list
+%type  <assignment_operator>        assignment_operator
+%type  <identifier>                 identifier_opt label_opt
+%type  <type_specifier>             type_specifier class_type_specifier array_type_specifier
+%type  <basic_type_specifier>       basic_type_specifier
+%type  <array_dimension>            dimension_expression dimension_expression_list dimension_list
+%type  <class_or_member_modifier>   class_or_member_modifier class_or_member_modifier_list access_modifier
+%type  <class_or_interface>         class_or_interface
+%type  <extends_list>               extends_list extends
+%type  <member_declaration>         member_declaration member_declaration_list method_member field_member
+%type  <function_definition>        method_function_definition constructor_definition
 
 %%
 translation_unit
-        : definition_or_statement
+        : initial_declaration definition_or_statement
         | translation_unit definition_or_statement
+        ;
+
+initial_declaration
+        : /* empty */
+        {
+            dkc_set_require_and_rename_list(NULL, NULL);
+        }
+        | require_list rename_list
+        {
+            dkc_set_require_and_rename_list($1, $2);
+        }
+        | require_list
+        {
+            dkc_set_require_and_rename_list($1, NULL);
+        }
+        | rename_list
+        {
+            dkc_set_require_and_rename_list(NULL, $2);
+        }
+        ;
+
+require_list
+        : require_declaration
+        | require_list require_declaration
+        {
+            $$ = dkc_chain_require_list($1, $2);
+        }
+        ;
+
+require_declaration
+        : REQUIRE package_name SEMICOLON
+        {
+            $$ = dkc_create_require_list($2);
+        }
+        ;
+
+package_name
+        : IDENTIFIER
+        {
+            $$ = dkc_create_package_name($1);
+        }
+        | package_name DOT IDENTIFIER
+        {
+            $$ = dkc_chain_package_name($1, $3);
+        }
+        ;
+
+rename_list
+        : rename_declaration
+        | rename_list rename_declaration
+        {
+            $$ = dkc_chain_rename_list($1, $2);
+        }
+        ;
+
+rename_declaration
+        : RENAME package_name IDENTIFIER SEMICOLON
+        {
+            $$ = dkc_create_rename_list($2, $3);
+        }
         ;
 
 definition_or_statement
         : function_definition
+        | class_definition
         | statement
         {
             DKC_Compiler *compiler = dkc_get_current_compiler();
@@ -92,6 +172,7 @@ statement
         | if_statement
         | while_statement
         | for_statement
+        | do_while_statement
         | return_statement
         | break_statement
         | continue_statement
@@ -144,6 +225,13 @@ for_statement
           expression_opt RIGHTP block
         {
             $$ = dkc_create_for_statement($1, $4, $6, $8, $10);
+        }
+        ;
+
+do_while_statement
+        : label_opt DO_T block WHILE LEFTP expression RIGHTP SEMICOLON
+        {
+            $$ = dkc_create_do_while_statement($1, $3, $6);
         }
         ;
 
@@ -336,7 +424,7 @@ multiplicative_expression
         ;
 
 unary_expression
-        : primary_expression
+        : postfix_expression
         | SUB unary_expression
         {
             $$ = dkc_create_minus_expression($2);
@@ -347,15 +435,40 @@ unary_expression
         }
         ;
 
+postfix_expression
+        : primary_expression
+        : primary_expression INCREMENT
+        {
+            $$ = dkc_create_incdec_expression($1, INCREMENT_EXPRESSION);
+        }
+        | primary_expression DECREMENT
+        {
+            $$ = dkc_create_incdec_expression($1, DECREMENT_EXPRESSION);
+        }
+        | primary_expression INSTANCEOF type_specifier
+        {
+            $$ = dkc_create_instanceof_expression($1, $3);
+        }
+        ;
+
 primary_expression
         : primary_no_new_array
         | array_creation
+        | IDENTIFIER
+        {
+            $$ = dkc_create_identifier_expression($1);
+        }
         ;
         
 primary_no_new_array
         : primary_no_new_array LB expression RB
         {
             $$ = dkc_create_index_expression($1, $3);
+        }
+        | IDENTIFIER LB expression RB
+        {
+            Expression *identifier = dkc_create_identifier_expression($1);
+            $$ = dkc_create_index_expression(identifier, $3);
         }
         | primary_expression DOT IDENTIFIER
         {
@@ -369,21 +482,13 @@ primary_no_new_array
         {
             $$ = dkc_create_function_call_expression($1, NULL);
         }
-        | primary_expression INCREMENT
-        {
-            $$ = dkc_create_incdec_expression($1, INCREMENT_EXPRESSION);
-        }
-        | primary_expression DECREMENT
-        {
-            $$ = dkc_create_incdec_expression($1, DECREMENT_EXPRESSION);
-        }
         | LEFTP expression RIGHTP
         {
             $$ = $2;
         }
-        | IDENTIFIER
+        | primary_expression DOWN_CAST_BEGIN type_specifier DOWN_CAST_END
         {
-            $$ = dkc_create_identifier_expression($1);
+            $$ = dkc_create_down_cast_expression($1, $3);
         }
         | INT_LITERAL
         | DOUBLE_LITERAL
@@ -401,6 +506,30 @@ primary_no_new_array
             $$ = dkc_create_null_expression();
         }
         | array_literal
+        | THIS_T
+        {
+            $$ = dkc_create_this_expression();
+        }
+        | SUPER_T
+        {
+            $$ = dkc_create_super_expression();
+        }
+        | NEW IDENTIFIER LEFTP RIGHTP
+        {
+            $$ = dkc_create_new_expression($2, NULL, NULL);
+        }
+        | NEW IDENTIFIER LEFTP argument_list RIGHTP
+        {
+            $$ = dkc_create_new_expression($2, NULL, $4);
+        }
+        | NEW IDENTIFIER DOT IDENTIFIER LEFTP RIGHTP
+        {
+            $$ = dkc_create_new_expression($2, $4, NULL);
+        }
+        | NEW IDENTIFIER DOT IDENTIFIER LEFTP argument_list RIGHTP
+        {
+            $$ = dkc_create_new_expression($2, $4, $6);
+        }
         ;
 
 array_literal
@@ -417,11 +546,19 @@ array_literal
 array_creation
         : NEW basic_type_specifier dimension_expression_list
         {
-            $$ = dkc_create_array_creation($2, $3, NULL);
+            $$ = dkc_create_basic_array_creation($2, $3, NULL);
         }
         | NEW basic_type_specifier dimension_expression_list dimension_list
         {
-            $$ = dkc_create_array_creation($2, $3, $4);
+            $$ = dkc_create_basic_array_creation($2, $3, $4);
+        }
+        | NEW class_type_specifier dimension_expression_list
+        {
+            $$ = dkc_create_class_array_creation($2, $3, NULL);
+        }
+        | NEW class_type_specifier dimension_expresson_list dimension_list
+        {
+            $$ = dkc_create_class_array_creation($2, $3, $4);
         }
         ;
 
@@ -505,7 +642,11 @@ assignment_operator
         ;
 
 basic_type_specifier
-        : BOOLEAN_T
+        : VOID_T
+        {
+            $$ = DVM_VOID_TYPE;
+        }
+        | BOOLEAN_T
         {
             $$ = DVM_BOOLEAN_TYPE;
         }
@@ -523,15 +664,37 @@ basic_type_specifier
         }
         ;
 
+class_type_specifier
+        : IDENTIFIER
+        {
+            $$ = dkc_create_class_type_specifier($1);
+        }
+        ;
+
+array_type_specifier
+        : basic_type_specifier LB RB
+        {
+            TypeSpecifier *basic_type = dkc_create_type_specifier($1);
+            $$ = dkc_create_array_type_specifier(basic_type);
+        }
+        | IDENTIFIER LB RB
+        {
+            TypeSpecifier *class_type = dkc_create_class_type_specifier($1);
+            $$ = dkc_create_array_type_specifier(class_type);
+        }
+        | array_type_specifier LB RB
+        {
+            $$ = dkc_create_array_type_specifier($1);
+        }
+        ;
+
 type_specifier
         : basic_type_specifier
         {
             $$ = dkc_create_type_specifier($1);
         }
-        | type_specifier LB RB
-        {
-            $$ = dkc_create_array_type_specifier($1);
-        }
+        | array_type_specifier
+        | class_type_specifier
         ;
 
 identifier_opt
