@@ -96,7 +96,7 @@ initial_declaration
         }
         | rename_list
         {
-            dkc_set_require_and_rename_list(NULL, $2);
+            dkc_set_require_and_rename_list(NULL, $1);
         }
         ;
 
@@ -437,7 +437,7 @@ unary_expression
 
 postfix_expression
         : primary_expression
-        : primary_expression INCREMENT
+        | primary_expression INCREMENT
         {
             $$ = dkc_create_incdec_expression($1, INCREMENT_EXPRESSION);
         }
@@ -556,7 +556,7 @@ array_creation
         {
             $$ = dkc_create_class_array_creation($2, $3, NULL);
         }
-        | NEW class_type_specifier dimension_expresson_list dimension_list
+        | NEW class_type_specifier dimension_expression_list dimension_list
         {
             $$ = dkc_create_class_array_creation($2, $3, $4);
         }

@@ -45,54 +45,71 @@
      IF = 262,
      ELSE = 263,
      WHILE = 264,
-     FOR = 265,
-     RETURN_T = 266,
-     BREAK = 267,
-     CONTINUE = 268,
-     NULL_T = 269,
-     LEFTP = 270,
-     RIGHTP = 271,
-     LC = 272,
-     RC = 273,
-     LB = 274,
-     RB = 275,
-     SEMICOLON = 276,
-     COLON = 277,
-     COMMA = 278,
-     ASSIGN_T = 279,
-     LOGICAL_AND = 280,
-     LOGICAL_OR = 281,
-     EQ = 282,
-     NE = 283,
-     GT = 284,
-     GE = 285,
-     LT = 286,
-     LE = 287,
-     ADD = 288,
-     SUB = 289,
-     MUL = 290,
-     DIV = 291,
-     MOD = 292,
-     TRUE_T = 293,
-     FALSE_T = 294,
-     EXCLAMATION = 295,
-     DOT = 296,
-     ADD_ASSIGN_T = 297,
-     SUB_ASSIGN_T = 298,
-     MUL_ASSIGN_T = 299,
-     DIV_ASSIGN_T = 300,
-     MOD_ASSIGN_T = 301,
-     INCREMENT = 302,
-     DECREMENT = 303,
-     TRY = 304,
-     CATCH = 305,
-     FINALLY = 306,
-     THROW = 307,
-     BOOLEAN_T = 308,
-     INT_T = 309,
-     DOUBLE_T = 310,
-     STRING_T = 311,
-     NEW = 312
+     DO_T = 265,
+     FOR = 266,
+     RETURN_T = 267,
+     BREAK = 268,
+     CONTINUE = 269,
+     NULL_T = 270,
+     LEFTP = 271,
+     RIGHTP = 272,
+     LC = 273,
+     RC = 274,
+     LB = 275,
+     RB = 276,
+     SEMICOLON = 277,
+     COLON = 278,
+     COMMA = 279,
+     ASSIGN_T = 280,
+     LOGICAL_AND = 281,
+     LOGICAL_OR = 282,
+     EQ = 283,
+     NE = 284,
+     GT = 285,
+     GE = 286,
+     LT = 287,
+     LE = 288,
+     ADD = 289,
+     SUB = 290,
+     MUL = 291,
+     DIV = 292,
+     MOD = 293,
+     TRUE_T = 294,
+     FALSE_T = 295,
+     EXCLAMATION = 296,
+     DOT = 297,
+     ADD_ASSIGN_T = 298,
+     SUB_ASSIGN_T = 299,
+     MUL_ASSIGN_T = 300,
+     DIV_ASSIGN_T = 301,
+     MOD_ASSIGN_T = 302,
+     INCREMENT = 303,
+     DECREMENT = 304,
+     TRY = 305,
+     CATCH = 306,
+     FINALLY = 307,
+     THROW = 308,
+     VOID_T = 309,
+     BOOLEAN_T = 310,
+     INT_T = 311,
+     DOUBLE_T = 312,
+     STRING_T = 313,
+     NEW = 314,
+     REQUIRE = 315,
+     RENAME = 316,
+     CLASS_T = 317,
+     INTERFACE_T = 318,
+     PUBLIC_T = 319,
+     PRIVATE_T = 320,
+     VIRTUAL_T = 321,
+     OVERRIDE_T = 322,
+     ABSTRACT_T = 323,
+     THIS_T = 324,
+     SUPER_T = 325,
+     CONSTRUCTOR = 326,
+     INSTANCEOF = 327,
+     DOWN_CAST_BEGIN = 328,
+     DOWN_CAST_END = 329
    };
 #endif
 /* Tokens.  */
@@ -103,54 +120,71 @@
 #define IF 262
 #define ELSE 263
 #define WHILE 264
-#define FOR 265
-#define RETURN_T 266
-#define BREAK 267
-#define CONTINUE 268
-#define NULL_T 269
-#define LEFTP 270
-#define RIGHTP 271
-#define LC 272
-#define RC 273
-#define LB 274
-#define RB 275
-#define SEMICOLON 276
-#define COLON 277
-#define COMMA 278
-#define ASSIGN_T 279
-#define LOGICAL_AND 280
-#define LOGICAL_OR 281
-#define EQ 282
-#define NE 283
-#define GT 284
-#define GE 285
-#define LT 286
-#define LE 287
-#define ADD 288
-#define SUB 289
-#define MUL 290
-#define DIV 291
-#define MOD 292
-#define TRUE_T 293
-#define FALSE_T 294
-#define EXCLAMATION 295
-#define DOT 296
-#define ADD_ASSIGN_T 297
-#define SUB_ASSIGN_T 298
-#define MUL_ASSIGN_T 299
-#define DIV_ASSIGN_T 300
-#define MOD_ASSIGN_T 301
-#define INCREMENT 302
-#define DECREMENT 303
-#define TRY 304
-#define CATCH 305
-#define FINALLY 306
-#define THROW 307
-#define BOOLEAN_T 308
-#define INT_T 309
-#define DOUBLE_T 310
-#define STRING_T 311
-#define NEW 312
+#define DO_T 265
+#define FOR 266
+#define RETURN_T 267
+#define BREAK 268
+#define CONTINUE 269
+#define NULL_T 270
+#define LEFTP 271
+#define RIGHTP 272
+#define LC 273
+#define RC 274
+#define LB 275
+#define RB 276
+#define SEMICOLON 277
+#define COLON 278
+#define COMMA 279
+#define ASSIGN_T 280
+#define LOGICAL_AND 281
+#define LOGICAL_OR 282
+#define EQ 283
+#define NE 284
+#define GT 285
+#define GE 286
+#define LT 287
+#define LE 288
+#define ADD 289
+#define SUB 290
+#define MUL 291
+#define DIV 292
+#define MOD 293
+#define TRUE_T 294
+#define FALSE_T 295
+#define EXCLAMATION 296
+#define DOT 297
+#define ADD_ASSIGN_T 298
+#define SUB_ASSIGN_T 299
+#define MUL_ASSIGN_T 300
+#define DIV_ASSIGN_T 301
+#define MOD_ASSIGN_T 302
+#define INCREMENT 303
+#define DECREMENT 304
+#define TRY 305
+#define CATCH 306
+#define FINALLY 307
+#define THROW 308
+#define VOID_T 309
+#define BOOLEAN_T 310
+#define INT_T 311
+#define DOUBLE_T 312
+#define STRING_T 313
+#define NEW 314
+#define REQUIRE 315
+#define RENAME 316
+#define CLASS_T 317
+#define INTERFACE_T 318
+#define PUBLIC_T 319
+#define PRIVATE_T 320
+#define VIRTUAL_T 321
+#define OVERRIDE_T 322
+#define ABSTRACT_T 323
+#define THIS_T 324
+#define SUPER_T 325
+#define CONSTRUCTOR 326
+#define INSTANCEOF 327
+#define DOWN_CAST_BEGIN 328
+#define DOWN_CAST_END 329
 
 
 
@@ -162,24 +196,32 @@ typedef union YYSTYPE
 /* Line 1685 of yacc.c  */
 #line 9 "DikSam.y"
 
-    char                *identifier;
-    ParameterList       *parameter_list;
-    ArgumentList        *argument_list;
-    Expression          *expression;
-    ExpressionList      *expression_list;
-    Statement           *statement;
-    StatementList       *statement_list;
-    Block               *block;
-    Elsif               *elsif;
-    AssignmentOperator   assignment_operator;
-    TypeSpecifier       *type_specifier;
-    DVM_BasicType        basic_type_specifier;
-    ArrayDimension      *array_dimension;
+    char                        *identifier;
+    PackageName                 *package_name;
+    RequireList                 *require_list;
+    RenameList                  *rename_list;
+    ParameterList               *parameter_list;
+    ArgumentList                *argument_list;
+    Expression                  *expression;
+    ExpressionList              *expression_list;
+    Statement                   *statement;
+    StatementList               *statement_list;
+    Block                       *block;
+    Elsif                       *elsif;
+    AssignmentOperator           assignment_operator;
+    TypeSpecifier               *type_specifier;
+    DVM_BasicType                basic_type_specifier;
+    ArrayDimension              *array_dimension;
+    ClassOrMemberModifierList    class_or_member_modifier;
+    DVM_ClassOrInterface         class_or_interface;
+    ExtendsList                 *extends_list;
+    MemberDeclaration           *member_declaration;
+    FunctionDefinition          *function_definition;
 
 
 
 /* Line 1685 of yacc.c  */
-#line 183 "y.tab.h"
+#line 225 "y.tab.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
