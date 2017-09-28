@@ -704,4 +704,188 @@ identifier_opt
         }
         | IDENTIFIER
         ;
+
+class_definition
+        : class_or_interface IDENTIFIER extends LC
+        {
+            dkc_start_class_definition(NULL, $1, $2, $3);
+        }
+         member_declaration_list RC
+        {
+            dkc_class_define($6);
+        }
+        | class_or_member_modifier_list class_or_interface IDENTIFIER extends LC
+        {
+            dkc_start_class_definition(&$1, $2, $3, $4);
+        }
+         member_declaration_list RC
+        {
+            dkc_class_define($7);
+        }
+        | class_or_interface IDENTIFIER extends LC
+        {
+            dkc_start_class_definition(NULL, $1, $2, $3);
+        }
+         RC
+        {
+            dkc_class_define(NULL);
+        }
+        | class_or_member_modifier_list class_or_interface IDENTIFIER extends LC
+        {
+            dkc_start_class_definition(&$1, $2, $3, $4);
+        }
+         RC
+        {
+            dkc_class_define(NULL);
+        }
+        ;
+
+class_or_member_modifier_list
+        : class_or_member_modifier
+        | class_or_member_modifier_list class_or_member_modifier
+        {
+            $$ = dkc_chain_class_or_member_modifier($1, $2);
+        }
+        ;
+
+class_or_member_modifier
+        : access_modifier
+        | VIRTUAL_T
+        {
+            $$ = dkc_create_class_or_member_modifier(VIRTUAL_MODIFIER);
+        }
+        | OVERRIDE_T
+        {
+            $$ = dkc_create_class_or_member_modifier(OVERRIDE_MODIFIER);
+        }
+        | ABSTRACT_T
+        {
+            $$ = dkc_create_class_or_member_modifier(ABSTRACT_MODIFIER);
+        }
+        ;
+
+class_or_interface
+        : CLASS_T
+        {
+            $$ = DVM_CLASS_DEFINITION;
+        }
+        | INTERFACE_T
+        {
+            $$ = DVM_INTERFACE_DEFINITION;
+        }
+        ;
+
+extends
+        : /* empty */
+        {
+            $$ = NULL;
+        }
+        | COLON extends_list
+        {
+            $$ = $2;
+        }
+        ;
+
+extends_list
+        : IDENTIFIER
+        {
+            $$ = dkc_create_extends_list($1);
+        }
+        | extends_list COMMA IDENTIFIER
+        {
+            $$ = dkc_chain_extends_list($1, $3);
+        }
+        ;
+
+member_declaration_list
+        : member_declaration
+        | member_declaration_list member_declaration
+        {
+            $$ = dkc_chain_member_declaration($1, $2);
+        }
+        ;
+
+member_declaration
+        : method_member
+        | field_member
+        ;
+
+method_member
+        : method_function_definition
+        {
+            $$ = dkc_create_method_member(NULL, $1, DVM_FALSE);
+        }
+        | class_or_member_modifier_list method_function_definition
+        {
+            $$ = dkc_create_method_member(&$1, $2, DVM_FALSE);
+        }
+        | constructor_definition
+        {
+            $$ = dkc_create_method_member(NULL, $1, DVM_TRUE);
+        }
+        | class_or_member_modifier_list constructor_definition
+        {
+            $$ = dkc_create_method_member(&$1, $2, DVM_TRUE);
+        }
+        ;
+
+method_function_definition
+        : type_specifier IDENTIFIER LEFTP parameter_list RIGHTP block
+        {
+            $$ = dkc_method_function_define($1, $2, $4, $6);
+        }
+        | type_specifier IDENTIFIER LEFTP RIGHTP block
+        {
+            $$ = dkc_method_function_define(#1, #2, NULL, $5);
+        }
+        | type_specifier IDENTIFIER LEFTP parameter_list RIGHTP SEMICOLON
+        {
+            $$ = dkc_method_function_define($1, $2, $4, NULL);
+        }
+        | type_specifier IDENTIFIER LEFTP RIGHTP SEMICOLON
+        {
+            $$ = dkc_method_function_define($1, $2, NULL, NULL);
+        }
+        ;
+
+constructor_definition
+        : CONSTRUCTOR IDENTIFIER LEFTP parameter_list RIGHTP block
+        {
+            $$ = dkc_constructor_function_define($2, $4, $6);
+        }
+        | CONSTRUCTOR IDENTIFIER LEFTP RIGHTP block
+        {
+            $$ = dkc_constructor_function_define($2, NULL, $5);
+        }
+        | CONSTRUCTOR IDENTIFIER LEFTP parameter_list RIGHTP SEMICOLON
+        {
+            $$ = dkc_constructor_function_define($2, $4, NULL);
+        }
+        | CONSTRUCTOR IDENTIFIER LEFTP RIGHTP SEMICOLON
+        {
+            $$ = dkc_constructor_function_define($2, NULL, NULL);
+        }
+        ;
+
+access_modifier
+        : PUBLIC_T
+        {
+            $$ = dkc_create_class_or_member_modifier(PUBLIC_MODIFIER);
+        }
+        | PRIVATE_T
+        {
+            $$ = dkc_create_class_or_member_modifier(PRIVATE_MODIFIER);
+        }
+        ;
+
+field_member
+        : type_specifier IDENTIFIER SEMICOLON
+        {
+            $$ = dkc_create_field_member(NULL, $1, $2);
+        }
+        | class_or_member_modifier_list type_specifier IDENTIFIER SEMICOLON
+        {
+            $$ = dkc_create_field_member(&$1, $2, $3);
+        }
+        ;
 %%
