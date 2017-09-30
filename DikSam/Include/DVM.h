@@ -21,8 +21,8 @@ typedef enum
 
 typedef union
 {
-    int         int_value;
-    double      double_value;
+    int          int_value;
+    double       double_value;
     DVM_Object  *object;
 } DVM_Value;
 

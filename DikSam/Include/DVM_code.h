@@ -35,7 +35,7 @@ typedef enum
 
 typedef struct 
 {
-    int                 parameter_count;
+    int                  parameter_count;
     DVM_LocalVariable   *parameter;
 } DVM_FunctionDerive;
 
@@ -55,8 +55,8 @@ typedef struct DVM_TypeDerive_tag
 
 struct DVM_TypeSpecifier_tag
 {
-    DVM_BasicType       basic_type;
-    int                 derive_count;
+    DVM_BasicType        basic_type;
+    int                  derive_count;
     DVM_TypeDerive      *derive;
 };
 
@@ -166,8 +166,8 @@ typedef struct
     DVM_ConstantPoolTag tag;
     union
     {
-        int         c_int;
-        double      c_double;
+        int          c_int;
+        double       c_double;
         DVM_Char    *c_string;
     } u;
 } DVM_ConstantPool;
@@ -189,33 +189,33 @@ typedef struct
 {
     DVM_TypeSpecifier   *type;
     char                *name;
-    int                 parameter_count;
+    int                  parameter_count;
     DVM_LocalVariable   *parameter;
-    DVM_Boolean         is_implemented;
-    int                 local_variable_count;
+    DVM_Boolean          is_implemented;
+    int                  local_variable_count;
     DVM_LocalVariable   *local_variable;
-    int                 code_size;
+    int                  code_size;
     DVM_Byte            *code;
-    int                 line_number_size;
+    int                  line_number_size;
     DVM_LineNumber      *line_number;
-    int                 need_stack_size;
+    int                  need_stack_size;
 } DVM_Function;
 
 struct DVM_Executable_tag
 {
-    int                 constant_pool_count;
+    int                  constant_pool_count;
     DVM_ConstantPool    *constant_pool;
-    int                 global_variable_count;
+    int                  global_variable_count;
     DVM_Variable        *global_variable;
-    int                 function_count;
+    int                  function_count;
     DVM_Function        *function;
-    int                 type_specifier_count;
+    int                  type_specifier_count;
     DVM_TypeSpecifier   *type_specifier;
-    int                 code_size;
+    int                  code_size;
     DVM_Byte            *code;
-    int                 line_number_size;
+    int                  line_number_size;
     DVM_LineNumber      *line_number;
-    int                 need_stack_size;
+    int                  need_stack_size;
 };
 
 #ifdef __cplusplus

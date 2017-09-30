@@ -28,7 +28,7 @@ typedef struct
 {
     DVM_NativeFunctionProc  *proc;
     Native                  *pThis;
-    int                     arg_count;
+    int                      arg_count;
 } NativeFunction;
 
 typedef struct 
@@ -40,7 +40,7 @@ typedef struct
 typedef struct 
 {
     char            *name;
-    FunctionKind    kind;
+    FunctionKind     kind;
     union
     {
         NativeFunction  native_f;
@@ -51,8 +51,8 @@ typedef struct
 typedef struct
 {
     Function    *caller;
-    int         caller_address;
-    int         base;
+    int          caller_address;
+    int          base;
 } CallInfo;
 
 #define revalue_up_align(val)   ((val) ? (((val) - 1) / sizeof(DVM_Value) + 1) : 0)
@@ -60,8 +60,8 @@ typedef struct
 
 typedef struct 
 {
-    int             alloc_size;
-    int             stack_pointer;
+    int              alloc_size;
+    int              stack_pointer;
     DVM_Value       *stack;
     DVM_Boolean     *pointer_flags;
 } Stack;
@@ -75,7 +75,7 @@ typedef enum
 
 struct DVM_String_tag
 {
-    DVM_Boolean is_literal;
+    DVM_Boolean  is_literal;
     DVM_Char    *string;
 };
 
@@ -88,14 +88,14 @@ typedef enum
 
 struct DVM_Array_tag
 {
-    ArrayType       type;
-    int             size;
-    int             alloc_size;
+    ArrayType        type;
+    int              size;
+    int              alloc_size;
     union
     {
         int         *int_array;
         double      *double_array;
-        DVM_Object  **object;
+        DVM_Object **object;
     } u;
 };
 
@@ -115,27 +115,27 @@ struct DVM_Object_tag
 
 typedef struct 
 {
-    int         current_heap_size;
-    int         current_threshold;
+    int          current_heap_size;
+    int          current_threshold;
     DVM_Object  *header;
 } Heap;
 
 typedef struct 
 {
-    int         variable_count;
+    int          variable_count;
     DVM_Value   *variable;
 } Static;
 
 struct DVM_VirtualMachine_tag
 {
-    Stack           stack;
-    Heap            heap;
-    Static          static_v;
+    Stack            stack;
+    Heap             heap;
+    Static           static_v;
     DVM_Executable  *current_executable;
     Function        *current_function;
-    int             pc;
+    int              pc;
     Function        *function;
-    int             function_count;
+    int              function_count;
     DVM_Executable  *executable;
 };
 

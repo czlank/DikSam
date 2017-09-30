@@ -72,7 +72,8 @@ private:
     inline bool IsBoolean(TypeSpecifier *pType) { return (DVM_BOOLEAN_TYPE == pType->basic_type && nullptr == pType->derive); }
     inline bool IsString(TypeSpecifier *pType) { return (DVM_STRING_TYPE == pType->basic_type && nullptr == pType->derive); }
     inline bool IsArray(TypeSpecifier *pType) { return (pType->derive && ARRAY_DERIVE == pType->derive->tag); }
-    inline bool IsObject(TypeSpecifier *pType) { return (IsString(pType) || IsArray(pType)); }
+    inline bool IsClassObject(TypeSpecifier *pType) { return DVM_CLASS_TYPE == pType->basic_type && nullptr == pType->derive; }
+    inline bool IsObject(TypeSpecifier *pType) { return (IsString(pType) || IsArray(pType)) || IsClassObject(pType); }
 
 private:
     Debug       &m_Debug;

@@ -86,6 +86,11 @@ void Create::FunctionDefine(TypeSpecifier *pType, char *lpstrIdentifier, Paramet
     }
 }
 
+FunctionDefinition* Create::CreateFunctionDefinition(TypeSpecifier *pType, char *lpstrIdentifier, ParameterList *pParameterList, Block *pBlock)
+{
+    // 待实现
+}
+
 ParameterList* Create::CreateParameter(TypeSpecifier *pType, char *lpstrIdentifier)
 {
     ParameterList *p = (ParameterList*)CREATE_UTIL_Malloc(sizeof(ParameterList));
@@ -202,6 +207,11 @@ TypeSpecifier* Create::CreateArrayTypeSpecifier(TypeSpecifier *pBase)
     }
 
     return pBase;
+}
+
+TypeSpecifier* Create::CreateClassTypeSpecifier(char *lpstrIdentifier)
+{
+    // 待实现
 }
 
 Expression* Create::AllocExpression(ExpressionKind enKind)
@@ -353,14 +363,45 @@ Expression* Create::CreateArrayLiteralExpression(ExpressionList *pList)
     return pExpression;
 }
 
-Expression* Create::CreateArrayCreation(DVM_BasicType enType, ArrayDimension *pArrayDimensionExpressionList, ArrayDimension *pArrayDimension)
+Expression* Create::CreateBasicArrayCreation(DVM_BasicType enType, ArrayDimension *pArrayDimensionExpressionList, ArrayDimension *pArrayDimension)
 {
+    // 待实现
     Expression *pExpression = AllocExpression(ARRAY_CREATION_EXPRESSION);
 
     pExpression->u.array_creation.type = CreateTypeSpecifier(enType);
     pExpression->u.array_creation.dimension = ChainArrayDimension(pArrayDimensionExpressionList, pArrayDimension);
 
     return pExpression;
+}
+
+Expression* Create::CreateClassArrayCreation(DVM_BasicType enType, ArrayDimension *pArrayDimensionExpressionList, ArrayDimension *pArrayDimension)
+{
+    // 待实现
+}
+
+Expression* Create::CreateInstanceofExpression(Expression *pOperand, TypeSpecifier *pType)
+{
+    // 待实现
+}
+
+Expression* Create::CreateDownCastExpression(Expression *pOperand, TypeSpecifier *pType)
+{
+    // 待实现
+}
+
+Expression* Create::CreateNewExpression(char *lpstrClassName, char *lpstrMethodName, ArgumentList *pArgument)
+{
+    // 待实现
+}
+
+Expression* Create::CreateThisExpression()
+{
+    // 待实现
+}
+
+Expression* Create::CreateSuperExpression()
+{
+    // 待实现
 }
 
 ArrayDimension* Create::CreateArrayDimension(Expression *pExpression)
@@ -382,6 +423,11 @@ ArrayDimension* Create::ChainArrayDimension(ArrayDimension *pList, ArrayDimensio
     pos->next = pArrayDimension;
 
     return pList;
+}
+
+Statement* Create::AllocStatement(StatementType enType)
+{
+    // 待实现
 }
 
 Statement* Create::CreateIfStatement(Expression *pCondition, Block *pThenBlock, Elsif *pElsifList, Block *pElseBlock)
@@ -431,6 +477,11 @@ Statement* Create::CreateWhileStatement(char *lpstrLabel, Expression *pConfition
     return pStatement;
 }
 
+Statement* Create::CreateDoWhileStatement(char *lpstrLabel, Block *pBlock, Expression *pCondition)
+{
+    // 待实现
+}
+
 Statement* Create::CreateForStatement(char *lpstrLabel, Expression *pInit, Expression *pCondition, Expression *pPost, Block *pBlock)
 {
     Statement *pStatement = AllocStatement(FOR_STATEMENT);
@@ -444,6 +495,11 @@ Statement* Create::CreateForStatement(char *lpstrLabel, Expression *pInit, Expre
     pBlock->parent.statement.statement = pStatement;
 
     return pStatement;
+}
+
+Block* Create::AllocBlock()
+{
+    // 待实现
 }
 
 Block* Create::OpenBlock()
@@ -504,16 +560,37 @@ Statement* Create::CreateContinueStatement(char *lpstrLabel)
     return pStatement;
 }
 
-Statement* Create::CreateTryStatement(Block *pTryBlock, char *lpstrException, Block *pCatchBlock, Block *pFinallyBlock)
+Statement* Create::CreateTryStatement(Block *pTryBlock, CatchClause *pCatchClause, Block *pFinallyBlock)
 {
+    // 待实现
     Statement *pStatement = AllocStatement(TRY_STATEMENT);
 
-    pStatement->u.try_s.try_block = pTryBlock;
-    pStatement->u.try_s.catch_block = pCatchBlock;
-    pStatement->u.try_s.exception = lpstrException;
-    pStatement->u.try_s.finally_block = pFinallyBlock;
+//    pStatement->u.try_s.try_block = pTryBlock;
+//    pStatement->u.try_s.catch_block = pCatchBlock;
+//    pStatement->u.try_s.exception = lpstrException;
+//    pStatement->u.try_s.finally_block = pFinallyBlock;
 
     return pStatement;
+}
+
+CatchClause* Create::CreateCatchClause(TypeSpecifier *pType, char *lpstrVariableName, Block *pBlock)
+{
+    // 待实现
+}
+
+CatchClause* Create::StartCatchClause()
+{
+    // 待实现
+}
+
+CatchClause* Create::EndCatchClause(CatchClause *pCatchClause, TypeSpecifier *pType, char *lpstrVariableName, Block *pBlock)
+{
+    // 待实现
+}
+
+CatchClause* Create::ChainCatchList(CatchClause *pList, CatchClause *pAdd)
+{
+    // 待实现
 }
 
 Statement* Create::CreateThrowStatement(Expression *pExpression)
@@ -534,6 +611,91 @@ Statement* Create::CreateDeclarationStatement(TypeSpecifier *pType, char *lpstrI
     pStatement->u.declaration_s = pDeclaration;
 
     return pStatement;
+}
+
+void Create::StartClassDefinition(ClassOrMemberModifierList *pModifier, DVM_ClassOrInterface enClassOrInterface, char *lpstrIdentifier, ExtendsList *pExtends)
+{
+    // 待实现
+}
+
+void Create::ClassDefine(MemberDeclaration *pMemberList)
+{
+    // 待实现
+}
+
+ExtendsList* Create::CreateExtendsList(char *lpstrIdentifier)
+{
+    // 待实现
+}
+
+ExtendsList* Create::ChainExtendsList(ExtendsList *pList, char *pAdd)
+{
+    // 待实现
+}
+
+ClassOrMemberModifierList Create::CreateClassOrMemberModifier(ClassOrMemberModifierKind Modifier)
+{
+    // 待实现
+}
+
+ClassOrMemberModifierList Create::ChainClassOrMemberModifier(ClassOrMemberModifierList List, ClassOrMemberModifierList Add)
+{
+    // 待实现
+}
+
+MemberDeclaration* Create::ChainMemberDeclaration(MemberDeclaration *pList, MemberDeclaration *pAdd)
+{
+    // 待实现
+}
+
+MemberDeclaration* Create::CreateMethodMember(ClassOrMemberModifierList *pModifier, FunctionDefinition *pFunctionDefinition, DVM_Boolean IsConstructor)
+{
+    // 待实现
+}
+
+FunctionDefinition* Create::MethodFunctionDefine(TypeSpecifier *pType, char *lpstrIdentifier, ParameterList *pParameterList, Block *pBlock)
+{
+    // 待实现
+}
+
+FunctionDefinition* Create::ConstructorFunctionDefine(char *lpstrIdentifier, ParameterList *pParameterList, Block *pBlock)
+{
+    // 待实现
+}
+
+MemberDeclaration* Create::CreateFieldMember(ClassOrMemberModifierList *pModifier, TypeSpecifier *pType, char *lpstrName)
+{
+    // 待实现
+}
+
+PackageName* Create::CreatePackageName(char *lpstrIdentifier)
+{
+    // 待实现
+}
+
+PackageName* Create::ChainPackageName(PackageName *pPackageNameList, char *lpstrIdentifier)
+{
+    // 待实现
+}
+
+RequireList* Create::CreateRequireList(PackageName *pPackageName)
+{
+    // 待实现
+}
+
+RequireList* Create::ChainRequireList(RequireList *pList, RequireList *pAdd)
+{
+    // 待实现
+}
+
+RenameList* Create::CreateRenameList(PackageName *pPackageName, char *lpstrIdentifier)
+{
+    // 待实现
+}
+
+void Create::SetRequireAndRenameList(RequireList *pRequireList, RenameList *pRenameList)
+{
+    // 待实现
 }
 
 FunctionDefinition* Create::CreateFunctionDefinition(TypeSpecifier *pType, char *lpstrIdentifier, ParameterList *pParameterList, Block *pBlock)
