@@ -3094,7 +3094,7 @@ yyreduce:
 /* Line 1464 of yacc.c  */
 #line 838 "DikSam.y"
     {
-            (yyval.function_definition) = dkc_method_function_define((yyvsp[(1) - (5)].type_specifier), #2, NULL, (yyvsp[(5) - (5)].block));
+            (yyval.function_definition) = dkc_method_function_define((yyvsp[(1) - (5)].type_specifier), (yyvsp[(2) - (5)].identifier), NULL, (yyvsp[(5) - (5)].block));
         }
     break;
 

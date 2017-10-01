@@ -773,11 +773,11 @@ void yyset_lineno (int line_number  );
  */
 
 #ifndef YY_SKIP_YYWRAP
-//#ifdef __cplusplus
-//extern "C" int yywrap (void );
-//#else
+#ifdef __cplusplus
+extern "C" int yywrap (void );
+#else
 extern int yywrap (void );
-//#endif
+#endif
 #endif
 
     static void yyunput (int c,char *buf_ptr  );
@@ -2121,7 +2121,7 @@ static void yy_load_buffer_state  (void)
 }
 
 #ifndef __cplusplus
-extern int _isatty (int );
+extern int isatty (int );
 #endif /* __cplusplus */
     
 /* Initializes or reinitializes a buffer.
@@ -2147,7 +2147,7 @@ extern int _isatty (int );
         b->yy_bs_column = 0;
     }
 
-        b->yy_is_interactive = file ? (_isatty( _fileno(file) ) > 0) : 0;
+        b->yy_is_interactive = file ? (isatty( fileno(file) ) > 0) : 0;
     
 	errno = oerrno;
 }
