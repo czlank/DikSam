@@ -836,7 +836,7 @@ method_function_definition
         }
         | type_specifier IDENTIFIER LEFTP RIGHTP block
         {
-            $$ = dkc_method_function_define($1, #2, NULL, $5);
+            $$ = dkc_method_function_define($1, $2, NULL, $5);
         }
         | type_specifier IDENTIFIER LEFTP parameter_list RIGHTP SEMICOLON
         {
