@@ -1,7 +1,6 @@
 #ifndef PRIVATE_DIKSAMC_H_INCLUDED
 #define PRIVATE_DIKSAMC_H_INCLUDED
 
-#include "DKC.h"
 #include "DVM_code.h"
 
 #ifdef __cplusplus
@@ -705,6 +704,8 @@ struct ClassDefinition_tag
     struct ClassDefinition_tag  *next;
 };
 
+typedef struct DKC_Compiler_tag DKC_Compiler;
+
 typedef struct CompilerList_tag
 {
     DKC_Compiler            *compiler;
@@ -836,7 +837,7 @@ Expression* dkc_create_null_expression(void);
 Expression* dkc_create_new_expression(char *class_name, char *method_name, ArgumentList *argument);
 Expression* dkc_create_array_literal_expression(ExpressionList *list);
 Expression* dkc_create_basic_array_creation(DVM_BasicType basic_type, ArrayDimension *dim_expr_list, ArrayDimension *dim_list);
-Expression* dkc_create_class_array_creation(DVM_BasicType basic_type, ArrayDimension *dim_expr_list, ArrayDimension *dim_list);
+Expression* dkc_create_class_array_creation(TypeSpecifier *type, ArrayDimension *dim_expr_list, ArrayDimension *dim_list);
 Expression* dkc_create_this_expression(void);
 Expression* dkc_create_super_expression(void);
 ArrayDimension* dkc_create_array_dimension(Expression *expr);

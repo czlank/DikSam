@@ -666,7 +666,7 @@ static int string_input(char *buf, int max_size)
         st_current_source_line++;
         st_current_char_index = 0;
         
-        if (NULL == st_source_string[st_current_source_line]))
+        if (NULL == st_source_string[st_current_source_line])
         {
             return 0;
         }
@@ -1551,7 +1551,7 @@ YY_RULE_SETUP
 case YY_STATE_EOF(STRING_LITERAL_STATE):
 #line 296 "DikSam.l"
 {
-    dkc_compiler_error(dkc_get_current_compiler()->current_line_number,
+    dkc_compile_error(dkc_get_current_compiler()->current_line_number,
                        EOF_IN_STRING_LITERAL_ERR,
                        (MESSAGE_ARGUMENT_END));
 }

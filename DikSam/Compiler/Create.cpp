@@ -89,6 +89,20 @@ void Create::FunctionDefine(TypeSpecifier *pType, char *lpstrIdentifier, Paramet
 FunctionDefinition* Create::CreateFunctionDefinition(TypeSpecifier *pType, char *lpstrIdentifier, ParameterList *pParameterList, Block *pBlock)
 {
     // 待实现
+//    DKC_Compiler *pCompiler = m_Interface.GetCompiler();
+//    FunctionDefinition *pFD = (FunctionDefinition*)CREATE_UTIL_Malloc(sizeof(FunctionDefinition));
+
+//    pFD->type = pType;
+//    pFD->name = lpstrIdentifier;
+//    pFD->parameter = pParameterList;
+//    pFD->block = pBlock;
+//    pFD->index = pCompiler->function_count++;
+//    pFD->local_variable_count = 0;
+//    pFD->local_variable = nullptr;
+//    pFD->end_line_number = pCompiler->current_line_number;
+//    pFD->next = nullptr;
+
+//    return pFD;
 }
 
 ParameterList* Create::CreateParameter(TypeSpecifier *pType, char *lpstrIdentifier)
@@ -374,7 +388,7 @@ Expression* Create::CreateBasicArrayCreation(DVM_BasicType enType, ArrayDimensio
     return pExpression;
 }
 
-Expression* Create::CreateClassArrayCreation(DVM_BasicType enType, ArrayDimension *pArrayDimensionExpressionList, ArrayDimension *pArrayDimension)
+Expression* Create::CreateClassArrayCreation(TypeSpecifier *pType, ArrayDimension *pArrayDimensionExpressionList, ArrayDimension *pArrayDimension)
 {
     // 待实现
 }
@@ -427,7 +441,12 @@ ArrayDimension* Create::ChainArrayDimension(ArrayDimension *pList, ArrayDimensio
 
 Statement* Create::AllocStatement(StatementType enType)
 {
-    // 待实现
+    Statement *pStatement = (Statement*)CREATE_UTIL_Malloc(sizeof(Statement));
+
+    pStatement->type = enType;
+    pStatement->line_number = m_Interface.GetCompiler()->current_line_number;
+
+    return pStatement;
 }
 
 Statement* Create::CreateIfStatement(Expression *pCondition, Block *pThenBlock, Elsif *pElsifList, Block *pElseBlock)
@@ -696,32 +715,4 @@ RenameList* Create::CreateRenameList(PackageName *pPackageName, char *lpstrIdent
 void Create::SetRequireAndRenameList(RequireList *pRequireList, RenameList *pRenameList)
 {
     // 待实现
-}
-
-FunctionDefinition* Create::CreateFunctionDefinition(TypeSpecifier *pType, char *lpstrIdentifier, ParameterList *pParameterList, Block *pBlock)
-{
-    DKC_Compiler *pCompiler = m_Interface.GetCompiler();
-    FunctionDefinition *pFD = (FunctionDefinition*)CREATE_UTIL_Malloc(sizeof(FunctionDefinition));
-
-    pFD->type = pType;
-    pFD->name = lpstrIdentifier;
-    pFD->parameter = pParameterList;
-    pFD->block = pBlock;
-    pFD->index = pCompiler->function_count++;
-    pFD->local_variable_count = 0;
-    pFD->local_variable = nullptr;
-    pFD->end_line_number = pCompiler->current_line_number;
-    pFD->next = nullptr;
-
-    return pFD;
-}
-
-Statement* Create::AllocStatement(StatementType enType)
-{
-    Statement *pStatement = (Statement*)CREATE_UTIL_Malloc(sizeof(Statement));
-
-    pStatement->type = enType;
-    pStatement->line_number = m_Interface.GetCompiler()->current_line_number;
-
-    return pStatement;
 }

@@ -12,11 +12,14 @@ extern "C"
 
 typedef enum
 {
+    DVM_VOID_TYPE,
     DVM_BOOLEAN_TYPE,
     DVM_INT_TYPE,
     DVM_DOUBLE_TYPE,
     DVM_STRING_TYPE,
-    DVM_NULL_TYPE
+    DVM_CLASS_TYPE,
+    DVM_NULL_TYPE,
+    DVM_BASE_TYPE
 } DVM_BasicType;
 
 typedef struct DVM_TypeSpecifier_tag DVM_TypeSpecifier;
@@ -56,6 +59,7 @@ typedef struct DVM_TypeDerive_tag
 struct DVM_TypeSpecifier_tag
 {
     DVM_BasicType        basic_type;
+    int                  class_index;
     int                  derive_count;
     DVM_TypeDerive      *derive;
 };
@@ -95,6 +99,13 @@ typedef enum
     DVM_POP_ARRAY_DOUBLE,
     DVM_POP_ARRAY_OBJECT,
     /**********/
+    DVM_PUSH_FIELD_INT,
+    DVM_PUSH_FIELD_DOUBLE,
+    DVM_PUSH_FIELD_OBJECT,
+    DVM_POP_FIELD_INT,
+    DVM_POP_FIELD_DOUBLE,
+    DVM_POP_FIELD_OBJECT,
+    /**********/
     DVM_ADD_INT,
     DVM_ADD_DOUBLE,
     DVM_ADD_STRING,
@@ -115,6 +126,8 @@ typedef enum
     DVM_CAST_BOOLEAN_TO_STRING,
     DVM_CAST_INT_TO_STRING,
     DVM_CAST_DOUBLE_TO_STRING,
+    DVM_UP_CAST,
+    DVM_DOWN_CAST,
     DVM_EQ_INT,
     DVM_EQ_DOUBLE,
     DVM_EQ_OBJECT,
@@ -140,18 +153,23 @@ typedef enum
     DVM_LOGICAL_NOT,
     DVM_POP,
     DVM_DUPLICATE,
+    DVM_DUPLICATE_OFFSET,
     DVM_JUMP,
     DVM_JUMP_IF_TRUE,
     DVM_JUMP_IF_FALSE,
     /**********/
     DVM_PUSH_FUNCTION,
+    DVM_PUSH_METHOD,
     DVM_INVOKE,
     DVM_RETURN,
     /**********/
+    DVM_NEW,
     DVM_NEW_ARRAY,
     DVM_NEW_ARRAY_LITERAL_INT,
     DVM_NEW_ARRAY_LITERAL_DOUBLE,
-    DVM_NEW_ARRAY_LITERAL_OBJECT
+    DVM_NEW_ARRAY_LITERAL_OBJECT,
+    DVM_SUPER,
+    DVM_INSTANCEOF
 } DVM_Opcode;
 
 typedef enum
@@ -188,10 +206,12 @@ typedef struct
 typedef struct 
 {
     DVM_TypeSpecifier   *type;
+    char                *package_name;
     char                *name;
     int                  parameter_count;
     DVM_LocalVariable   *parameter;
     DVM_Boolean          is_implemented;
+    DVM_Boolean          is_method;
     int                  local_variable_count;
     DVM_LocalVariable   *local_variable;
     int                  code_size;
@@ -201,8 +221,63 @@ typedef struct
     int                  need_stack_size;
 } DVM_Function;
 
+typedef enum
+{
+    DVM_FILE_ACCESS,
+    DVM_PUBLIC_ACCESS,
+    DVM_PRIVATE_ACCESS
+} DVM_AccessModifier;
+
+typedef struct
+{
+    DVM_AccessModifier  access_modifier;
+    char               *name;
+    DVM_TypeSpecifier  *type;
+} DVM_Field;
+
+typedef struct
+{
+    DVM_AccessModifier  access_modifier;
+    DVM_Boolean         is_abstract;
+    DVM_Boolean         is_virtual;
+    DVM_Boolean         is_override;
+    char               *name;
+} DVM_Method;
+
+typedef enum
+{
+    DVM_CLASS_DEFINITION,
+    DVM_INTERFACE_DEFINITION
+} DVM_ClassOrInterface;
+
+typedef struct
+{
+    char    *package_name;
+    char    *name;
+} DVM_ClassIdentifier;
+
+typedef struct
+{
+    DVM_Boolean             is_abstract;
+    DVM_AccessModifier      access_modifier;
+    DVM_ClassOrInterface    class_or_interface;
+    char                   *package_name;
+    char                   *name;
+    DVM_Boolean             is_implemented;
+    DVM_ClassIdentifier    *super_class;
+    int                     interface_count;
+    DVM_ClassIdentifier    *interface_;
+    int                     field_count;
+    DVM_Field              *field;
+    int                     method_count;
+    DVM_Method             *method;
+} DVM_Class;
+
 struct DVM_Executable_tag
 {
+    char                *package_name;
+    DVM_Boolean          is_required;
+    char                *path;
     int                  constant_pool_count;
     DVM_ConstantPool    *constant_pool;
     int                  global_variable_count;
@@ -213,9 +288,23 @@ struct DVM_Executable_tag
     DVM_TypeSpecifier   *type_specifier;
     int                  code_size;
     DVM_Byte            *code;
+    int                  class_count;
+    DVM_Class           *class_definition;
     int                  line_number_size;
     DVM_LineNumber      *line_number;
     int                  need_stack_size;
+};
+
+typedef struct DVM_ExecutableItem_tag
+{
+    DVM_Executable                  *executable;
+    struct DVM_ExecutableItem_tag   *next;
+} DVM_ExecutableItem;
+
+struct DVM_ExecutableList_tag
+{
+    DVM_Executable      *top_level;
+    DVM_ExecutableItem  *list;
 };
 
 #ifdef __cplusplus

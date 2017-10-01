@@ -205,9 +205,9 @@ Expression* dkc_create_basic_array_creation(DVM_BasicType basic_type, ArrayDimen
     return DikSam::GetClassObject(g_iCurrentThreadIndex)->GetCreate()->CreateBasicArrayCreation(basic_type, dim_expr_list, dim_list);
 }
 
-Expression* dkc_create_class_array_creation(DVM_BasicType basic_type, ArrayDimension *dim_expr_list, ArrayDimension *dim_list)
+Expression* dkc_create_class_array_creation(TypeSpecifier *type, ArrayDimension *dim_expr_list, ArrayDimension *dim_list)
 {
-    return DikSam::GetClassObject(g_iCurrentThreadIndex)->GetCreate()->CreateClassArrayCreation(basic_type, dim_expr_list, dim_list);
+    return DikSam::GetClassObject(g_iCurrentThreadIndex)->GetCreate()->CreateClassArrayCreation(type, dim_expr_list, dim_list);
 }
 
 Expression* dkc_create_this_expression(void)

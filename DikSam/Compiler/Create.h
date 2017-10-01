@@ -60,7 +60,7 @@ public:
     Expression* CreateIndexExpression(Expression *pArrayExpression, Expression* pIndex);
     Expression* CreateArrayLiteralExpression(ExpressionList *pList);
     Expression* CreateBasicArrayCreation(DVM_BasicType enType, ArrayDimension *pArrayDimensionExpressionList, ArrayDimension *pArrayDimension);
-    Expression* CreateClassArrayCreation(DVM_BasicType enType, ArrayDimension *pArrayDimensionExpressionList, ArrayDimension *pArrayDimension);
+    Expression* CreateClassArrayCreation(TypeSpecifier *pType, ArrayDimension *pArrayDimensionExpressionList, ArrayDimension *pArrayDimension);
     Expression* CreateInstanceofExpression(Expression *pOperand, TypeSpecifier *pType);
     Expression* CreateDownCastExpression(Expression *pOperand, TypeSpecifier *pType);
     Expression* CreateNewExpression(char *lpstrClassName, char *lpstrMethodName, ArgumentList *pArgument);
@@ -115,10 +115,6 @@ public:
     RenameList* CreateRenameList(PackageName *pPackageName, char *lpstrIdentifier);
     RenameList* ChainRenameList(RenameList *pList, RenameList *pAdd);
     void SetRequireAndRenameList(RequireList *pRequireList, RenameList *pRenameList);
-
-private:
-    FunctionDefinition* CreateFunctionDefinition(TypeSpecifier *pType, char *lpstrIdentifier, ParameterList *pParameterList, Block *pBlock);
-    Statement* AllocStatement(StatementType enType);
 
 private:
     Debug       &m_Debug;
