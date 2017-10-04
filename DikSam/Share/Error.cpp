@@ -104,7 +104,7 @@ void Error::InitMessageFormat()
     m_ErrorMessageFormat[MEMBER_EXPRESSION_TYPE_ERR]                = TEXT("该类型不能使用成员运算符。");
     m_ErrorMessageFormat[MEMBER_NOT_FOUND_ERR]                      = TEXT("在类型$(class_name)中不存在成员$(member_name)。");
     m_ErrorMessageFormat[PRIVATE_MEMBER_ACCESS_ERR]                 = TEXT("不能访问private的成员$(member_name)。");
-    m_ErrorMessageFormat[NO_ABSTRACT_METHOD_ERR]                    = TEXT("没有实现abstract方法。");
+    m_ErrorMessageFormat[ABSTRACT_METHOD_HAS_BODY_ERR]              = TEXT("不能实现abstract方法。");
     m_ErrorMessageFormat[CONCRETE_METHOD_HAS_NO_BODY_ERR]           = TEXT("必须实现非abstract方法。");
     m_ErrorMessageFormat[MULTIPLE_INHERITANCE_ERR]                  = TEXT("继承了多个类。");
     m_ErrorMessageFormat[INHERIT_CONCRETE_CLASS_ERR]                = TEXT("只能继承abstract类(类$(name)不是abstract类)。");

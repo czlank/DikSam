@@ -20,7 +20,8 @@ public:
 
     void Open();
     void Add(int letter);
-    DVM_Char* Close();
+    DVM_Char* CloseString();
+    int CloseCharacter();
     void Reset();
     char* CreateIdentifier(const char *lpcstrStr);
 

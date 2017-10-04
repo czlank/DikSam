@@ -3,17 +3,22 @@
 #include "DikSamc.h"
 
 class Debug;
+class Memory;
 class Error;
 class Util;
 class Interface;
 
 class Create
 {
+#define CREATE_MEM_MALLOC(size)             (m_Memory.Malloc(__FILE__, __LINE__, size))
+#define CREATE_MEM_Realloc(ptr, size)       (m_Memory.Realloc(__FILE__, __LINE__, ptr, size))
+#define CREATE_MEM_Free(ptr)                (m_Memory.Free(ptr))
 #define CREATE_UTIL_Malloc(size)            (m_Util.Malloc(__FILE__, __LINE__, size))
+
 #define CREATE_DBG_Assert(expression, arg)  ((expression) ? (void)(0) : (m_Debug.Assert(__FILE__, __LINE__, #expression, arg)))
 
 public:
-    Create(Debug& debug, Error& error, Util& util, Interface& rInterface);
+    Create(Debug& debug, Memory& memory, Error& error, Util& util, Interface& rInterface);
     ~Create();
 
     // ÉùÃ÷
@@ -117,7 +122,14 @@ public:
     void SetRequireAndRenameList(RequireList *pRequireList, RenameList *pRenameList);
 
 private:
+    RequireList* AddDefaultPackage(RequireList *pRequireList);
+    void AddFunctionToCompiler(FunctionDefinition *pFunctionDefinition);
+    DVM_AccessModifier ConvertAccessModifier(ClassOrMemberModifierKind src);
+    MemberDeclaration* AllocMemberDeclaration(MemberKind enKind, ClassOrMemberModifierList *pModifierList);
+
+private:
     Debug       &m_Debug;
+    Memory      &m_Memory;
     Error       &m_Error;
     Util        &m_Util;
     Interface   &m_Interface;

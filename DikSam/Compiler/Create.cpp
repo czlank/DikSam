@@ -2,14 +2,16 @@
 #include "Create.h"
 #include "DikSam.h"
 #include "Debug.h"
+#include "Memory.h"
 #include "Error.h"
 #include "Util.h"
 #include "Interface.h"
 
 #include "CreateC.cpp"
 
-Create::Create(Debug& debug, Error& error, Util& util, Interface& rInterface)
+Create::Create(Debug& debug, Memory& memory, Error& error, Util& util, Interface& rInterface)
     : m_Debug(debug)
+    , m_Memory(memory)
     , m_Error(error)
     , m_Util(util)
     , m_Interface(rInterface)
@@ -63,7 +65,24 @@ void Create::FunctionDefine(TypeSpecifier *pType, char *lpstrIdentifier, Paramet
             MESSAGE_ARGUMENT_END);
     }
 
-    FunctionDefinition  *pFD = CreateFunctionDefinition(pType, lpstrIdentifier, pParameterList, pBlock);
+    (void)CreateFunctionDefinition(pType, lpstrIdentifier, pParameterList, pBlock);
+}
+
+FunctionDefinition* Create::CreateFunctionDefinition(TypeSpecifier *pType, char *lpstrIdentifier, ParameterList *pParameterList, Block *pBlock)
+{
+    DKC_Compiler *pCompiler = m_Interface.GetCompiler();
+    FunctionDefinition *pFD = (FunctionDefinition*)CREATE_UTIL_Malloc(sizeof(FunctionDefinition));
+
+    pFD->type = pType;
+    pFD->package_name = pCompiler->package_name;
+    pFD->name = lpstrIdentifier;
+    pFD->parameter = pParameterList;
+    pFD->block = pBlock;
+    pFD->local_variable_count = 0;
+    pFD->local_variable = nullptr;
+    pFD->class_definition = nullptr;
+    pFD->end_line_number = pCompiler->current_line_number;
+    pFD->next = nullptr;
 
     if (pBlock)
     {
@@ -71,38 +90,9 @@ void Create::FunctionDefine(TypeSpecifier *pType, char *lpstrIdentifier, Paramet
         pBlock->parent.function.function = pFD;
     }
 
-    DKC_Compiler *pCompiler = m_Interface.GetCompiler();
+    AddFunctionToCompiler(pFD);
 
-    if (pCompiler->function_list)
-    {
-        FunctionDefinition *pos = pCompiler->function_list;
-        for (; pos->next; pos = pos->next)
-            ;
-        pos->next = pFD;
-    }
-    else
-    {
-        pCompiler->function_list = pFD;
-    }
-}
-
-FunctionDefinition* Create::CreateFunctionDefinition(TypeSpecifier *pType, char *lpstrIdentifier, ParameterList *pParameterList, Block *pBlock)
-{
-    // 待实现
-//    DKC_Compiler *pCompiler = m_Interface.GetCompiler();
-//    FunctionDefinition *pFD = (FunctionDefinition*)CREATE_UTIL_Malloc(sizeof(FunctionDefinition));
-
-//    pFD->type = pType;
-//    pFD->name = lpstrIdentifier;
-//    pFD->parameter = pParameterList;
-//    pFD->block = pBlock;
-//    pFD->index = pCompiler->function_count++;
-//    pFD->local_variable_count = 0;
-//    pFD->local_variable = nullptr;
-//    pFD->end_line_number = pCompiler->current_line_number;
-//    pFD->next = nullptr;
-
-//    return pFD;
+    return pFD;
 }
 
 ParameterList* Create::CreateParameter(TypeSpecifier *pType, char *lpstrIdentifier)
@@ -196,10 +186,8 @@ StatementList* Create::ChainStatementList(StatementList *pList, Statement *pStat
 
 TypeSpecifier* Create::CreateTypeSpecifier(DVM_BasicType enType)
 {
-    TypeSpecifier *pTypeSpecifier = (TypeSpecifier*)CREATE_UTIL_Malloc(sizeof(TypeSpecifier));
-
-    pTypeSpecifier->basic_type = enType;
-    pTypeSpecifier->derive = nullptr;
+    TypeSpecifier *pTypeSpecifier = m_Util.AllocTypeSpecifier(enType);
+    pTypeSpecifier->line_number = m_Interface.GetCompiler()->current_line_number;
 
     return pTypeSpecifier;
 }
@@ -225,7 +213,13 @@ TypeSpecifier* Create::CreateArrayTypeSpecifier(TypeSpecifier *pBase)
 
 TypeSpecifier* Create::CreateClassTypeSpecifier(char *lpstrIdentifier)
 {
-    // 待实现
+    TypeSpecifier *pTypeSpecifier = m_Util.AllocTypeSpecifier(DVM_CLASS_TYPE);
+
+    pTypeSpecifier->class_ref.identifier = lpstrIdentifier;
+    pTypeSpecifier->class_ref.class_definition = nullptr;
+    pTypeSpecifier->line_number = m_Interface.GetCompiler()->current_line_number;
+
+    return pTypeSpecifier;
 }
 
 Expression* Create::AllocExpression(ExpressionKind enKind)
@@ -379,43 +373,65 @@ Expression* Create::CreateArrayLiteralExpression(ExpressionList *pList)
 
 Expression* Create::CreateBasicArrayCreation(DVM_BasicType enType, ArrayDimension *pArrayDimensionExpressionList, ArrayDimension *pArrayDimension)
 {
-    // 待实现
-    Expression *pExpression = AllocExpression(ARRAY_CREATION_EXPRESSION);
-
-    pExpression->u.array_creation.type = CreateTypeSpecifier(enType);
-    pExpression->u.array_creation.dimension = ChainArrayDimension(pArrayDimensionExpressionList, pArrayDimension);
+    TypeSpecifier *pTypeSpecifier = CreateTypeSpecifier(enType);
+    Expression *pExpression = CreateClassArrayCreation(pTypeSpecifier, pArrayDimensionExpressionList, pArrayDimension);
 
     return pExpression;
 }
 
 Expression* Create::CreateClassArrayCreation(TypeSpecifier *pType, ArrayDimension *pArrayDimensionExpressionList, ArrayDimension *pArrayDimension)
 {
-    // 待实现
+    Expression *pExpression = AllocExpression(ARRAY_CREATION_EXPRESSION);
+
+    pExpression->u.array_creation.type = pType;
+    pExpression->u.array_creation.dimension = ChainArrayDimension(pArrayDimensionExpressionList, pArrayDimension);
+
+    return pExpression;
 }
 
 Expression* Create::CreateInstanceofExpression(Expression *pOperand, TypeSpecifier *pType)
 {
-    // 待实现
+    Expression *pExpression = AllocExpression(INSTANCEOF_EXPRESSION);
+
+    pExpression->u.instanceof.operand = pOperand;
+    pExpression->u.instanceof.type = pType;
+
+    return pExpression;
 }
 
 Expression* Create::CreateDownCastExpression(Expression *pOperand, TypeSpecifier *pType)
 {
-    // 待实现
+    Expression *pExpression = AllocExpression(DOWN_CAST_EXPRESSION);
+
+    pExpression->u.down_cast.operand = pOperand;
+    pExpression->u.down_cast.type = pType;
+
+    return pExpression;
 }
 
 Expression* Create::CreateNewExpression(char *lpstrClassName, char *lpstrMethodName, ArgumentList *pArgument)
 {
-    // 待实现
+    Expression *pExpression = AllocExpression(NEW_EXPRESSION);
+
+    pExpression->u.new_e.class_name = lpstrClassName;
+    pExpression->u.new_e.class_definition = nullptr;
+    pExpression->u.new_e.method_name = lpstrMethodName;
+    pExpression->u.new_e.method_declaration = nullptr;
+    pExpression->u.new_e.argument = pArgument;
+
+    return pExpression;
 }
 
 Expression* Create::CreateThisExpression()
 {
-    // 待实现
+    Expression *pExpression = AllocExpression(THIS_EXPRESSION);
+    return pExpression;
 }
 
 Expression* Create::CreateSuperExpression()
 {
-    // 待实现
+    Expression *pExpression = AllocExpression(SUPER_EXPRESSION);
+    return pExpression;
 }
 
 ArrayDimension* Create::CreateArrayDimension(Expression *pExpression)
@@ -498,7 +514,16 @@ Statement* Create::CreateWhileStatement(char *lpstrLabel, Expression *pConfition
 
 Statement* Create::CreateDoWhileStatement(char *lpstrLabel, Block *pBlock, Expression *pCondition)
 {
-    // 待实现
+    Statement *pStatement = AllocStatement(DO_WHILE_STATEMENT);
+
+    pStatement->u.do_while_s.label = lpstrLabel;
+    pStatement->u.do_while_s.block = pBlock;
+    pStatement->u.do_while_s.condition = pCondition;
+
+    pBlock->type = DO_WHILE_STATEMENT_BLOCK;
+    pBlock->parent.statement.statement = pStatement;
+
+    return pStatement;
 }
 
 Statement* Create::CreateForStatement(char *lpstrLabel, Expression *pInit, Expression *pCondition, Expression *pPost, Block *pBlock)
@@ -518,16 +543,21 @@ Statement* Create::CreateForStatement(char *lpstrLabel, Expression *pInit, Expre
 
 Block* Create::AllocBlock()
 {
-    // 待实现
+    Block *pBlock = (Block*)CREATE_UTIL_Malloc(sizeof(Block));
+
+    pBlock->type = UNDEFINED_BLOCK;
+    pBlock->outer_block = nullptr;
+    pBlock->statement_list = nullptr;
+    pBlock->declaration_list = nullptr;
+
+    return pBlock;
 }
 
 Block* Create::OpenBlock()
 {
-    Block *pBlock = (Block*)CREATE_UTIL_Malloc(sizeof(Block));
+    Block *pBlock = AllocBlock();
 
-    pBlock->type = UNDEFINED_BLOCK;
     pBlock->outer_block = m_Interface.GetCompiler()->current_block;
-    pBlock->declaration_list = nullptr;
     m_Interface.GetCompiler()->current_block = pBlock;
 
     return pBlock;
@@ -582,34 +612,31 @@ Statement* Create::CreateContinueStatement(char *lpstrLabel)
 Statement* Create::CreateTryStatement(Block *pTryBlock, CatchClause *pCatchClause, Block *pFinallyBlock)
 {
     // 待实现
-    Statement *pStatement = AllocStatement(TRY_STATEMENT);
-
-//    pStatement->u.try_s.try_block = pTryBlock;
-//    pStatement->u.try_s.catch_block = pCatchBlock;
-//    pStatement->u.try_s.exception = lpstrException;
-//    pStatement->u.try_s.finally_block = pFinallyBlock;
-
-    return pStatement;
+    return nullptr;
 }
 
 CatchClause* Create::CreateCatchClause(TypeSpecifier *pType, char *lpstrVariableName, Block *pBlock)
 {
     // 待实现
+    return nullptr;
 }
 
 CatchClause* Create::StartCatchClause()
 {
     // 待实现
+    return nullptr;
 }
 
 CatchClause* Create::EndCatchClause(CatchClause *pCatchClause, TypeSpecifier *pType, char *lpstrVariableName, Block *pBlock)
 {
     // 待实现
+    return nullptr;
 }
 
 CatchClause* Create::ChainCatchList(CatchClause *pList, CatchClause *pAdd)
 {
     // 待实现
+    return nullptr;
 }
 
 Statement* Create::CreateThrowStatement(Expression *pExpression)
@@ -634,85 +661,470 @@ Statement* Create::CreateDeclarationStatement(TypeSpecifier *pType, char *lpstrI
 
 void Create::StartClassDefinition(ClassOrMemberModifierList *pModifier, DVM_ClassOrInterface enClassOrInterface, char *lpstrIdentifier, ExtendsList *pExtends)
 {
-    // 待实现
+    DKC_Compiler *pCompiler = m_Interface.GetCompiler();
+
+    ClassDefinition *pClassDefinition = (ClassDefinition*)CREATE_UTIL_Malloc(sizeof(ClassDefinition));
+
+    pClassDefinition->is_abstract = (DVM_INTERFACE_DEFINITION == enClassOrInterface) ? DVM_TRUE : DVM_FALSE;
+    pClassDefinition->access_modifier = DVM_FILE_ACCESS;
+
+    if (pModifier)
+    {
+        if (ABSTRACT_MODIFIER == pModifier->is_abstract)
+        {
+            pClassDefinition->is_abstract = DVM_TRUE;
+        }
+
+        pClassDefinition->access_modifier = ConvertAccessModifier(pModifier->access_modifier);
+    }
+
+    pClassDefinition->class_or_interface = enClassOrInterface;
+    pClassDefinition->package_name = pCompiler->package_name;
+    pClassDefinition->name = lpstrIdentifier;
+    pClassDefinition->extends = pExtends;
+    pClassDefinition->super_class = nullptr;
+    pClassDefinition->interface_list = nullptr;
+    pClassDefinition->member = nullptr;
+    pClassDefinition->next = nullptr;
+    pClassDefinition->line_number = pCompiler->current_line_number;
+
+    CREATE_DBG_Assert(nullptr == pCompiler->current_class_definition, ("current_class_definition is not null."));
+    pCompiler->current_class_definition = pClassDefinition;
 }
 
 void Create::ClassDefine(MemberDeclaration *pMemberList)
 {
-    // 待实现
+    DKC_Compiler *pCompiler = m_Interface.GetCompiler();
+    ClassDefinition *pClassDefinition = pCompiler->current_class_definition;
+
+    CREATE_DBG_Assert(pClassDefinition != nullptr, ("current_class_definition is null."));
+
+    if (nullptr == pCompiler->class_definition_list)
+    {
+        pCompiler->class_definition_list = pClassDefinition;
+    }
+    else
+    {
+        ClassDefinition *pos = pCompiler->class_definition_list;
+
+        for (; pos->next; pos = pos->next)
+            ;
+
+        pos->next = pClassDefinition;
+    }
+
+    pClassDefinition->member = pMemberList;
+    pCompiler->current_class_definition = nullptr;
 }
 
 ExtendsList* Create::CreateExtendsList(char *lpstrIdentifier)
 {
-    // 待实现
+    ExtendsList *pList = (ExtendsList*)CREATE_UTIL_Malloc(sizeof(ExtendsList));
+
+    pList->identifier = lpstrIdentifier;
+    pList->class_definition = nullptr;
+    pList->next = nullptr;
+
+    return pList;
 }
 
 ExtendsList* Create::ChainExtendsList(ExtendsList *pList, char *pAdd)
 {
-    // 待实现
+    ExtendsList *pos = pList;
+
+    for (; pos->next; pos = pos->next)
+        ;
+
+    pos->next = CreateExtendsList(pAdd);
+
+    return pList;
 }
 
 ClassOrMemberModifierList Create::CreateClassOrMemberModifier(ClassOrMemberModifierKind Modifier)
 {
-    // 待实现
+    ClassOrMemberModifierList modifierList;
+
+    modifierList.is_abstract = NOT_SPECIFIED_MODIFIER;
+    modifierList.access_modifier = NOT_SPECIFIED_MODIFIER;
+    modifierList.is_override = NOT_SPECIFIED_MODIFIER;
+    modifierList.is_virtual = NOT_SPECIFIED_MODIFIER;
+
+    switch (Modifier)
+    {
+    case ABSTRACT_MODIFIER :
+        modifierList.is_abstract = ABSTRACT_MODIFIER;
+        break;
+
+    case PUBLIC_MODIFIER :
+        modifierList.access_modifier = PUBLIC_MODIFIER;
+        break;
+
+    case PRIVATE_MODIFIER :
+        modifierList.access_modifier = PRIVATE_MODIFIER;
+        break;
+
+    case OVERRIDE_MODIFIER :
+        modifierList.is_override = OVERRIDE_MODIFIER;
+        break;
+
+    case VIRTUAL_MODIFIER :
+        modifierList.is_virtual = VIRTUAL_MODIFIER;
+        break;
+
+    case NOT_SPECIFIED_MODIFIER :
+    default :
+        CREATE_DBG_Assert(0, ("modifier..", Modifier));
+    }
+
+    return modifierList;
 }
 
 ClassOrMemberModifierList Create::ChainClassOrMemberModifier(ClassOrMemberModifierList List, ClassOrMemberModifierList Add)
 {
-    // 待实现
+    if (Add.is_abstract != NOT_SPECIFIED_MODIFIER)
+    {
+        CREATE_DBG_Assert(ABSTRACT_MODIFIER == Add.is_abstract, ("add.is_abstract..", Add.is_abstract));
+
+        if (List.is_abstract != NOT_SPECIFIED_MODIFIER)
+        {
+            m_Error.CompileError(m_Interface.GetCompiler()->current_line_number, ABSTRACT_MULTIPILE_SPECIFIED_ERR, MESSAGE_ARGUMENT_END);
+        }
+
+        List.is_abstract = ABSTRACT_MODIFIER;
+    }
+    else if (Add.access_modifier != NOT_SPECIFIED_MODIFIER)
+    {
+        CREATE_DBG_Assert(PUBLIC_MODIFIER == Add.access_modifier || PRIVATE_MODIFIER == Add.access_modifier, ("add.access_modifier..", Add.access_modifier));
+
+        if (List.access_modifier != NOT_SPECIFIED_MODIFIER)
+        {
+            m_Error.CompileError(m_Interface.GetCompiler()->current_line_number, ACCESS_MODIFIER_MULTIPLE_SPECIFIED_ERR, MESSAGE_ARGUMENT_END);
+        }
+
+        List.access_modifier = Add.access_modifier;
+    }
+    else if (Add.is_override != NOT_SPECIFIED_MODIFIER)
+    {
+        CREATE_DBG_Assert(OVERRIDE_MODIFIER == Add.is_override, ("add.is_override..", Add.is_override));
+
+        if (List.is_override != NOT_SPECIFIED_MODIFIER)
+        {
+            m_Error.CompileError(m_Interface.GetCompiler()->current_line_number, OVERRIDE_MODIFIER_MULTIPLE_SPECIFIED_ERR, MESSAGE_ARGUMENT_END);
+        }
+
+        List.is_override = Add.is_override;
+    }
+    else if (Add.is_virtual != NOT_SPECIFIED_MODIFIER)
+    {
+        CREATE_DBG_Assert(VIRTUAL_MODIFIER == Add.is_virtual, ("add.is_virtual..", Add.is_virtual));
+
+        if (List.is_virtual != NOT_SPECIFIED_MODIFIER)
+        {
+            m_Error.CompileError(m_Interface.GetCompiler()->current_line_number, VIRTUAL_MODIFIER_MULTIPLE_SPECIFIED_ERR, MESSAGE_ARGUMENT_END);
+        }
+
+        List.is_virtual = Add.is_virtual;
+    }
+
+    return List;
 }
 
 MemberDeclaration* Create::ChainMemberDeclaration(MemberDeclaration *pList, MemberDeclaration *pAdd)
 {
-    // 待实现
+    MemberDeclaration *pos = pList;
+
+    for (; pos->next; pos = pos->next)
+        ;
+
+    pos->next = pAdd;
+
+    return pList;
 }
 
 MemberDeclaration* Create::CreateMethodMember(ClassOrMemberModifierList *pModifier, FunctionDefinition *pFunctionDefinition, DVM_Boolean IsConstructor)
 {
-    // 待实现
+    MemberDeclaration *pMemberDeclaration = AllocMemberDeclaration(METHOD_MEMBER, pModifier);
+
+    pMemberDeclaration->u.method.is_constructor = IsConstructor;
+    pMemberDeclaration->u.method.is_abstract = DVM_FALSE;
+    pMemberDeclaration->u.method.is_virtual = DVM_FALSE;
+    pMemberDeclaration->u.method.is_override = DVM_FALSE;
+
+    if (pModifier)
+    {
+        if (ABSTRACT_MODIFIER == pModifier->is_abstract)
+        {
+            pMemberDeclaration->u.method.is_abstract = DVM_TRUE;
+        }
+
+        if (VIRTUAL_MODIFIER == pModifier->is_virtual)
+        {
+            pMemberDeclaration->u.method.is_virtual = DVM_TRUE;
+        }
+
+        if (OVERRIDE_MODIFIER == pModifier->is_override)
+        {
+            pMemberDeclaration->u.method.is_override = DVM_TRUE;
+        }
+    }
+
+    DKC_Compiler *pCompiler = m_Interface.GetCompiler();
+
+    if (DVM_INTERFACE_DEFINITION == pCompiler->current_class_definition->class_or_interface)
+    {
+        pMemberDeclaration->u.method.is_abstract = DVM_TRUE;
+        pMemberDeclaration->u.method.is_virtual = DVM_TRUE;
+    }
+
+    pMemberDeclaration->u.method.function_definition = pFunctionDefinition;
+
+    if (pMemberDeclaration->u.method.is_abstract)
+    {
+        if (pFunctionDefinition->block)
+        {
+            m_Error.CompileError(pCompiler->current_line_number, ABSTRACT_METHOD_HAS_BODY_ERR, MESSAGE_ARGUMENT_END);
+        }
+    }
+    else
+    {
+        if (nullptr == pFunctionDefinition->block)
+        {
+            m_Error.CompileError(pCompiler->current_line_number, CONCRETE_METHOD_HAS_NO_BODY_ERR, MESSAGE_ARGUMENT_END);
+        }
+    }
+
+    pFunctionDefinition->class_definition = pCompiler->current_class_definition;
+
+    return pMemberDeclaration;
 }
 
 FunctionDefinition* Create::MethodFunctionDefine(TypeSpecifier *pType, char *lpstrIdentifier, ParameterList *pParameterList, Block *pBlock)
 {
-    // 待实现
+    FunctionDefinition *pFunctionDefinition = CreateFunctionDefinition(pType, lpstrIdentifier, pParameterList, pBlock);
+
+    return pFunctionDefinition;
 }
 
 FunctionDefinition* Create::ConstructorFunctionDefine(char *lpstrIdentifier, ParameterList *pParameterList, Block *pBlock)
 {
-    // 待实现
+    TypeSpecifier *pType = CreateTypeSpecifier(DVM_VOID_TYPE);
+    FunctionDefinition *pFunctionDefinition = MethodFunctionDefine(pType, lpstrIdentifier, pParameterList, pBlock);
+
+    return pFunctionDefinition;
 }
 
 MemberDeclaration* Create::CreateFieldMember(ClassOrMemberModifierList *pModifier, TypeSpecifier *pType, char *lpstrName)
 {
-    // 待实现
+    MemberDeclaration *pMemberDeclaration = AllocMemberDeclaration(FIELD_MEMBER, pModifier);
+
+    pMemberDeclaration->u.field.name = lpstrName;
+    pMemberDeclaration->u.field.type = pType;
+
+    return pMemberDeclaration;
 }
 
 PackageName* Create::CreatePackageName(char *lpstrIdentifier)
 {
-    // 待实现
+    PackageName *pPackageName = (PackageName*)CREATE_UTIL_Malloc(sizeof(PackageName));
+
+    pPackageName->name = lpstrIdentifier;
+    pPackageName->next = nullptr;
+
+    return pPackageName;
 }
 
 PackageName* Create::ChainPackageName(PackageName *pPackageNameList, char *lpstrIdentifier)
 {
-    // 待实现
+    PackageName *pos = pPackageNameList;
+
+    for (; pos->next; pos = pos->next)
+        ;
+
+    pos->next = CreatePackageName(lpstrIdentifier);
+
+    return pPackageNameList;
 }
 
 RequireList* Create::CreateRequireList(PackageName *pPackageName)
 {
-    // 待实现
+    DKC_Compiler *pCompiler = m_Interface.GetCompiler();
+    char *pCurrPackageName = m_Util.PackageNameToString(pCompiler->package_name);
+    char *pReqPackageName = m_Util.PackageNameToString(pPackageName);
+
+    if (std::string(pCurrPackageName) == pReqPackageName && DKH_SOURCE == pCompiler->source_suffix)
+    {
+        m_Error.CompileError(pCompiler->current_line_number, REQUIRE_ITSELF_ERR, MESSAGE_ARGUMENT_END);
+    }
+
+    CREATE_MEM_Free(pCurrPackageName);
+    CREATE_MEM_Free(pReqPackageName);
+
+    RequireList *pRequireList = (RequireList*)CREATE_UTIL_Malloc(sizeof(RequireList));
+
+    pRequireList->package_name = pPackageName;
+    pRequireList->line_number = pCompiler->current_line_number;
+    pRequireList->next = nullptr;
+
+    return pRequireList;
 }
 
 RequireList* Create::ChainRequireList(RequireList *pList, RequireList *pAdd)
 {
-    // 待实现
+    RequireList *pos = pList;
+    for (; pos->next; pos = pos->next)
+    {
+        if (m_Util.ComparePackageName(pos->package_name, pAdd->package_name))
+        {
+            char *pPackageName = m_Util.PackageNameToString(pAdd->package_name);
+            std::string sPackageName(pPackageName);
+            CREATE_MEM_Free(pPackageName);
+
+            m_Error.CompileError(m_Interface.GetCompiler()->current_line_number,
+                REQUIRE_DUPLICATE_ERR, STRING_MESSAGE_ARGUMENT, "package_name", sPackageName.c_str(),
+                MESSAGE_ARGUMENT_END);
+        }
+    }
+
+    pos->next = pAdd;
+    return pList;
 }
 
 RenameList* Create::CreateRenameList(PackageName *pPackageName, char *lpstrIdentifier)
 {
-    // 待实现
+    PackageName *pPreTail = nullptr;
+    PackageName *pTail = pPackageName;
+
+    for (; pTail->next; pTail = pTail->next)
+    {
+        pPreTail = pTail;
+    }
+
+    if (nullptr == pPreTail)
+    {
+        m_Error.CompileError(m_Interface.GetCompiler()->current_line_number, RENAME_HAS_NO_PACKAGED_NAME_ERR, MESSAGE_ARGUMENT_END);
+    }
+
+    pPreTail->next = nullptr;
+
+    RenameList *pRenameList = (RenameList*)CREATE_UTIL_Malloc(sizeof(RenameList));
+
+    pRenameList->package_name = pPackageName;
+    pRenameList->original_name = pTail->name;
+    pRenameList->renamed_name = lpstrIdentifier;
+    pRenameList->line_number = m_Interface.GetCompiler()->current_line_number;
+    pRenameList->next = nullptr;
+
+    return pRenameList;
+}
+
+RenameList* Create::ChainRenameList(RenameList *pList, RenameList *pAdd)
+{
+    RenameList *pos = pList;
+
+    for (; pos->next; pos = pos->next)
+        ;
+
+    pos->next = pAdd;
+
+    return pList;
 }
 
 void Create::SetRequireAndRenameList(RequireList *pRequireList, RenameList *pRenameList)
 {
-    // 待实现
+    DKC_Compiler *pCompiler = m_Interface.GetCompiler();
+    char *pCurrentPackageName = m_Util.PackageNameToString(pCompiler->package_name);
+
+    if (DVM_DIKSAM_DEFAULT_PACKAGE != std::string(pCurrentPackageName))
+    {
+        pRequireList = AddDefaultPackage(pRequireList);
+    }
+
+    CREATE_MEM_Free(pCurrentPackageName);
+
+    pCompiler->require_list = pRequireList;
+    pCompiler->rename_list = pRenameList;
+}
+
+RequireList* Create::AddDefaultPackage(RequireList *pRequireList)
+{
+    bool bDefaultPackageRequired = false;
+
+    for (RequireList *pos = pRequireList; pos; pos = pos->next)
+    {
+        char *tempName = m_Util.PackageNameToString(pos->package_name);
+        if (DVM_DIKSAM_DEFAULT_PACKAGE == std::string(tempName))
+        {
+            bDefaultPackageRequired = true;
+        }
+        CREATE_MEM_Free(tempName);
+    }
+
+    if (!bDefaultPackageRequired)
+    {
+        PackageName *pPackageName = CreatePackageName(DVM_DIKSAM_DEFAULT_PACKAGE_P1);
+        pPackageName = ChainPackageName(pPackageName, DVM_DIKSAM_DEFAULT_PACKAGE_P2);
+
+        RequireList *tempReq = pRequireList;
+        pRequireList = CreateRequireList(pPackageName);
+        pRequireList->next = tempReq;
+    }
+
+    return pRequireList;
+}
+
+void Create::AddFunctionToCompiler(FunctionDefinition *pFunctionDefinition)
+{
+    DKC_Compiler *pCompiler = m_Interface.GetCompiler();
+
+    if (pCompiler->function_list)
+    {
+        FunctionDefinition *pos = pCompiler->function_list;
+
+        for (; pos->next; pos = pos->next)
+            ;
+
+        pos->next = pFunctionDefinition;
+    }
+    else
+    {
+        pCompiler->function_list = pFunctionDefinition;
+    }
+}
+
+DVM_AccessModifier Create::ConvertAccessModifier(ClassOrMemberModifierKind src)
+{
+    if (PUBLIC_MODIFIER == src)
+    {
+        return DVM_PUBLIC_ACCESS;
+    }
+    else if (PRIVATE_MODIFIER)
+    {
+        return DVM_PRIVATE_ACCESS;
+    }
+    else
+    {
+        CREATE_DBG_Assert(NOT_SPECIFIED_MODIFIER == src, ("src..", src));
+        return DVM_FILE_ACCESS;
+    }
+}
+
+MemberDeclaration* Create::AllocMemberDeclaration(MemberKind enKind, ClassOrMemberModifierList *pModifierList)
+{
+    MemberDeclaration *pMemberDeclaration = (MemberDeclaration*)CREATE_UTIL_Malloc(sizeof(MemberDeclaration));
+
+    pMemberDeclaration->kind = enKind;
+
+    if (pModifierList)
+    {
+        pMemberDeclaration->access_modifier = ConvertAccessModifier(pModifierList->access_modifier);
+    }
+    else
+    {
+        pMemberDeclaration->access_modifier = DVM_FILE_ACCESS;
+    }
+
+    pMemberDeclaration->line_number = m_Interface.GetCompiler()->current_line_number;
+    pMemberDeclaration->next = nullptr;
+
+    return pMemberDeclaration;
 }

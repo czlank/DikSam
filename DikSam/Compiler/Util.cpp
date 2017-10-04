@@ -106,6 +106,20 @@ bool Util::CompareType(TypeSpecifier *type1, TypeSpecifier *type2)
     return true;
 }
 
+bool Util::ComparePackageName(PackageName *pPackageName1, PackageName *pPackageName2)
+{
+    PackageName *pos1 = pPackageName1;
+    PackageName *pos2 = pPackageName2;
+
+    for (; pos1 && pos2; pos1 = pos1->next, pos2 = pos2->next)
+    {
+        if (std::string(pos1->name) != pos2->name)
+            return false;
+    }
+
+    return !(pos1 || pos2);
+}
+
 FunctionDefinition* Util::SearchFunction(const char *lpcstrName)
 {
     FunctionDefinition  *pos = nullptr;
@@ -278,6 +292,37 @@ DVM_Char* Util::ExpressionToString(Expression *stExpr)
     wcscpy_s(pNewStr, iLen + 1, exprVal.c_str());
 
     return pNewStr;
+}
+
+char* Util::PackageNameToString(PackageName *src)
+{
+    if (nullptr == src)
+        return nullptr;
+
+    std::string packageName;
+    for (PackageName *pos = src; pos; pos = pos->next)
+    {
+        if (pos->name)
+        {
+            packageName += pos->name;
+        }
+        
+        if (pos->next)
+        {
+            packageName += ".";
+        }   
+    }
+
+    char *dest = (char*)UTIL_MEM_MALLOC(packageName.length() + 1);
+    
+    for (size_t i = 0; i < packageName.length(); i++)
+    {
+        dest[i] = packageName[i];
+    }
+
+    dest[packageName.length()] = '\0';
+
+    return dest;
 }
 
 int Util::StrLen(const DVM_Char *str)

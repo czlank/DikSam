@@ -25,7 +25,12 @@ void dkc_add_string_literal(int letter)
 
 DVM_Char* dkc_close_string_literal(void)
 {
-    return DikSam::GetClassObject(g_iCurrentThreadIndex)->GetStringLiteral()->Close();
+    return DikSam::GetClassObject(g_iCurrentThreadIndex)->GetStringLiteral()->CloseString();
+}
+
+int dkc_close_character_literal(void)
+{
+    return DikSam::GetClassObject(g_iCurrentThreadIndex)->GetStringLiteral()->CloseCharacter();
 }
 
 char* dkc_create_identifier(char *str)
@@ -70,7 +75,7 @@ void StringLiteral::Add(int letter)
     m_pBuffer[m_iIndex++] = letter;
 }
 
-DVM_Char* StringLiteral::Close()
+DVM_Char* StringLiteral::CloseString()
 {
     Add('\0');
 
@@ -92,6 +97,11 @@ DVM_Char* StringLiteral::Close()
     Reset();
 
     return pNewStr;
+}
+
+int StringLiteral::CloseCharacter()
+{
+    // ´ýÊµÏÖ
 }
 
 void StringLiteral::Reset()

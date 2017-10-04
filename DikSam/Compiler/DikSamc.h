@@ -80,7 +80,7 @@ typedef enum
     MEMBER_EXPRESSION_TYPE_ERR,
     MEMBER_NOT_FOUND_ERR,
     PRIVATE_MEMBER_ACCESS_ERR,
-    NO_ABSTRACT_METHOD_ERR,
+    ABSTRACT_METHOD_HAS_BODY_ERR,
     CONCRETE_METHOD_HAS_NO_BODY_ERR,
     MULTIPLE_INHERITANCE_ERR,
     INHERIT_CONCRETE_CLASS_ERR,
@@ -797,6 +797,7 @@ int yyerror(char const *str);
 void dkc_open_string_literal(void);
 void dkc_add_string_literal(int letter);
 DVM_Char* dkc_close_string_literal(void);
+int dkc_close_character_literal(void);
 char* dkc_create_identifier(char *str);
 
 // CreateC.cpp
