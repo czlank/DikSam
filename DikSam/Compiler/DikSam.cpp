@@ -25,7 +25,7 @@ DikSam::DikSam(int iThreadIndex)
     , m_Interface(m_Debug, m_Memory, m_Storage, m_Util, m_Error, m_StringLiteral, m_Create, m_iThreadIndex)
     , m_Util(m_Debug, m_Memory, m_Storage, m_Interface)
     , m_Error(m_Debug, m_Util)
-    , m_Create(m_Debug, m_Error, m_Util, m_Interface)
+    , m_Create(m_Debug, m_Memory, m_Error, m_Util, m_Interface)
 {
 
 }

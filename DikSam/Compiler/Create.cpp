@@ -26,7 +26,7 @@ Create::~Create()
 
 Declaration* Create::AllocDeclaration(TypeSpecifier *pType, char *lpstrIdentifier)
 {
-    Declaration *pDecl = (Declaration*)CREATE_UTIL_Malloc(sizeof(Declaration));
+    Declaration *pDecl = (Declaration*)dkc_malloc(sizeof(Declaration));
 
     pDecl->name = lpstrIdentifier;
     pDecl->type = pType;
@@ -37,7 +37,7 @@ Declaration* Create::AllocDeclaration(TypeSpecifier *pType, char *lpstrIdentifie
 
 DeclarationList* Create::ChainDeclaration(DeclarationList *pList, Declaration *pDecl)
 {
-    DeclarationList *pNewItem = (DeclarationList*)CREATE_UTIL_Malloc(sizeof(DeclarationList));
+    DeclarationList *pNewItem = (DeclarationList*)dkc_malloc(sizeof(DeclarationList));
     
     pNewItem->declaration = pDecl;
     pNewItem->next = nullptr;
@@ -71,7 +71,7 @@ void Create::FunctionDefine(TypeSpecifier *pType, char *lpstrIdentifier, Paramet
 FunctionDefinition* Create::CreateFunctionDefinition(TypeSpecifier *pType, char *lpstrIdentifier, ParameterList *pParameterList, Block *pBlock)
 {
     DKC_Compiler *pCompiler = m_Interface.GetCompiler();
-    FunctionDefinition *pFD = (FunctionDefinition*)CREATE_UTIL_Malloc(sizeof(FunctionDefinition));
+    FunctionDefinition *pFD = (FunctionDefinition*)dkc_malloc(sizeof(FunctionDefinition));
 
     pFD->type = pType;
     pFD->package_name = pCompiler->package_name;
@@ -97,7 +97,7 @@ FunctionDefinition* Create::CreateFunctionDefinition(TypeSpecifier *pType, char 
 
 ParameterList* Create::CreateParameter(TypeSpecifier *pType, char *lpstrIdentifier)
 {
-    ParameterList *p = (ParameterList*)CREATE_UTIL_Malloc(sizeof(ParameterList));
+    ParameterList *p = (ParameterList*)dkc_malloc(sizeof(ParameterList));
 
     p->name = lpstrIdentifier;
     p->type = pType;
@@ -120,7 +120,7 @@ ParameterList* Create::ChainParameter(ParameterList *pList, TypeSpecifier *pType
 
 ArgumentList* Create::CreateArgumentList(Expression *pExpression)
 {
-    ArgumentList *pArgumentList = (ArgumentList*)CREATE_UTIL_Malloc(sizeof(ArgumentList));
+    ArgumentList *pArgumentList = (ArgumentList*)dkc_malloc(sizeof(ArgumentList));
 
     pArgumentList->expression = pExpression;
     pArgumentList->next = nullptr;
@@ -141,7 +141,7 @@ ArgumentList* Create::ChainArgumentList(ArgumentList *pList, Expression *pExpres
 
 ExpressionList* Create::CreateExpressionList(Expression *pExpression)
 {
-    ExpressionList *pExpressionList = (ExpressionList*)CREATE_UTIL_Malloc(sizeof(ExpressionList));
+    ExpressionList *pExpressionList = (ExpressionList*)dkc_malloc(sizeof(ExpressionList));
 
     pExpressionList->expression = pExpression;
     pExpressionList->next = nullptr;
@@ -162,7 +162,7 @@ ExpressionList* Create::ChainExpressionList(ExpressionList *pList, Expression *p
 
 StatementList* Create::CreateStatementList(Statement *pStatement)
 {
-    StatementList *pStatementList = (StatementList*)CREATE_UTIL_Malloc(sizeof(StatementList));
+    StatementList *pStatementList = (StatementList*)dkc_malloc(sizeof(StatementList));
 
     pStatementList->statement = pStatement;
     pStatementList->next = nullptr;
@@ -224,7 +224,7 @@ TypeSpecifier* Create::CreateClassTypeSpecifier(char *lpstrIdentifier)
 
 Expression* Create::AllocExpression(ExpressionKind enKind)
 {
-    Expression *pExpression = (Expression*)CREATE_UTIL_Malloc(sizeof(Expression));
+    Expression *pExpression = (Expression*)dkc_malloc(sizeof(Expression));
 
     pExpression->type = nullptr;
     pExpression->kind = enKind;
@@ -243,11 +243,11 @@ Expression* Create::CreateCommaExpression(Expression *pLeft, Expression *pRight)
     Expression *pExpression = AllocExpression(COMMA_EXPRESSION);
     pExpression->u.comma.left = pLeft;
 
-    Statement *pStatement = (Statement*)CREATE_UTIL_Malloc(sizeof(Statement));
+    Statement *pStatement = (Statement*)dkc_malloc(sizeof(Statement));
     pStatement->type = DECLARATION_STATEMENT;
     pStatement->line_number = pLeft->line_number;
     
-    Declaration *pDeclaration = (Declaration*)CREATE_UTIL_Malloc(sizeof(Declaration));
+    Declaration *pDeclaration = (Declaration*)dkc_malloc(sizeof(Declaration));
     pDeclaration->name = pRight->u.assign_expression.left->u.identifier.name;
     pDeclaration->type = nullptr;
     pDeclaration->initializer = pRight->u.assign_expression.operand;
@@ -436,7 +436,7 @@ Expression* Create::CreateSuperExpression()
 
 ArrayDimension* Create::CreateArrayDimension(Expression *pExpression)
 {
-    ArrayDimension *pArrayDimension = (ArrayDimension*)CREATE_UTIL_Malloc(sizeof(ArrayDimension));
+    ArrayDimension *pArrayDimension = (ArrayDimension*)dkc_malloc(sizeof(ArrayDimension));
 
     pArrayDimension->expression = pExpression;
     pArrayDimension->next = nullptr;
@@ -457,7 +457,7 @@ ArrayDimension* Create::ChainArrayDimension(ArrayDimension *pList, ArrayDimensio
 
 Statement* Create::AllocStatement(StatementType enType)
 {
-    Statement *pStatement = (Statement*)CREATE_UTIL_Malloc(sizeof(Statement));
+    Statement *pStatement = (Statement*)dkc_malloc(sizeof(Statement));
 
     pStatement->type = enType;
     pStatement->line_number = m_Interface.GetCompiler()->current_line_number;
@@ -490,7 +490,7 @@ Elsif* Create::ChainElsifList(Elsif *pList, Elsif *pAdd)
 
 Elsif* Create::CreateElsif(Expression *pExpression, Block *pBlock)
 {
-    Elsif *pElsif = (Elsif*)CREATE_UTIL_Malloc(sizeof(Elsif));
+    Elsif *pElsif = (Elsif*)dkc_malloc(sizeof(Elsif));
 
     pElsif->condition = pExpression;
     pElsif->block = pBlock;
@@ -543,7 +543,7 @@ Statement* Create::CreateForStatement(char *lpstrLabel, Expression *pInit, Expre
 
 Block* Create::AllocBlock()
 {
-    Block *pBlock = (Block*)CREATE_UTIL_Malloc(sizeof(Block));
+    Block *pBlock = (Block*)dkc_malloc(sizeof(Block));
 
     pBlock->type = UNDEFINED_BLOCK;
     pBlock->outer_block = nullptr;
@@ -565,7 +565,7 @@ Block* Create::OpenBlock()
 
 Block* Create::CloseBlock(Block *pBlock, StatementList *pStatementList)
 {
-    CREATE_DBG_Assert(pBlock == m_Interface.GetCompiler()->current_block, ("block mismatch."));
+    DBG_assert(pBlock == m_Interface.GetCompiler()->current_block, ("block mismatch."));
 
     pBlock->statement_list = pStatementList;
     m_Interface.GetCompiler()->current_block = pBlock->outer_block;
@@ -663,7 +663,7 @@ void Create::StartClassDefinition(ClassOrMemberModifierList *pModifier, DVM_Clas
 {
     DKC_Compiler *pCompiler = m_Interface.GetCompiler();
 
-    ClassDefinition *pClassDefinition = (ClassDefinition*)CREATE_UTIL_Malloc(sizeof(ClassDefinition));
+    ClassDefinition *pClassDefinition = (ClassDefinition*)dkc_malloc(sizeof(ClassDefinition));
 
     pClassDefinition->is_abstract = (DVM_INTERFACE_DEFINITION == enClassOrInterface) ? DVM_TRUE : DVM_FALSE;
     pClassDefinition->access_modifier = DVM_FILE_ACCESS;
@@ -688,7 +688,7 @@ void Create::StartClassDefinition(ClassOrMemberModifierList *pModifier, DVM_Clas
     pClassDefinition->next = nullptr;
     pClassDefinition->line_number = pCompiler->current_line_number;
 
-    CREATE_DBG_Assert(nullptr == pCompiler->current_class_definition, ("current_class_definition is not null."));
+    DBG_assert(nullptr == pCompiler->current_class_definition, ("current_class_definition is not null."));
     pCompiler->current_class_definition = pClassDefinition;
 }
 
@@ -697,7 +697,7 @@ void Create::ClassDefine(MemberDeclaration *pMemberList)
     DKC_Compiler *pCompiler = m_Interface.GetCompiler();
     ClassDefinition *pClassDefinition = pCompiler->current_class_definition;
 
-    CREATE_DBG_Assert(pClassDefinition != nullptr, ("current_class_definition is null."));
+    DBG_assert(pClassDefinition != nullptr, ("current_class_definition is null."));
 
     if (nullptr == pCompiler->class_definition_list)
     {
@@ -719,7 +719,7 @@ void Create::ClassDefine(MemberDeclaration *pMemberList)
 
 ExtendsList* Create::CreateExtendsList(char *lpstrIdentifier)
 {
-    ExtendsList *pList = (ExtendsList*)CREATE_UTIL_Malloc(sizeof(ExtendsList));
+    ExtendsList *pList = (ExtendsList*)dkc_malloc(sizeof(ExtendsList));
 
     pList->identifier = lpstrIdentifier;
     pList->class_definition = nullptr;
@@ -773,7 +773,7 @@ ClassOrMemberModifierList Create::CreateClassOrMemberModifier(ClassOrMemberModif
 
     case NOT_SPECIFIED_MODIFIER :
     default :
-        CREATE_DBG_Assert(0, ("modifier..", Modifier));
+        DBG_assert(0, ("modifier..", Modifier));
     }
 
     return modifierList;
@@ -783,7 +783,7 @@ ClassOrMemberModifierList Create::ChainClassOrMemberModifier(ClassOrMemberModifi
 {
     if (Add.is_abstract != NOT_SPECIFIED_MODIFIER)
     {
-        CREATE_DBG_Assert(ABSTRACT_MODIFIER == Add.is_abstract, ("add.is_abstract..", Add.is_abstract));
+        DBG_assert(ABSTRACT_MODIFIER == Add.is_abstract, ("add.is_abstract..", Add.is_abstract));
 
         if (List.is_abstract != NOT_SPECIFIED_MODIFIER)
         {
@@ -794,7 +794,7 @@ ClassOrMemberModifierList Create::ChainClassOrMemberModifier(ClassOrMemberModifi
     }
     else if (Add.access_modifier != NOT_SPECIFIED_MODIFIER)
     {
-        CREATE_DBG_Assert(PUBLIC_MODIFIER == Add.access_modifier || PRIVATE_MODIFIER == Add.access_modifier, ("add.access_modifier..", Add.access_modifier));
+        DBG_assert(PUBLIC_MODIFIER == Add.access_modifier || PRIVATE_MODIFIER == Add.access_modifier, ("add.access_modifier..", Add.access_modifier));
 
         if (List.access_modifier != NOT_SPECIFIED_MODIFIER)
         {
@@ -805,7 +805,7 @@ ClassOrMemberModifierList Create::ChainClassOrMemberModifier(ClassOrMemberModifi
     }
     else if (Add.is_override != NOT_SPECIFIED_MODIFIER)
     {
-        CREATE_DBG_Assert(OVERRIDE_MODIFIER == Add.is_override, ("add.is_override..", Add.is_override));
+        DBG_assert(OVERRIDE_MODIFIER == Add.is_override, ("add.is_override..", Add.is_override));
 
         if (List.is_override != NOT_SPECIFIED_MODIFIER)
         {
@@ -816,7 +816,7 @@ ClassOrMemberModifierList Create::ChainClassOrMemberModifier(ClassOrMemberModifi
     }
     else if (Add.is_virtual != NOT_SPECIFIED_MODIFIER)
     {
-        CREATE_DBG_Assert(VIRTUAL_MODIFIER == Add.is_virtual, ("add.is_virtual..", Add.is_virtual));
+        DBG_assert(VIRTUAL_MODIFIER == Add.is_virtual, ("add.is_virtual..", Add.is_virtual));
 
         if (List.is_virtual != NOT_SPECIFIED_MODIFIER)
         {
@@ -925,7 +925,7 @@ MemberDeclaration* Create::CreateFieldMember(ClassOrMemberModifierList *pModifie
 
 PackageName* Create::CreatePackageName(char *lpstrIdentifier)
 {
-    PackageName *pPackageName = (PackageName*)CREATE_UTIL_Malloc(sizeof(PackageName));
+    PackageName *pPackageName = (PackageName*)dkc_malloc(sizeof(PackageName));
 
     pPackageName->name = lpstrIdentifier;
     pPackageName->next = nullptr;
@@ -951,15 +951,15 @@ RequireList* Create::CreateRequireList(PackageName *pPackageName)
     char *pCurrPackageName = m_Util.PackageNameToString(pCompiler->package_name);
     char *pReqPackageName = m_Util.PackageNameToString(pPackageName);
 
-    if (std::string(pCurrPackageName) == pReqPackageName && DKH_SOURCE == pCompiler->source_suffix)
+    if (m_Util.CompareString(pCurrPackageName, pReqPackageName) && DKH_SOURCE == pCompiler->source_suffix)
     {
         m_Error.CompileError(pCompiler->current_line_number, REQUIRE_ITSELF_ERR, MESSAGE_ARGUMENT_END);
     }
 
-    CREATE_MEM_Free(pCurrPackageName);
-    CREATE_MEM_Free(pReqPackageName);
+    MEM_Free(pCurrPackageName);
+    MEM_Free(pReqPackageName);
 
-    RequireList *pRequireList = (RequireList*)CREATE_UTIL_Malloc(sizeof(RequireList));
+    RequireList *pRequireList = (RequireList*)dkc_malloc(sizeof(RequireList));
 
     pRequireList->package_name = pPackageName;
     pRequireList->line_number = pCompiler->current_line_number;
@@ -977,7 +977,7 @@ RequireList* Create::ChainRequireList(RequireList *pList, RequireList *pAdd)
         {
             char *pPackageName = m_Util.PackageNameToString(pAdd->package_name);
             std::string sPackageName(pPackageName);
-            CREATE_MEM_Free(pPackageName);
+            MEM_Free(pPackageName);
 
             m_Error.CompileError(m_Interface.GetCompiler()->current_line_number,
                 REQUIRE_DUPLICATE_ERR, STRING_MESSAGE_ARGUMENT, "package_name", sPackageName.c_str(),
@@ -1006,7 +1006,7 @@ RenameList* Create::CreateRenameList(PackageName *pPackageName, char *lpstrIdent
 
     pPreTail->next = nullptr;
 
-    RenameList *pRenameList = (RenameList*)CREATE_UTIL_Malloc(sizeof(RenameList));
+    RenameList *pRenameList = (RenameList*)dkc_malloc(sizeof(RenameList));
 
     pRenameList->package_name = pPackageName;
     pRenameList->original_name = pTail->name;
@@ -1034,12 +1034,12 @@ void Create::SetRequireAndRenameList(RequireList *pRequireList, RenameList *pRen
     DKC_Compiler *pCompiler = m_Interface.GetCompiler();
     char *pCurrentPackageName = m_Util.PackageNameToString(pCompiler->package_name);
 
-    if (DVM_DIKSAM_DEFAULT_PACKAGE != std::string(pCurrentPackageName))
+    if (!m_Util.CompareString(pCurrentPackageName, DVM_DIKSAM_DEFAULT_PACKAGE))
     {
         pRequireList = AddDefaultPackage(pRequireList);
     }
 
-    CREATE_MEM_Free(pCurrentPackageName);
+    MEM_Free(pCurrentPackageName);
 
     pCompiler->require_list = pRequireList;
     pCompiler->rename_list = pRenameList;
@@ -1056,7 +1056,7 @@ RequireList* Create::AddDefaultPackage(RequireList *pRequireList)
         {
             bDefaultPackageRequired = true;
         }
-        CREATE_MEM_Free(tempName);
+        MEM_Free(tempName);
     }
 
     if (!bDefaultPackageRequired)
@@ -1103,14 +1103,14 @@ DVM_AccessModifier Create::ConvertAccessModifier(ClassOrMemberModifierKind src)
     }
     else
     {
-        CREATE_DBG_Assert(NOT_SPECIFIED_MODIFIER == src, ("src..", src));
+        DBG_assert(NOT_SPECIFIED_MODIFIER == src, ("src..", src));
         return DVM_FILE_ACCESS;
     }
 }
 
 MemberDeclaration* Create::AllocMemberDeclaration(MemberKind enKind, ClassOrMemberModifierList *pModifierList)
 {
-    MemberDeclaration *pMemberDeclaration = (MemberDeclaration*)CREATE_UTIL_Malloc(sizeof(MemberDeclaration));
+    MemberDeclaration *pMemberDeclaration = (MemberDeclaration*)dkc_malloc(sizeof(MemberDeclaration));
 
     pMemberDeclaration->kind = enKind;
 

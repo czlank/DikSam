@@ -23,7 +23,9 @@ public:
     TypeDerive* AllocTypeDerive(DeriveTag enTag);
     bool CompareParameter(ParameterList *param1, ParameterList *param2);
     bool CompareType(TypeSpecifier *type1, TypeSpecifier *type2);
+    bool CompareString(char *str1, char* str2);
     bool ComparePackageName(PackageName *pPackageName1, PackageName *pPackageName2);
+    bool ComparePackageName(char *p1, char *p2);
     
     FunctionDefinition* SearchFunction(const char *lpcstrName);
     Declaration* SearchDeclaration(const char *lpcstrIdentifier, Block *pBlock);

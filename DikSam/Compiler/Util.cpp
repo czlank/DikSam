@@ -106,6 +106,17 @@ bool Util::CompareType(TypeSpecifier *type1, TypeSpecifier *type2)
     return true;
 }
 
+bool Util::CompareString(char *str1, char* str2)
+{
+    if (nullptr == str1 && nullptr == str2)
+        return true;
+
+    if (nullptr == str1 || nullptr == str2)
+        return false;
+
+    return std::string(str1) == str2;
+}
+
 bool Util::ComparePackageName(PackageName *pPackageName1, PackageName *pPackageName2)
 {
     PackageName *pos1 = pPackageName1;
@@ -118,6 +129,11 @@ bool Util::ComparePackageName(PackageName *pPackageName1, PackageName *pPackageN
     }
 
     return !(pos1 || pos2);
+}
+
+bool Util::ComparePackageName(char *p1, char *p2)
+{
+    return CompareString(p1, p2);
 }
 
 FunctionDefinition* Util::SearchFunction(const char *lpcstrName)

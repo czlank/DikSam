@@ -30,7 +30,7 @@ DIKSAM_DECLARE int RunScript(int iThreadIndex, const char* lpctstrScriptFile)
 
     if (char **ppLines = pDikSam->Translate(lpctstrScriptFile))
     {
-        pDikSam->GetInterface()->RunScript(ppLines);
+        pDikSam->GetInterface()->RunScript(ppLines, lpctstrScriptFile);
     }
 
     return 0;
