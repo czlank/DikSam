@@ -486,12 +486,19 @@ void Interface::GetRequireInput(RequireList *pReqList, char *lpstrFoundPath, Sou
 
     if (err)
     {
+        if (lpstrSearchPath)
+        {
+            free(lpstrSearchPath);
+        }
+
         DBG_assert(0, ("can't find environment variable DKM_REQUIRE_SEARCH_PATH, err = ", err));
     }
 
+    bool bLiteralPool = false;
     if (nullptr == lpstrSearchPath)
     {
         lpstrSearchPath = ".";
+        bLiteralPool = true;
     }
 
     char chSearchFile[FILENAME_MAX]{};
@@ -514,6 +521,11 @@ void Interface::GetRequireInput(RequireList *pReqList, char *lpstrFoundPath, Sou
 
     pSourceInput->input_mode = FILE_INPUT_MODE;
     pSourceInput->u.file.fp = fp;
+
+    if (!bLiteralPool)
+    {
+        free(lpstrSearchPath);
+    }
 }
 
 bool Interface::AddExeToList(DVM_Executable *pExecutable, DVM_ExecutableList *pList)
@@ -546,4 +558,41 @@ bool Interface::AddExeToList(DVM_Executable *pExecutable, DVM_ExecutableList *pL
     }
 
     return true;
+}
+
+void Interface::MakeSearchPath(int iLineNumber, PackageName *pPackageName, char *pBuf)
+{
+    int iSuffixLen = std::string(DIKSAM_REQUIRE_SUFFIX).length();
+    
+    int iLen = 0;
+    int iPrevLen = 0;
+
+    pBuf[0] = '\0';
+
+    for (PackageName *pos = pPackageName; pos; pos = pos->next)
+    {
+        iPrevLen = iLen;
+        iLen += std::string(pos->name).length();
+
+        if (iLen > FILENAME_MAX - (2 + iSuffixLen))
+        {
+            m_Error.CompileError(iLineNumber, PACKAGE_NAME_TOO_LONG_ERR, MESSAGE_ARGUMENT_END);
+        }
+
+        for (size_t i = 0; i < std::string(pos->name).length(); i++)
+        {
+            pBuf[iPrevLen + i] = pos->name[i];
+        }
+
+        if (pos->next)
+        {
+            pBuf[std::string(pBuf).length()] = FILE_SEPARATOR;
+        }
+    }
+
+    std::string sRequireSuffix(DIKSAM_REQUIRE_SUFFIX);
+    for (size_t i = 0; i < sRequireSuffix.length(); i++)
+    {
+        pBuf[iLen + i] = sRequireSuffix[i];
+    }
 }

@@ -89,6 +89,7 @@ private:
     CompilerList* AddCompilerToList(CompilerList *pList, DKC_Compiler *pCompilter);
     void GetRequireInput(RequireList *pReqList, char *lpstrFoundPath, SourceInput *pSourceInput);
     bool AddExeToList(DVM_Executable *pExecutable, DVM_ExecutableList *pList);
+    void MakeSearchPath(int iLineNumber, PackageName *pPackageName, char *pBuf);
 
 private:
     Debug                          &m_Debug;

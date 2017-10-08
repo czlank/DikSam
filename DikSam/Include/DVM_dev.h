@@ -12,6 +12,17 @@ extern "C"
 #define DVM_DIKSAM_DEFAULT_PACKAGE_P2   "lang"
 #define DVM_DIKSAM_DEFAULT_PACKAGE      (DVM_DIKSAM_DEFAULT_PACKAGE_P1 "." DVM_DIKSAM_DEFAULT_PACKAGE_P2)
 
+#ifdef DKM_WINDOWS
+#define FILE_SEPARATOR                  ('\\')
+#define FILE_PATH_SEPARATOR             (";")
+#else
+#define FILE_SEPARATOR                  ('/')
+#define FILE_PATH_SEPARATOR             (":")
+#endif // DKM_WINDOWS
+
+#define DIKSAM_REQUIRE_SUFFIX           (".dkh")
+#define DIKSAM_IMPLEMENTATION_SUFFIX    (".dkm")
+
 #define ARRAY_METHOD_SIZE       "size"
 #define ARRAY_METHOD_RESIZE     "resize"
 #define ARRAY_METHOD_INSERT     "insert"

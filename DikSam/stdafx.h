@@ -28,6 +28,8 @@
 #include <stack>
 #include <mutex>
 
+#define DKM_WINDOWS
+
 #include "DikSamc.h"
 
 #ifdef __cplusplus

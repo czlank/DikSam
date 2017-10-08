@@ -341,6 +341,11 @@ char* Util::PackageNameToString(PackageName *src)
     return dest;
 }
 
+SearchFileStatus Util::SearchFile(const char *lpcstrSearchPath, const char *lpcstrSearchFile, const char *lpcstrFoundPath, FILE **ppFp)
+{
+    // ´ýÊµÏÖ
+}
+
 int Util::StrLen(const DVM_Char *str)
 {
     if (nullptr == str)

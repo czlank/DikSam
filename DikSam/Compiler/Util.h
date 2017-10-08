@@ -40,6 +40,8 @@ public:
     DVM_Char* ExpressionToString(Expression *stExpr);
     char* PackageNameToString(PackageName *src);
 
+    SearchFileStatus SearchFile(const char *lpcstrSearchPath, const char *lpcstrSearchFile, const char *lpcstrFoundPath, FILE **ppFp);
+
 private:
     int StrLen(const DVM_Char *str);
 
