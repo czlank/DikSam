@@ -341,9 +341,89 @@ char* Util::PackageNameToString(PackageName *src)
     return dest;
 }
 
-SearchFileStatus Util::SearchFile(const char *lpcstrSearchPath, const char *lpcstrSearchFile, const char *lpcstrFoundPath, FILE **ppFp)
+SearchFileStatus Util::SearchFile(const char *lpcstrSearchPath, const char *lpcstrSearchFile, char *lpstrFoundPath, FILE **ppFp)
 {
-    // ´ýÊµÏÖ
+    size_t iSearchFileLen = std::string(lpcstrSearchFile).length();
+    char lpstrDirPath[FILENAME_MAX];
+
+    for (int spIdx = 0, dpIdx = 0; ; spIdx++)
+    {
+        if (FILE_PATH_SEPARATOR == lpcstrSearchPath[spIdx] || '\0' == lpcstrSearchPath[spIdx])
+        {
+            if (dpIdx + 1 + iSearchFileLen >= FILENAME_MAX - 1)
+            {
+                return SEARCH_FILE_PATH_TOO_LONG;
+            }
+
+            if (dpIdx > 0 && lpstrDirPath[dpIdx - 1] != FILE_SEPARATOR)
+            {
+                lpstrDirPath[dpIdx++] = FILE_SEPARATOR;
+            }
+
+            for (size_t i = 0; i < iSearchFileLen; i++)
+            {
+                lpstrDirPath[dpIdx + i] = lpcstrSearchFile[i];
+            }
+
+            FILE *fpTemp = fopen(lpstrDirPath, "r");
+            
+            if (fpTemp)
+            {
+                *ppFp = fpTemp;
+
+                for (size_t i = 0; i < std::string(lpstrDirPath).length(); i++)
+                {
+                    lpstrFoundPath[i] = lpstrDirPath[i];
+                }
+
+                return SEARCH_FILE_SUCCESS;
+            }
+
+            dpIdx = 0;
+
+            if ('\0' == lpcstrSearchPath[spIdx])
+            {
+                return SEARCH_FILE_NOT_FOUND;
+            }
+        }
+        else
+        {
+            char *lpstrHome = nullptr;
+            size_t len = 0;
+            errno_t err = _dupenv_s(&lpstrHome, &len, "DKM_REQUIRE_SEARCH_PATH");
+
+            if (err)
+            {
+                if (lpstrHome)
+                {
+                    free(lpstrHome);
+                }
+
+                DBG_assert(0, ("can't find environment variable DKM_REQUIRE_SEARCH_PATH, err = ", err));
+            }
+
+            if (0 == dpIdx && '~' == lpcstrSearchPath[spIdx] && lpstrHome)
+            {
+                for (size_t i = 0; i < std::string(lpstrHome).length(); i++)
+                {
+                    lpstrDirPath[dpIdx + i] = lpstrHome[i];
+                }
+
+                dpIdx += std::string(lpstrHome).length();
+            }
+            else
+            {
+                if (dpIdx >= FILENAME_MAX - 1)
+                {
+                    return SEARCH_FILE_PATH_TOO_LONG;
+                }
+
+                lpstrDirPath[dpIdx++] = lpcstrSearchPath[spIdx];
+            }
+        }
+    }
+
+    DBG_assert(0, ("bad flow."));
 }
 
 int Util::StrLen(const DVM_Char *str)

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "DikSamc.h"
+#include "DVM_dev.h"
 
 class Debug;
 class Memory;
@@ -40,7 +41,7 @@ public:
     DVM_Char* ExpressionToString(Expression *stExpr);
     char* PackageNameToString(PackageName *src);
 
-    SearchFileStatus SearchFile(const char *lpcstrSearchPath, const char *lpcstrSearchFile, const char *lpcstrFoundPath, FILE **ppFp);
+    SearchFileStatus SearchFile(const char *lpcstrSearchPath, const char *lpcstrSearchFile, char *lpstrFoundPath, FILE **ppFp);
 
 private:
     int StrLen(const DVM_Char *str);

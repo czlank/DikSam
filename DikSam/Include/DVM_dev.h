@@ -14,10 +14,10 @@ extern "C"
 
 #ifdef DKM_WINDOWS
 #define FILE_SEPARATOR                  ('\\')
-#define FILE_PATH_SEPARATOR             (";")
+#define FILE_PATH_SEPARATOR             (';')
 #else
 #define FILE_SEPARATOR                  ('/')
-#define FILE_PATH_SEPARATOR             (":")
+#define FILE_PATH_SEPARATOR             (':')
 #endif // DKM_WINDOWS
 
 #define DIKSAM_REQUIRE_SUFFIX           (".dkh")
