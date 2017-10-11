@@ -90,6 +90,10 @@ private:
     void GetRequireInput(RequireList *pReqList, char *lpstrFoundPath, SourceInput *pSourceInput);
     bool AddExeToList(DVM_Executable *pExecutable, DVM_ExecutableList *pList);
     void MakeSearchPath(int iLineNumber, PackageName *pPackageName, char *pBuf);
+    void MakeSearchPathImpl(char *lpstrPackageName, char *pBuf);
+    PackageName* CreateOnePackageName(DKC_Compiler *pCompiler, char *str, int iStartIdx, int iToIdx);
+    PackageName* StringToPackageName(DKC_Compiler *pCompiler, char *str);
+    SearchFileStatus GetDynamicLoadInput(char *lpstrPackageName, char *lpstrFoundPath, char *lpstrSearchFile, SourceInput *pSourceInput);
 
 private:
     Debug                          &m_Debug;

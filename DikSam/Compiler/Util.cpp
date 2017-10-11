@@ -365,7 +365,8 @@ SearchFileStatus Util::SearchFile(const char *lpcstrSearchPath, const char *lpcs
                 lpstrDirPath[dpIdx + i] = lpcstrSearchFile[i];
             }
 
-            FILE *fpTemp = fopen(lpstrDirPath, "r");
+            FILE *fpTemp = nullptr;
+            fopen_s(&fpTemp, lpstrDirPath, "r");
             
             if (fpTemp)
             {

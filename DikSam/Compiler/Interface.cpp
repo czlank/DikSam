@@ -596,3 +596,144 @@ void Interface::MakeSearchPath(int iLineNumber, PackageName *pPackageName, char 
         pBuf[iLen + i] = sRequireSuffix[i];
     }
 }
+
+void Interface::MakeSearchPathImpl(char *lpstrPackageName, char *pBuf)
+{
+    int iSuffixLen = std::string(DIKSAM_IMPLEMENTATION_SUFFIX);
+    int iPackageLen = std::string(lpstrPackageName);
+
+    DBG_assert(iPackageLen <= FILENAME_MAX - (2 + iSuffixLen), ("package name is too long(", lpstrPackageName, ")"));
+
+    int i = 0;
+    for (; lpstrPackageName[i] != '\0'; i++)
+    {
+        if ('.' == lpstrPackageName[i])
+        {
+            pBuf[i] = FILE_SEPARATOR;
+        }
+        else
+        {
+            pBuf[i] = lpstrPackageName[i];
+        }
+    }
+
+    std::string sSuffix(DIKSAM_IMPLEMENTATION_SUFFIX);
+
+    for (size_t idx = 0; idx < sSuffix.length(); idx++, i++)
+    {
+        pBuf[i] = sSuffix[idx];
+    }
+
+    pBuf[i] = '\0';
+}
+
+PackageName* Interface::CreateOnePackageName(DKC_Compiler *pCompiler, char *str, int iStartIdx, int iToIdx)
+{
+    MEM_Storage storage = pCompiler->compile_storage;
+    PackageName *pPackageName = (PackageName*)MEM_storage_malloc(storage, sizeof(PackageName));
+    
+    pPackageName->name = (char*)MEM_storage_malloc(storage, iToIdx - iStartIdx + 1);
+
+    int i = 0;
+    for (; i < iToIdx - iStartIdx; i++)
+    {
+        pPackageName->name[i] = str[iStartIdx + i];
+    }
+
+    pPackageName->name[i] = '\0';
+    pPackageName->next = nullptr;
+
+    return pPackageName;
+}
+
+PackageName* Interface::StringToPackageName(DKC_Compiler *pCompiler, char *str)
+{
+    int i;
+    int iStartIdx;
+
+    PackageName *pPackageName = nullptr;
+    PackageName *pTop = nullptr;
+    PackageName *pTail = nullptr;
+
+    for (i = 0, iStartIdx = 0; str[i] != '\0'; i++)
+    {
+        if ('.' == str[i])
+        {
+            pPackageName = CreateOnePackageName(pCompiler, str, iStartIdx, i);
+            iStartIdx = i + 1;
+
+            if (pTail)
+            {
+                pTail->next = pPackageName;
+            }
+            else
+            {
+                pTop = pPackageName;
+            }
+
+            pTail = pPackageName;
+        }
+    }
+
+    pPackageName = CreateOnePackageName(pCompiler, str, iStartIdx, i);
+
+    if (pTail)
+    {
+        pTail->next = pPackageName;
+    }
+    else
+    {
+        pTop = pPackageName;
+    }
+
+    return pTop;
+}
+
+SearchFileStatus Interface::GetDynamicLoadInput(char *lpstrPackageName, char *lpstrFoundPath, char *lpstrSearchFile, SourceInput *pSourceInput)
+{
+    char *lpstrSearchPath = nullptr;
+    size_t len = 0;
+    errno_t err = _dupenv_s(&lpstrSearchPath, &len, "DKM_LOAD_SEARCH_PATH");
+
+    if (err)
+    {
+        if (lpstrSearchPath)
+        {
+            free(lpstrSearchPath);
+        }
+
+        DBG_assert(0, ("can't find environment variable DKM_LOAD_SEARCH_PATH, err = ", err));
+    }
+
+    bool bLiteralPool = false;
+    if (nullptr == lpstrSearchPath)
+    {
+        lpstrSearchPath = ".";
+        bLiteralPool = true;
+    }
+
+    MakeSearchPathImpl(lpstrPackageName, lpstrSearchFile);
+
+    FILE *fp = nullptr;
+    SearchFileStatus status = m_Util.SearchFile(lpstrSearchPath, lpstrSearchFile, lpstrFoundPath, &fp);
+
+    if (status != SEARCH_FILE_SUCCESS)
+    {
+        if (!bLiteralPool)
+        {
+            free(lpstrSearchPath);
+        }
+
+        return status;
+    }
+
+    pSourceInput->input_mode = FILE_INPUT_MODE;
+    pSourceInput->u.file.fp = fp;
+
+    if (!bLiteralPool)
+    {
+        free(lpstrSearchPath);
+    }
+
+    return SEARCH_FILE_SUCCESS;
+}
