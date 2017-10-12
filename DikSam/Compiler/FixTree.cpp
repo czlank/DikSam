@@ -7,6 +7,31 @@
 #include "Interface.h"
 #include "FixTree.h"
 
+#ifdef DBG_assert
+#undef DBG_assert
+#endif
+#define DBG_assert(expression, arg) ((expression) ? (void)(0) : (m_Debug.Assert(__FILE__, __LINE__, #expression, arg)))
+
+#ifdef MEM_malloc
+#undef MEM_malloc
+#endif
+#define MEM_malloc(size)                    (m_Memory.Malloc(__FILE__, __LINE__, size))
+
+#ifdef MEM_realloc
+#undef MEM_realloc
+#endif
+#define MEM_realloc(ptr, size)              (m_Memory.Realloc(__FILE__, __LINE__, ptr, size))
+
+#ifdef MEM_free
+#undef MEM_free
+#endif
+#define MEM_free(ptr)                       (m_Memory.Free(ptr))
+
+#ifdef MEM_strdup
+#undef MEM_strdup
+#endif
+#define MEM_strdup(ptr)                     (m_Memory.StrDUP(__FILE__, __LINE__, ptr))
+
 FixTree::FixTree(Debug& debug, Memory& memory, Util& util, Error& error, Create& create, Interface& refInterface)
     : m_Debug(debug)
     , m_Memory(memory)
@@ -146,7 +171,7 @@ Expression* FixTree::FixExpression(Block *pBlock, Expression *pExpression, Expre
         break;
 
     default :
-        FIXTREE_DBG_Assert(0, ("bad case. kind..", pExpression->kind));
+        DBG_assert(0, ("bad case. kind..", pExpression->kind));
     }
 
     return pExpression;
@@ -226,7 +251,7 @@ void FixTree::FixStatement(Block *pBlock, Statement *pStatement, FunctionDefinit
         break;
 
     default :
-        FIXTREE_DBG_Assert(0, ("bad case. type..", pStatement->type));
+        DBG_assert(0, ("bad case. type..", pStatement->type));
     }
 }
 
@@ -644,7 +669,7 @@ Expression* FixTree::EvalMathExpressionInt(Expression *pExpression, int left, in
         break;
 
     default :
-        FIXTREE_DBG_Assert(0, ("pExpression->kind..", pExpression->kind));
+        DBG_assert(0, ("pExpression->kind..", pExpression->kind));
     }
 
     pExpression->type = m_Util.AllocTypeSpecifier(DVM_INT_TYPE);
@@ -678,7 +703,7 @@ Expression* FixTree::EvalMathExpressionDouble(Expression *pExpression, double le
         break;
 
     default :
-        FIXTREE_DBG_Assert(0, ("pExpression->kind..", pExpression->kind));
+        DBG_assert(0, ("pExpression->kind..", pExpression->kind));
     }
 
     pExpression->type = m_Util.AllocTypeSpecifier(DVM_DOUBLE_TYPE);
@@ -774,7 +799,7 @@ Expression* FixTree::EvalCompareExpressionInt(Expression *pExpression, int left,
         break;
 
     default :
-        FIXTREE_DBG_Assert(0, ("pExpression->kind..", pExpression));
+        DBG_assert(0, ("pExpression->kind..", pExpression));
     }
 
     pExpression->type = m_Util.AllocTypeSpecifier(DVM_BOOLEAN_TYPE);
@@ -812,7 +837,7 @@ Expression* FixTree::EvalCompareExpressionDouble(Expression *pExpression, double
         break;
 
     default :
-        FIXTREE_DBG_Assert(0, ("pExpression->kind..", pExpression));
+        DBG_assert(0, ("pExpression->kind..", pExpression));
     }
 
     pExpression->type = m_Util.AllocTypeSpecifier(DVM_BOOLEAN_TYPE);
@@ -850,7 +875,7 @@ Expression* FixTree::EvalCompareExpressionString(Expression *pExpression, DVM_Ch
         break;
 
     default :
-        FIXTREE_DBG_Assert(0, ("pExpression->kind..", pExpression));
+        DBG_assert(0, ("pExpression->kind..", pExpression));
     }
 
     pExpression->type = m_Util.AllocTypeSpecifier(DVM_BOOLEAN_TYPE);
@@ -985,11 +1010,11 @@ Expression* FixTree::ChainString(Expression *pExpression)
 
     int iLen = std::basic_string<DVM_Char>(pLeftStr).length() + std::basic_string<DVM_Char>(pRightStr).length();
 
-    DVM_Char *pNewStr = (DVM_Char*)FIXTREE_MEM_Malloc(sizeof(DVM_Char) * (iLen + 1));
+    DVM_Char *pNewStr = (DVM_Char*)MEM_malloc(sizeof(DVM_Char) * (iLen + 1));
     wcscpy_s(pNewStr, iLen + 1, (std::basic_string<DVM_Char>(pLeftStr) + std::basic_string<DVM_Char>(pRightStr)).c_str());
 
-    FIXTREE_MEM_Free(pLeftStr);
-    FIXTREE_MEM_Free(pRightStr);
+    MEM_free(pLeftStr);
+    MEM_free(pRightStr);
 
     pExpression->kind = STRING_EXPRESSION;
     pExpression->type = m_Util.AllocTypeSpecifier(DVM_STRING_TYPE);
@@ -1049,7 +1074,7 @@ void FixTree::CheckArgument(Block *pBlock, FunctionDefinition *pFunctionDefiniti
 
 void FixTree::AddLocalVariable(FunctionDefinition *pFunctionDefinition, Declaration *pDeclaration)
 {
-    pFunctionDefinition->local_variable = (Declaration**)FIXTREE_MEM_Realloc(pFunctionDefinition->local_variable,
+    pFunctionDefinition->local_variable = (Declaration**)MEM_realloc(pFunctionDefinition->local_variable,
         sizeof(Declaration*) * (pFunctionDefinition->local_variable_count + 1));
 
     pFunctionDefinition->local_variable[pFunctionDefinition->local_variable_count] = pDeclaration;
@@ -1162,4 +1187,39 @@ void FixTree::CastMismatchError(int iLine, TypeSpecifier *pSrc, TypeSpecifier *p
         STRING_MESSAGE_ARGUMENT, "src", pSrcName,
         STRING_MESSAGE_ARGUMENT, "dest", pDestName,
         MESSAGE_ARGUMENT_END);
+}
+
+int FixTree::ReservFunctionIndex(DKC_Compiler *pCompiler, FunctionDefinition *pFunctionDefinition)
+{
+    if (pFunctionDefinition->class_definition && nullptr == pFunctionDefinition->block)
+    {
+        return ABSTRACT_METHOD_INDEX;
+    }
+
+    char *srcPackageName = m_Util.PackageNameToString(pFunctionDefinition->package_name);
+
+    for (int i = 0; i < pCompiler->dvm_function_count; i++)
+    {
+        if (m_Util.ComparePackageName(srcPackageName, pCompiler->dvm_function[i].package_name)
+            && std::string(pFunctionDefinition->name) == pCompiler->dvm_function[i].name)
+        {
+            MEM_Free(srcPackageName);
+            return i;
+        }
+    }
+
+    pCompiler->dvm_function = (DVM_Function*)MEM_realloc(pCompiler->dvm_function, sizeof(DVM_Function) * (pCompiler->dvm_function_count + 1));
+    DVM_Function *dest = &pCompiler->dvm_function[pCompiler->dvm_function_count++];
+    dest->package_name = srcPackageName;
+
+    if (pFunctionDefinition->class_definition)
+    {
+        dest->name = m_Util.CreateMethodFunctionName(pFunctionDefinition->class_definition->name, pFunctionDefinition->name);
+    }
+    else
+    {
+        dest->name = MEM_strdup(pFunctionDefinition->name);
+    }
+
+    return pCompiler->dvm_function_count - 1;
 }

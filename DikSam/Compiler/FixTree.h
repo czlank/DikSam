@@ -11,12 +11,6 @@ class Interface;
 
 class FixTree
 {
-#define FIXTREE_DBG_Panic(arg)              (m_Debug.Panic(__FILE__, __LINE__, arg))
-#define FIXTREE_DBG_Assert(expression, arg) ((expression) ? (void)(0) : (m_Debug.Assert(__FILE__, __LINE__, #expression, arg)))
-#define FIXTREE_MEM_Malloc(size)            (m_Memory.Malloc(__FILE__, __LINE__, size))
-#define FIXTREE_MEM_Realloc(ptr, size)      (m_Memory.Realloc(__FILE__, __LINE__, ptr, size))
-#define FIXTREE_MEM_Free(ptr)               (m_Memory.Free(ptr))
-
 public:
     FixTree(Debug& debug, Memory& memory, Util& util, Error& error, Create& create, Interface& refInterface);
     ~FixTree();
@@ -66,6 +60,7 @@ private:
     void AddReturnFunction(FunctionDefinition *pFunctionDefinition);
 
     void CastMismatchError(int iLine, TypeSpecifier *pSrc, TypeSpecifier *pDest);
+    int ReservFunctionIndex(DKC_Compiler *pCompiler, FunctionDefinition *pFunctionDefinition);
 
     inline bool IsInt(TypeSpecifier *pType) { return (DVM_INT_TYPE == pType->basic_type && nullptr == pType->derive); }
     inline bool IsDouble(TypeSpecifier *pType) { return (DVM_DOUBLE_TYPE == pType->basic_type && nullptr == pType->derive); }

@@ -6,6 +6,26 @@
 #include "Storage.h"
 #include "Interface.h"
 
+#ifdef MEM_malloc
+#undef MEM_malloc
+#endif
+#define MEM_malloc(size)                    (m_Memory.Malloc(__FILE__, __LINE__, size))
+
+#ifdef MEM_realloc
+#undef MEM_realloc
+#endif
+#define MEM_realloc(ptr, size)              (m_Memory.Realloc(__FILE__, __LINE__, ptr, size))
+
+#ifdef dkc_malloc
+#undef dkc_malloc
+#endif
+#define dkc_malloc(size)                    (Malloc(__FILE__, __LINE__, size))
+
+#ifdef DBG_assert
+#undef DBG_assert
+#endif
+#define DBG_assert(expression, arg) ((expression) ? (void)(0) : (m_Debug.Assert(__FILE__, __LINE__, #expression, arg)))
+
 Util::Util(Debug& debug, Memory& memory, Storage& storage, Interface& rInterface)
     : m_Debug(debug)
     , m_Memory(memory)
@@ -28,7 +48,7 @@ void* Util::Malloc(const char *lpcstrFileName, int iLine, size_t szSize)
 
 TypeSpecifier* Util::AllocTypeSpecifier(DVM_BasicType enType)
 {
-    TypeSpecifier *pTypeSpecifier = (TypeSpecifier*)UTIL_STORAGE_MALLOC(sizeof(TypeSpecifier));
+    TypeSpecifier *pTypeSpecifier = (TypeSpecifier*)dkc_malloc(sizeof(TypeSpecifier));
 
     pTypeSpecifier->basic_type = enType;
     pTypeSpecifier->derive = nullptr;
@@ -38,7 +58,7 @@ TypeSpecifier* Util::AllocTypeSpecifier(DVM_BasicType enType)
 
 TypeDerive* Util::AllocTypeDerive(DeriveTag enTag)
 {
-    TypeDerive *pTypeDerive = (TypeDerive*)UTIL_STORAGE_MALLOC(sizeof(TypeDerive));
+    TypeDerive *pTypeDerive = (TypeDerive*)dkc_malloc(sizeof(TypeDerive));
 
     pTypeDerive->tag = enTag;
     pTypeDerive->next = nullptr;
@@ -203,7 +223,7 @@ void Util::VStrAppandString(VString *vStr, const DVM_Char *lpcstrStr)
     int iOldLen = StrLen(vStr->string);
     int iNewLen = iOldLen + StrLen(lpcstrStr) + 1;
 
-    vStr->string = (DVM_Char*)UTIL_MEM_Realloc(vStr->string, sizeof(DVM_Char) * iNewLen);
+    vStr->string = (DVM_Char*)MEM_realloc(vStr->string, sizeof(DVM_Char) * iNewLen);
     wcscpy_s(&vStr->string[iOldLen], iNewLen - iOldLen, lpcstrStr);
 }
 
@@ -211,7 +231,7 @@ void Util::VStrAppandCharacter(VString *vStr, DVM_Char ch)
 {
     int iCurrentLen = StrLen(vStr->string);
 
-    vStr->string = (DVM_Char*)UTIL_MEM_Realloc(vStr->string, sizeof(DVM_Char) * (iCurrentLen + 2));
+    vStr->string = (DVM_Char*)MEM_realloc(vStr->string, sizeof(DVM_Char) * (iCurrentLen + 2));
     vStr->string[iCurrentLen] = ch;
     vStr->string[iCurrentLen + 1] = TEXT('\0');
 }
@@ -233,7 +253,7 @@ char* Util::GetBasicTypeName(DVM_BasicType enType)
         return "string";
 
     default :
-        UTIL_DBG_Assert(0, ("bad case. type..", enType));
+        DBG_assert(0, ("bad case. type..", enType));
     }
 
     return nullptr;
@@ -249,14 +269,14 @@ char* Util::GetTypeName(TypeSpecifier *type)
         switch (pos->tag)
         {
         case FUNCTION_DERIVE :
-            UTIL_DBG_Assert(0, ("derive_ta..%d\n", pos->tag));
+            DBG_assert(0, ("derive_ta..%d\n", pos->tag));
             break;
 
         case ARRAY_DERIVE :
             {
                 int iLen = std::string(pTypeName).length();
 
-                pFinalTypeName = (char *)UTIL_MEM_MALLOC(iLen + 3);
+                pFinalTypeName = (char *)MEM_malloc(iLen + 3);
                 for (int i = 0; i < iLen; i++)
                 {
                     pFinalTypeName[i] = pTypeName[i];
@@ -270,7 +290,7 @@ char* Util::GetTypeName(TypeSpecifier *type)
             break;
 
         default :
-            UTIL_DBG_Assert(0, ("derive_ta..%d\n", pos->tag));
+            DBG_assert(0, ("derive_ta..%d\n", pos->tag));
         }
     }
 
@@ -304,7 +324,7 @@ DVM_Char* Util::ExpressionToString(Expression *stExpr)
 
     std::basic_string<DVM_Char> exprVal(dvmChar.str());
     int iLen = exprVal.length();
-    DVM_Char *pNewStr = (DVM_Char*)UTIL_MEM_MALLOC(sizeof(DVM_Char) * (iLen + 1));
+    DVM_Char *pNewStr = (DVM_Char*)MEM_malloc(sizeof(DVM_Char) * (iLen + 1));
     wcscpy_s(pNewStr, iLen + 1, exprVal.c_str());
 
     return pNewStr;
@@ -329,7 +349,7 @@ char* Util::PackageNameToString(PackageName *src)
         }   
     }
 
-    char *dest = (char*)UTIL_MEM_MALLOC(packageName.length() + 1);
+    char *dest = (char*)MEM_malloc(packageName.length() + 1);
     
     for (size_t i = 0; i < packageName.length(); i++)
     {
@@ -339,6 +359,37 @@ char* Util::PackageNameToString(PackageName *src)
     dest[packageName.length()] = '\0';
 
     return dest;
+}
+
+char* Util::CreateMethodFunctionName(char *lpstrClassName, char *lpstrMethodName)
+{
+    int iClassNameLen = lpstrClassName ? std::string(lpstrClassName).length() : 0;
+    int iMethodNameLen = lpstrMethodName ? std::string(lpstrMethodName).length() : 0;
+
+    char *ret = (char*)MEM_malloc(iClassNameLen + iMethodNameLen + 2);
+
+    int i = 0;
+    if (iClassNameLen)
+    {
+        for (; i < iClassNameLen; i++)
+        {
+            ret[i] = lpstrClassName[i];
+        }
+    }
+
+    ret[i++] = '#';
+
+    if (iMethodNameLen)
+    {
+        for (int j = 0; j < iMethodNameLen; j++, i++)
+        {
+            ret[i] = lpstrMethodName[j];
+        }
+    }
+
+    ret[i] = '\0';
+
+    return ret;
 }
 
 SearchFileStatus Util::SearchFile(const char *lpcstrSearchPath, const char *lpcstrSearchFile, char *lpstrFoundPath, FILE **ppFp)

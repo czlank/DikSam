@@ -10,21 +10,6 @@ class Interface;
 
 class Create
 {
-#ifdef MEM_Free
-#undef MEM_Free
-#endif
-#define MEM_Free(ptr)               (m_Memory.Free(ptr))
-
-#ifdef dkc_malloc
-#undef dkc_malloc
-#endif
-#define dkc_malloc(size)            (m_Util.Malloc(__FILE__, __LINE__, size))
-
-#ifdef DBG_assert
-#undef DBG_assert
-#endif
-#define DBG_assert(expression, arg) ((expression) ? (void)(0) : (m_Debug.Assert(__FILE__, __LINE__, #expression, arg)))
-
 public:
     Create(Debug& debug, Memory& memory, Error& error, Util& util, Interface& rInterface);
     ~Create();

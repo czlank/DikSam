@@ -14,41 +14,6 @@ class Execute;
 
 class Interface
 {
-#ifdef DBG_assert
-#undef DBG_assert
-#endif
-#define DBG_assert(expression, arg) ((expression) ? (void)(0) : (m_Debug.Assert(__FILE__, __LINE__, #expression, arg)))
-
-#ifdef DBG_panic
-#undef DBG_panic
-#endif
-#define DBG_panic(arg)                      (m_Debug.Panic(__FILE__, __LINE__, arg))
-
-#ifdef MEM_malloc
-#undef MEM_malloc
-#endif
-#define MEM_malloc(size)                    (m_Memory.Malloc(__FILE__, __LINE__, size))
-
-#ifdef MEM_strdup
-#undef MEM_strdup
-#endif
-#define MEM_strdup(ptr)                     (m_Memory.StrDUP(__FILE__, __LINE__, ptr))
-
-#ifdef MEM_open_sotrage
-#undef MEM_open_storage
-#endif
-#define MEM_open_sotrage(size)              (m_Storage.Open(__FILE__, __LINE__, size))
-
-#ifdef MEM_storage_malloc
-#undef MEM_storage_malloc
-#endif
-#define MEM_storage_malloc(storage, size)   (m_Storage.Malloc(__FILE__, __LINE__, storage, size))
-
-#ifdef dkc_malloc
-#undef dkc_malloc
-#endif
-#define dkc_malloc(size)                    (m_Util.Malloc(__FILE__, __LINE__, size))
-
 public:
     Interface(Debug& debug, Memory& memory, Storage& storage, Util& util, Error& error, StringLiteral& stringliteral, Create& create, int iThreadIndex);
     ~Interface();
