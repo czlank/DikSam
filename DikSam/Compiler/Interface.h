@@ -58,6 +58,8 @@ public:
     void RunScript(FILE *pFile, const char *lpstrPath);
     void RunScript(char **ppLines, const char *lpstrPath);
 
+    SearchFileStatus DynamicCompile(DKC_Compiler *pCompiler, char *lpstrPackageName, DVM_ExecutableList *pExecutableList, DVM_ExecutableItem **ppAddTop, char *lpstrSearchFile);
+
 private:
     typedef struct
     {
@@ -80,7 +82,7 @@ private:
 
     void ResetCompiler();
     DKC_Compiler* CreateCompiler();
-    void DisposeCompiler();
+    void DisposeCompiler(DKC_Compiler *pCompiler);
 
     FunctionDefinition* CreateBuiltInMethod(BuiltInMethod *pMethod, int iMethodCount);
     void SetPathToCompiler(DKC_Compiler *pCompiler, const char *lpstrPath);
@@ -94,6 +96,7 @@ private:
     PackageName* CreateOnePackageName(DKC_Compiler *pCompiler, char *str, int iStartIdx, int iToIdx);
     PackageName* StringToPackageName(DKC_Compiler *pCompiler, char *str);
     SearchFileStatus GetDynamicLoadInput(char *lpstrPackageName, char *lpstrFoundPath, char *lpstrSearchFile, SourceInput *pSourceInput);
+    CompilerList* TraversalCompiler(CompilerList *pList, DKC_Compiler *pCompiler);
 
 private:
     Debug                          &m_Debug;

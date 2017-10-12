@@ -163,6 +163,48 @@ void Interface::RunScript(char **ppLines, const char *lpstrPath)
     }
 }
 
+SearchFileStatus Interface::DynamicCompile(DKC_Compiler *pCompiler, char *lpstrPackageName, DVM_ExecutableList *pExecutableList, DVM_ExecutableItem **ppAddTop, char *lpstrSearchFile)
+{
+    extern FILE *yyin;
+
+    char chFoundPath[FILENAME_MAX]{};
+    SourceInput sourceInput;
+    SearchFileStatus status = GetDynamicLoadInput(lpstrPackageName, chFoundPath, lpstrSearchFile, &sourceInput);
+
+    if (status != SEARCH_FILE_SUCCESS)
+    {
+        return status;
+    }
+
+    DBG_assert(nullptr == m_pCompilerList, ("m_pCompilerList != nullptr(", int(m_pCompilerList), ")"));
+
+    DVM_ExecutableItem *pTail = pExecutableList->list;
+    for (; pTail->next; pTail = pTail->next)
+        ;
+
+    pCompiler->package_name = StringToPackageName(pCompiler, lpstrPackageName);
+    SetPathToCompiler(pCompiler, chFoundPath);
+
+    pCompiler->input_mode = sourceInput.input_mode;
+    if (FILE_INPUT_MODE == sourceInput.input_mode)
+    {
+        yyin = sourceInput.u.file.fp;
+        (void)DoCompile(pCompiler, nullptr, pExecutableList, chFoundPath, false);
+    }
+    else
+    {
+        dkc_set_source_string(sourceInput.u.string.lines);
+        (void)DoCompile(pCompiler, sourceInput.u.string.lines, pExecutableList, chFoundPath, false);
+    }
+
+    DisposeCompilerList();
+    m_StringLiteral.Reset();
+
+    *ppAddTop = pTail->next;
+
+    return SEARCH_FILE_SUCCESS;
+}
+
 DVM_ExecutableList* Interface::Compile(FILE *pFile, const char *lpstrPath)
 {
     extern FILE *yyin;
@@ -313,7 +355,7 @@ DVM_Executable* Interface::DoCompile(DKC_Compiler *pCompiler, char **ppLines, DV
 
 void Interface::ResetCompiler()
 {
-    DisposeCompiler();
+    DisposeCompiler(m_pCompiler);
     m_StringLiteral.Reset();
 }
 
@@ -368,16 +410,30 @@ DKC_Compiler* Interface::CreateCompiler()
     return pCompilerNew;
 }
 
-void Interface::DisposeCompiler()
+void Interface::DisposeCompiler(DKC_Compiler *pCompiler)
 {
-    FunctionDefinition *pos = m_pCompiler->function_list;
+    CompilerList *pList = TraversalCompiler(nullptr, pCompiler);
 
-    for (; pos; pos = pos->next)
+    for (CompilerList *pos = pList; pos; )
     {
-        m_Memory.Free(pos->local_variable);
-    }
+        for (FunctionDefinition *pFdPos = pos->compiler->function_list; pFdPos; pFdPos = pFdPos->next)
+        {
+            m_Memory.Free(pFdPos->local_variable);
+        }
 
-    m_Storage.Dispose(m_pCompiler->compile_storage);
+        CompilerList *pTemp = nullptr;
+        while (pos->compiler->required_list)
+        {
+            pTemp = pos->compiler->required_list;
+            pos->compiler->required_list = pTemp->next;
+            m_Memory.Free(pTemp);
+        }
+
+        m_Storage.Dispose(pos->compiler->compile_storage);
+        pTemp = pos->next;
+        m_Memory.Free(pos);
+        pos = pTemp;
+    }
 }
 
 FunctionDefinition* Interface::CreateBuiltInMethod(BuiltInMethod *pMethod, int iMethodCount)
@@ -599,8 +655,8 @@ void Interface::MakeSearchPath(int iLineNumber, PackageName *pPackageName, char 
 
 void Interface::MakeSearchPathImpl(char *lpstrPackageName, char *pBuf)
 {
-    int iSuffixLen = std::string(DIKSAM_IMPLEMENTATION_SUFFIX);
-    int iPackageLen = std::string(lpstrPackageName);
+    int iSuffixLen = std::string(DIKSAM_IMPLEMENTATION_SUFFIX).length();
+    int iPackageLen = std::string(lpstrPackageName).length();
 
     DBG_assert(iPackageLen <= FILENAME_MAX - (2 + iSuffixLen), ("package name is too long(", lpstrPackageName, ")"));
 
@@ -736,4 +792,27 @@ SearchFileStatus Interface::GetDynamicLoadInput(char *lpstrPackageName, char *lp
     }
 
     return SEARCH_FILE_SUCCESS;
+}
+
+CompilerList* Interface::TraversalCompiler(CompilerList *pList, DKC_Compiler *pCompiler)
+{
+    CompilerList *pListPos = nullptr;
+
+    for (pListPos = pList; pListPos; pListPos = pListPos->next)
+    {
+        if (pListPos->compiler == pCompiler)
+            break;
+    }
+
+    if (nullptr == pListPos)
+    {
+        pList = AddCompilerToList(pList, pCompiler);
+    }
+
+    for (CompilerList *pReqPos = pCompiler->required_list; pReqPos; pReqPos = pReqPos->next)
+    {
+        pList = TraversalCompiler(pList, pReqPos->compiler);
+    }
+
+    return pList;
 }
