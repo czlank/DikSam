@@ -556,6 +556,14 @@ Expression* FixTree::FixArrayCreationExpression(Block *pBlock, Expression *pExpr
     return pExpression;
 }
 
+void FixTree::FixParameterList(ParameterList *pParameterList)
+{
+    for (ParameterList *pos = pParameterList; pos; pos = pos->next)
+    {
+        FixTypeSpecifier(pos->type);
+    }
+}
+
 void FixTree::FixIfStatement(Block *pBlock, IfStatement *pIfStatement, FunctionDefinition *pFunctionDefinition)
 {
     FixExpression(pBlock, pIfStatement->condition, nullptr);
@@ -1189,19 +1197,19 @@ void FixTree::CastMismatchError(int iLine, TypeSpecifier *pSrc, TypeSpecifier *p
         MESSAGE_ARGUMENT_END);
 }
 
-int FixTree::ReservFunctionIndex(DKC_Compiler *pCompiler, FunctionDefinition *pFunctionDefinition)
+int FixTree::ReservFunctionIndex(DKC_Compiler *pCompiler, FunctionDefinition *pSrc)
 {
-    if (pFunctionDefinition->class_definition && nullptr == pFunctionDefinition->block)
+    if (pSrc->class_definition && nullptr == pSrc->block)
     {
         return ABSTRACT_METHOD_INDEX;
     }
 
-    char *srcPackageName = m_Util.PackageNameToString(pFunctionDefinition->package_name);
+    char *srcPackageName = m_Util.PackageNameToString(pSrc->package_name);
 
     for (int i = 0; i < pCompiler->dvm_function_count; i++)
     {
         if (m_Util.ComparePackageName(srcPackageName, pCompiler->dvm_function[i].package_name)
-            && std::string(pFunctionDefinition->name) == pCompiler->dvm_function[i].name)
+            && std::string(pSrc->name) == pCompiler->dvm_function[i].name)
         {
             MEM_Free(srcPackageName);
             return i;
@@ -1212,14 +1220,79 @@ int FixTree::ReservFunctionIndex(DKC_Compiler *pCompiler, FunctionDefinition *pF
     DVM_Function *dest = &pCompiler->dvm_function[pCompiler->dvm_function_count++];
     dest->package_name = srcPackageName;
 
-    if (pFunctionDefinition->class_definition)
+    if (pSrc->class_definition)
     {
-        dest->name = m_Util.CreateMethodFunctionName(pFunctionDefinition->class_definition->name, pFunctionDefinition->name);
+        dest->name = m_Util.CreateMethodFunctionName(pSrc->class_definition->name, pSrc->name);
     }
     else
     {
-        dest->name = MEM_strdup(pFunctionDefinition->name);
+        dest->name = MEM_strdup(pSrc->name);
     }
 
     return pCompiler->dvm_function_count - 1;
+}
+
+int FixTree::AddClass(ClassDefinition *pSrc)
+{
+    DKC_Compiler *pCompiler = m_Interface.GetCompiler();
+    char *lpstrPackageName = m_Util.PackageNameToString(pSrc->package_name);
+
+    for (int i = 0; i < pCompiler->dvm_class_count; i++)
+    {
+        if (m_Util.ComparePackageName(lpstrPackageName, pCompiler->dvm_class[i].package_name)
+            && std::string(pSrc->name) == pCompiler->dvm_class[i].name)
+        {
+            MEM_free(lpstrPackageName);
+            return i;
+        }
+    }
+
+    pCompiler->dvm_class = (DVM_Class*)MEM_realloc(pCompiler->dvm_class, sizeof(DVM_Class) * (pCompiler->dvm_class_count + 1));
+
+    DVM_Class *pDest = &pCompiler->dvm_class[pCompiler->dvm_class_count++];
+
+    pDest->package_name = lpstrPackageName;
+    pDest->name = MEM_strdup(pSrc->name);
+    pDest->is_implemented = DVM_FALSE;
+
+    for (ExtendsList *pos = pSrc->extends; pos; pos = pos->next)
+    {
+        int dummy;
+        (void)SearchAndAddClass(pSrc->line_number, pos->identifier, &dummy);
+    }
+
+    return pCompiler->dvm_class_count - 1;
+}
+
+bool FixTree::IsSuperInterface(ClassDefinition *pChild, ClassDefinition *pParent, int *pInterfaceIndexOut)
+{
+    int iInterfaceIndex = 0;
+
+    for (ExtendsList *pos = pChild->interface_list; pos; pos = pos->next)
+    {
+        if (pos->class_definition == pParent)
+        {
+            *pInterfaceIndexOut = iInterfaceIndex;
+            return true;
+        }
+
+        iInterfaceIndex++;
+    }
+
+    return false;
+}
+
+bool FixTree::IsSuperClass(ClassDefinition *pChild, ClassDefinition *pParent, bool *pIsInterface, int *pInterfaceIndex)
+{
+    for (ClassDefinition *pos = pChild->super_class; pos; pos = pos->super_class)
+    {
+        if (pos == pParent)
+        {
+            *pIsInterface = false;
+            return true;
+        }
+    }
+
+    *pIsInterface = true;
+    return IsSuperInterface(pChild, pParent, pInterfaceIndex);
 }

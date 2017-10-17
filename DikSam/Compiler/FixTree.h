@@ -35,6 +35,7 @@ private:
     Expression* FixIndexExpression(Block *pBlock, Expression *pExpression);
     Expression* FixArrayCreationExpression(Block *pBlock, Expression *pExpression);
     
+    void FixParameterList(ParameterList *pParameterList);
     void FixIfStatement(Block *pBlock, IfStatement *pIfStatement, FunctionDefinition *pFunctionDefinition);
     void FixReturnStatement(Block *pBlock, ReturnStatement *pReturnStatement, FunctionDefinition *pFunctionDefinition);
     void FixStatementList(Block *pBlock, StatementList *pStatementList, FunctionDefinition *pFunctionDefinition);
@@ -60,7 +61,10 @@ private:
     void AddReturnFunction(FunctionDefinition *pFunctionDefinition);
 
     void CastMismatchError(int iLine, TypeSpecifier *pSrc, TypeSpecifier *pDest);
-    int ReservFunctionIndex(DKC_Compiler *pCompiler, FunctionDefinition *pFunctionDefinition);
+    int ReservFunctionIndex(DKC_Compiler *pCompiler, FunctionDefinition *pSrc);
+    int AddClass(ClassDefinition *pSrc);
+    bool IsSuperInterface(ClassDefinition *pChild, ClassDefinition *pParent, int *pInterfaceIndexOut);
+    bool IsSuperClass(ClassDefinition *pChild, ClassDefinition *pParent, bool *pIsInterface, int *pInterfaceIndex);
 
     inline bool IsInt(TypeSpecifier *pType) { return (DVM_INT_TYPE == pType->basic_type && nullptr == pType->derive); }
     inline bool IsDouble(TypeSpecifier *pType) { return (DVM_DOUBLE_TYPE == pType->basic_type && nullptr == pType->derive); }
