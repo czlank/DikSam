@@ -8,10 +8,6 @@ class Memory;
 
 class GarbageCollect
 {
-#define GARBAGECOLLECT_MEM_Malloc(size)             (m_Memory.Malloc(__FILE__, __LINE__, size))
-#define GARBAGECOLLECT_MEM_Free(ptr)                (m_Memory.Free(ptr))
-#define GARBAGECOLLECT_DBG_Assert(expression, arg)  ((expression) ? (void)(0) : (m_Debug.Assert(__FILE__, __LINE__, #expression, arg)))
-
 public:
     GarbageCollect(Debug& debug, Memory& memory);
     ~GarbageCollect();

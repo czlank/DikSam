@@ -8,15 +8,6 @@ class Error;
 
 class Generate
 {
-#define GENERATE_MEM_Malloc(size)               (m_Memory.Malloc(__FILE__, __LINE__, size))
-#define GENERATE_MEM_Realloc(ptr, size)         (m_Memory.Realloc(__FILE__, __LINE__, ptr, size))
-#define GENERATE_MEM_StrDUP(str)                (m_Memory.StrDUP(__FILE__, __LINE__, str))
-#define GENERATE_MEM_Free(ptr)                  (m_Memory.Free(ptr))
-#define GENERATE_DBG_Assert(expression, arg)    ((expression) ? (void)(0) : (m_Debug.Assert(__FILE__, __LINE__, #expression, arg)))
-
-#define OPCODE_ALLOC_SIZE       (256)
-#define LABEL_TABLE_ALLOC_SIZE  (256)
-
     class LabelTable
     {
     public:

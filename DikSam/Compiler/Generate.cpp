@@ -5,6 +5,34 @@
 #include "Error.h"
 #include "OpcodeInfo.h"
 
+#ifdef DBG_assert
+#undef DBG_assert
+#endif
+#define DBG_assert(expression, arg) ((expression) ? (void)(0) : (m_Debug.Assert(__FILE__, __LINE__, #expression, arg)))
+
+#ifdef MEM_malloc
+#undef MEM_malloc
+#endif
+#define MEM_malloc(size)                    (m_Memory.Malloc(__FILE__, __LINE__, size))
+
+#ifdef MEM_realloc
+#undef MEM_realloc
+#endif
+#define MEM_realloc(ptr, size)              (m_Memory.Realloc(__FILE__, __LINE__, ptr, size))
+
+#ifdef MEM_free
+#undef MEM_free
+#endif
+#define MEM_free(ptr)                       (m_Memory.Free(ptr))
+
+#ifdef MEM_strdup
+#undef MEM_strdup
+#endif
+#define MEM_strdup(ptr)                     (m_Memory.StrDUP(__FILE__, __LINE__, ptr))
+
+#define OPCODE_ALLOC_SIZE       (256)
+#define LABEL_TABLE_ALLOC_SIZE  (256)
+
 Generate::Generate(Debug& debug, Memory& memory, Error& error)
     : m_Debug(debug)
     , m_Memory(memory)
@@ -31,7 +59,7 @@ DVM_Executable* Generate::operator () (DKC_Compiler *pCompiler)
 
 int Generate::AddConstantPool(DVM_Executable *pExecutable, DVM_ConstantPool *pConstantPool)
 {
-    pExecutable->constant_pool = (DVM_ConstantPool*)GENERATE_MEM_Realloc(pExecutable->constant_pool, sizeof(DVM_ConstantPool) * (pExecutable->constant_pool_count + 1));
+    pExecutable->constant_pool = (DVM_ConstantPool*)MEM_realloc(pExecutable->constant_pool, sizeof(DVM_ConstantPool) * (pExecutable->constant_pool_count + 1));
     pExecutable->constant_pool[pExecutable->constant_pool_count] = *pConstantPool;
 
     return pExecutable->constant_pool_count++;
@@ -47,19 +75,19 @@ void Generate::AddGlobalVariable(DKC_Compiler *pCompiler, DVM_Executable *pExecu
     }
 
     pExecutable->global_variable_count = iVariableCount;
-    pExecutable->global_variable = (DVM_Variable*)GENERATE_MEM_Malloc(sizeof(DVM_Variable) * iVariableCount);
+    pExecutable->global_variable = (DVM_Variable*)MEM_malloc(sizeof(DVM_Variable) * iVariableCount);
 
     int i = 0;
     for (DeclarationList *pDeclarationList = pCompiler->declaration_list; pDeclarationList; pDeclarationList = pDeclarationList->next, i++)
     {
-        pExecutable->global_variable[i].name = GENERATE_MEM_StrDUP(pDeclarationList->declaration->name);
+        pExecutable->global_variable[i].name = MEM_strdup(pDeclarationList->declaration->name);
         pExecutable->global_variable[i].type = CopyTypeSpecifier(pDeclarationList->declaration->type);
     }
 }
 
 int Generate::AddTypeSpecifier(TypeSpecifier *pTypeSpecifier, DVM_Executable *pExecutable)
 {
-    pExecutable->type_specifier = (DVM_TypeSpecifier*)GENERATE_MEM_Realloc(pExecutable->type_specifier, sizeof(DVM_TypeSpecifier) * (pExecutable->type_specifier_count + 1));
+    pExecutable->type_specifier = (DVM_TypeSpecifier*)MEM_realloc(pExecutable->type_specifier, sizeof(DVM_TypeSpecifier) * (pExecutable->type_specifier_count + 1));
     CopyTypeSpecifierNoAlloc(pTypeSpecifier, &pExecutable->type_specifier[pExecutable->type_specifier_count]);
 
     return pExecutable->type_specifier_count++;
@@ -70,7 +98,7 @@ void Generate::AddLineNumber(OpcodeBuf *pOpcode, int iLine, int iStartPC)
     if (nullptr == pOpcode->m_pLineNumber
         || pOpcode->m_pLineNumber[pOpcode->m_iLineNumberSize - 1].line_number != iLine)
     {
-        pOpcode->m_pLineNumber = (DVM_LineNumber*)GENERATE_MEM_Realloc(pOpcode->m_pLineNumber, sizeof(DVM_LineNumber) * (pOpcode->m_iLineNumberSize + 1));
+        pOpcode->m_pLineNumber = (DVM_LineNumber*)MEM_realloc(pOpcode->m_pLineNumber, sizeof(DVM_LineNumber) * (pOpcode->m_iLineNumberSize + 1));
         pOpcode->m_pLineNumber[pOpcode->m_iLineNumberSize].line_number = iLine;
         pOpcode->m_pLineNumber[pOpcode->m_iLineNumberSize].start_pc = iStartPC;
         pOpcode->m_pLineNumber[pOpcode->m_iLineNumberSize].pc_count = pOpcode->m_iSize - iStartPC;
@@ -93,7 +121,7 @@ void Generate::AddFunctions(DKC_Compiler *pCompiler, DVM_Executable *pExecutable
     }
 
     pExecutable->function_count = iCount;
-    pExecutable->function = (DVM_Function*)GENERATE_MEM_Malloc(sizeof(DVM_Function) * iCount);
+    pExecutable->function = (DVM_Function*)MEM_malloc(sizeof(DVM_Function) * iCount);
 
     pFunctionDefinition = pCompiler->function_list;
     for (int i = 0; pFunctionDefinition; pFunctionDefinition = pFunctionDefinition->next, i++)
@@ -147,7 +175,7 @@ void Generate::GenerateCode(OpcodeBuf *pOpcode, int iLine, DVM_Opcode code, ...)
 
     if (pOpcode->m_iAllocSize < pOpcode->m_iSize + 1 + (paramLen * 2))
     {
-        pOpcode->m_pCode = (DVM_Byte*)GENERATE_MEM_Realloc(pOpcode->m_pCode, pOpcode->m_iAllocSize + OPCODE_ALLOC_SIZE);
+        pOpcode->m_pCode = (DVM_Byte*)MEM_realloc(pOpcode->m_pCode, pOpcode->m_iAllocSize + OPCODE_ALLOC_SIZE);
         pOpcode->m_iAllocSize += OPCODE_ALLOC_SIZE;
     }
 
@@ -178,7 +206,7 @@ void Generate::GenerateCode(OpcodeBuf *pOpcode, int iLine, DVM_Opcode code, ...)
             break;
 
         default :
-            GENERATE_DBG_Assert(0, ("param..", param, ", i..", i));
+            DBG_assert(0, ("param..", param, ", i..", i));
         }
     }
 
@@ -279,7 +307,7 @@ void Generate::GeneratePopToLValue(DVM_Executable *pExecutable, Block *pBlock, E
     }
     else
     {
-        GENERATE_DBG_Assert(INDEX_EXPRESSION == pExpression->kind, ("pExpression->kind..", pExpression->kind));
+        DBG_assert(INDEX_EXPRESSION == pExpression->kind, ("pExpression->kind..", pExpression->kind));
 
         GenerateExpression(pExecutable, pBlock, pExpression->u.index_expression.array, pOpcode);
         GenerateExpression(pExecutable, pBlock, pExpression->u.index_expression.index, pOpcode);
@@ -322,7 +350,7 @@ void Generate::GenerateAssignExpression(DVM_Executable *pExecutable, Block *pBlo
         break;
 
     default :
-        GENERATE_DBG_Assert(0, ("operator..", pExpression->u.assign_expression.op));
+        DBG_assert(0, ("operator..", pExpression->u.assign_expression.op));
     }
 
     if (!isTopLevel)
@@ -413,13 +441,13 @@ void Generate::GenerateCastExpression(DVM_Executable *pExecutable, Block *pBlock
         break;
 
     default :
-        GENERATE_DBG_Assert(0, ("pExpression->u.cast.type..", pExpression->u.cast.type));
+        DBG_assert(0, ("pExpression->u.cast.type..", pExpression->u.cast.type));
     }
 }
 
 void Generate::GenerateArrayLiteralExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode)
 {
-    GENERATE_DBG_Assert(pExpression->type->derive && ARRAY_DERIVE == pExpression->type->derive->tag, ("array literal is not array."));
+    DBG_assert(pExpression->type->derive && ARRAY_DERIVE == pExpression->type->derive->tag, ("array literal is not array."));
 
     int count = 0;
     for (ExpressionList *pos = pExpression->u.array_literal; pos; pos = pos->next)
@@ -454,7 +482,7 @@ void Generate::GenerateIncDecExpression(DVM_Executable *pExecutable, Block *pBlo
         break;
 
     default :
-        GENERATE_DBG_Assert(0, ("kind..", kind));
+        DBG_assert(0, ("kind..", kind));
     }
 
     if (!isTopLevel)
@@ -487,7 +515,7 @@ void Generate::GenerateArrayCreationExpression(DVM_Executable *pExecutable, Bloc
 {
     int index = AddTypeSpecifier(pExpression->type, pExecutable);
 
-    GENERATE_DBG_Assert(ARRAY_DERIVE == pExpression->type->derive->tag, ("pExpression->type->derive->tag", pExpression->type->derive->tag));
+    DBG_assert(ARRAY_DERIVE == pExpression->type->derive->tag, ("pExpression->type->derive->tag", pExpression->type->derive->tag));
 
     int iDimCount = 0;
     for (ArrayDimension *pos = pExpression->u.array_creation.dimension; pos; pos = pos->next)
@@ -630,7 +658,7 @@ void Generate::GenerateExpression(DVM_Executable *pExecutable, Block *pBlock, Ex
         break;
 
     default :
-        GENERATE_DBG_Assert(0, ("pExpression->kind..", pExpression->kind));
+        DBG_assert(0, ("pExpression->kind..", pExpression->kind));
     }
 }
 
@@ -749,7 +777,7 @@ void Generate::GenerateForStatement(DVM_Executable *pExecutable, Block *pBlock, 
 
 void Generate::GenerateReturnStatement(DVM_Executable *pExecutable, Block *pBlock, Statement *pStatement, OpcodeBuf *pOpcode)
 {
-    GENERATE_DBG_Assert(pStatement->u.return_s.return_value, ("return value is null."));
+    DBG_assert(pStatement->u.return_s.return_value, ("return value is null."));
 
     GenerateExpression(pExecutable, pBlock, pStatement->u.return_s.return_value, pOpcode);
     GenerateCode(pOpcode, pStatement->line_number, DVM_RETURN);
@@ -890,7 +918,7 @@ void Generate::GenerateStatement(DVM_Executable *pExecutable, Block *pBlock, Sta
         break;
 
     default :
-        GENERATE_DBG_Assert(0, ("pos->statement->type..", pStatement->type));
+        DBG_assert(0, ("pos->statement->type..", pStatement->type));
     }
 }
 
@@ -904,7 +932,7 @@ void Generate::GenerateStatementList(DVM_Executable *pExecutable, Block *pBlock,
 
 DVM_Executable* Generate::AllocExecutable()
 {
-    DVM_Executable *pExecutable = (DVM_Executable*)GENERATE_MEM_Malloc(sizeof(DVM_Executable));
+    DVM_Executable *pExecutable = (DVM_Executable*)MEM_malloc(sizeof(DVM_Executable));
 
     pExecutable->constant_pool_count = 0;
     pExecutable->constant_pool = nullptr;
@@ -931,12 +959,12 @@ DVM_LocalVariable* Generate::CopyParameterList(ParameterList *pParameterList, in
 
     *pParameterCount = iParamCount;
 
-    DVM_LocalVariable *pDest = (DVM_LocalVariable*)GENERATE_MEM_Malloc(sizeof(DVM_LocalVariable) * iParamCount);
+    DVM_LocalVariable *pDest = (DVM_LocalVariable*)MEM_malloc(sizeof(DVM_LocalVariable) * iParamCount);
 
     int i = 0;
     for (ParameterList *pParam = pParameterList; pParam; pParam = pParam->next, i++)
     {
-        pDest[i].name = GENERATE_MEM_StrDUP(pParam->name);
+        pDest[i].name = MEM_strdup(pParam->name);
         pDest[i].type = CopyTypeSpecifier(pParam->type);
     }
 
@@ -946,11 +974,11 @@ DVM_LocalVariable* Generate::CopyParameterList(ParameterList *pParameterList, in
 DVM_LocalVariable* Generate::CopyLocalVariables(FunctionDefinition *pFunctionDefinition, int iParameterCount)
 {
     int iLocalVariableCount = pFunctionDefinition->local_variable_count - iParameterCount;
-    DVM_LocalVariable *pDest = (DVM_LocalVariable*)GENERATE_MEM_Malloc(sizeof(DVM_LocalVariable) * iLocalVariableCount);
+    DVM_LocalVariable *pDest = (DVM_LocalVariable*)MEM_malloc(sizeof(DVM_LocalVariable) * iLocalVariableCount);
 
     for (int i = 0; i < iLocalVariableCount; i++)
     {
-        pDest[i].name = GENERATE_MEM_StrDUP(pFunctionDefinition->local_variable[iParameterCount + i]->name);
+        pDest[i].name = MEM_strdup(pFunctionDefinition->local_variable[iParameterCount + i]->name);
         pDest[i].type = CopyTypeSpecifier(pFunctionDefinition->local_variable[iParameterCount + i]->type);
     }
 
@@ -968,7 +996,7 @@ void Generate::CopyTypeSpecifierNoAlloc(TypeSpecifier *pSrc, DVM_TypeSpecifier *
     }
 
     pDest->derive_count = iDeriveCount;
-    pDest->derive = (DVM_TypeDerive*)GENERATE_MEM_Malloc(sizeof(DVM_TypeDerive) * iDeriveCount);
+    pDest->derive = (DVM_TypeDerive*)MEM_malloc(sizeof(DVM_TypeDerive) * iDeriveCount);
 
     int i = 0;
     for (TypeDerive *pDerive = pSrc->derive; pDerive; pDerive = pDerive->next, i++)
@@ -990,14 +1018,14 @@ void Generate::CopyTypeSpecifierNoAlloc(TypeSpecifier *pSrc, DVM_TypeSpecifier *
             break;
 
         default :
-            GENERATE_DBG_Assert(0, ("pDerive->tag..", pDerive->tag));
+            DBG_assert(0, ("pDerive->tag..", pDerive->tag));
         }
     }
 }
 
 DVM_TypeSpecifier* Generate::CopyTypeSpecifier(TypeSpecifier *pTypeSpecifier)
 {
-    DVM_TypeSpecifier *pDest = (DVM_TypeSpecifier*)GENERATE_MEM_Malloc(sizeof(DVM_TypeSpecifier));
+    DVM_TypeSpecifier *pDest = (DVM_TypeSpecifier*)MEM_malloc(sizeof(DVM_TypeSpecifier));
     
     CopyTypeSpecifierNoAlloc(pTypeSpecifier, pDest);
     
@@ -1008,7 +1036,7 @@ int Generate::GetOpcodeTypeOffset(TypeSpecifier *pTypeSpecifier)
 {
     if (pTypeSpecifier->derive)
     {
-        GENERATE_DBG_Assert(pTypeSpecifier->derive->tag == ARRAY_DERIVE, ("pTypeSpecifier->derive->tag..", pTypeSpecifier->derive->tag));
+        DBG_assert(pTypeSpecifier->derive->tag == ARRAY_DERIVE, ("pTypeSpecifier->derive->tag..", pTypeSpecifier->derive->tag));
         return 2;
     }
 
@@ -1028,7 +1056,7 @@ int Generate::GetOpcodeTypeOffset(TypeSpecifier *pTypeSpecifier)
 
     case DVM_NULL_TYPE :
     default :
-        GENERATE_DBG_Assert(0, ("basic_type..", pTypeSpecifier->basic_type));
+        DBG_assert(0, ("basic_type..", pTypeSpecifier->basic_type));
     }
 
     return 0;
@@ -1038,7 +1066,7 @@ int Generate::GetLabel(OpcodeBuf *pOpcode)
 {
     if (pOpcode->m_iLabelTableAllocSize < pOpcode->m_iLabelTableSize + 1)
     {
-        pOpcode->m_pLabelTable = (LabelTable*)GENERATE_MEM_Realloc(pOpcode->m_pLabelTable,
+        pOpcode->m_pLabelTable = (LabelTable*)MEM_realloc(pOpcode->m_pLabelTable,
             (pOpcode->m_iLabelTableAllocSize + LABEL_TABLE_ALLOC_SIZE) * sizeof(LabelTable));
         pOpcode->m_iLabelTableAllocSize += LABEL_TABLE_ALLOC_SIZE;
     }
@@ -1095,7 +1123,7 @@ void Generate::FixLabels(OpcodeBuf *pOpcode)
                 break;
 
             default :
-                GENERATE_DBG_Assert(0, ("param..", Info.parameter, ", idx..", idx));
+                DBG_assert(0, ("param..", Info.parameter, ", idx..", idx));
             }
         }
     }
@@ -1105,8 +1133,8 @@ DVM_Byte* Generate::FixOpcodeBuf(OpcodeBuf *pOpcode)
 {
     FixLabels(pOpcode);
 
-    DVM_Byte *ret = (DVM_Byte*)GENERATE_MEM_Realloc(pOpcode->m_pCode, pOpcode->m_iSize);
-    GENERATE_MEM_Free(pOpcode->m_pLabelTable);
+    DVM_Byte *ret = (DVM_Byte*)MEM_realloc(pOpcode->m_pCode, pOpcode->m_iSize);
+    MEM_free(pOpcode->m_pLabelTable);
 
     return ret;
 }
@@ -1138,7 +1166,7 @@ int Generate::CalcNeedStackSize(DVM_Byte *pCode, int iCodeSize)
                 break;
 
             default :
-                GENERATE_DBG_Assert(0, ("param..", Info.parameter, ", idx..", idx));
+                DBG_assert(0, ("param..", Info.parameter, ", idx..", idx));
             }
         }
     }
@@ -1149,7 +1177,7 @@ int Generate::CalcNeedStackSize(DVM_Byte *pCode, int iCodeSize)
 void Generate::CopyFunction(FunctionDefinition *pFunctionDefinition, DVM_Function *pFunction)
 {
     pFunction->type = CopyTypeSpecifier(pFunctionDefinition->type);
-    pFunction->name = GENERATE_MEM_StrDUP(pFunctionDefinition->name);
+    pFunction->name = MEM_strdup(pFunctionDefinition->name);
     pFunction->parameter = CopyParameterList(pFunctionDefinition->parameter, &pFunction->parameter_count);
 
     if (pFunctionDefinition->block)

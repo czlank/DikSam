@@ -8,10 +8,6 @@ class Memory;
 
 class Native
 {
-#define NATIVE_MEM_Realloc(ptr, size)       (m_Memory.Realloc(__FILE__, __LINE__, ptr, size))
-#define NATIVE_MEM_StrDUP(str)              (m_Memory.StrDUP(__FILE__, __LINE__, str))
-#define NATIVE_DBG_Assert(expression, arg)  ((expression) ? (void)(0) : (m_Debug.Assert(__FILE__, __LINE__, #expression, arg)))
-
 public:
     Native(Debug& debug, Memory& memory);
     ~Native();

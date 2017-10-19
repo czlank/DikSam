@@ -4,6 +4,21 @@
 #include "Memory.h"
 #include "DVM_pri.h"
 
+#ifdef DBG_assert
+#undef DBG_assert
+#endif
+#define DBG_assert(expression, arg) ((expression) ? (void)(0) : (m_Debug.Assert(__FILE__, __LINE__, #expression, arg)))
+
+#ifdef MEM_malloc
+#undef MEM_malloc
+#endif
+#define MEM_malloc(size)                    (m_Memory.Malloc(__FILE__, __LINE__, size))
+
+#ifdef MEM_free
+#undef MEM_free
+#endif
+#define MEM_free(ptr)                       (m_Memory.Free(ptr))
+
 GarbageCollect::GarbageCollect(Debug& debug, Memory& memory)
     : m_Debug(debug)
     , m_Memory(memory)
@@ -49,7 +64,7 @@ DVM_Object* GarbageCollect::CreateArrayIntI(DVM_VirtualMachine *pVirtualMachine,
 {
     DVM_Object *pObject = AllocArray(pVirtualMachine, INT_ARRAY, iSize);
 
-    pObject->u.array.u.int_array = (int *)GARBAGECOLLECT_MEM_Malloc(sizeof(int) * iSize);
+    pObject->u.array.u.int_array = (int *)MEM_malloc(sizeof(int) * iSize);
     pVirtualMachine->heap.current_heap_size += sizeof(int) * iSize;
 
     return pObject;
@@ -71,7 +86,7 @@ DVM_Object* GarbageCollect::CreateArrayDoubleI(DVM_VirtualMachine *pVirtualMachi
 {
     DVM_Object *pObject = AllocArray(pVirtualMachine, DOUBLE_ARRAY, iSize);
 
-    pObject->u.array.u.double_array = (double *)GARBAGECOLLECT_MEM_Malloc(sizeof(double) * iSize);
+    pObject->u.array.u.double_array = (double *)MEM_malloc(sizeof(double) * iSize);
     pVirtualMachine->heap.current_heap_size += sizeof(double) * iSize;
 
     return pObject;
@@ -93,7 +108,7 @@ DVM_Object* GarbageCollect::CreateArrayObjectI(DVM_VirtualMachine *pVirtualMachi
 {
     DVM_Object *pObject = AllocArray(pVirtualMachine, OBJECT_ARRAY, iSize);
 
-    pObject->u.array.u.object = (DVM_Object **)GARBAGECOLLECT_MEM_Malloc(sizeof(DVM_Object*) * iSize);
+    pObject->u.array.u.object = (DVM_Object **)MEM_malloc(sizeof(DVM_Object*) * iSize);
     pVirtualMachine->heap.current_heap_size += sizeof(DVM_Object*) * iSize;
 
     return pObject;
@@ -124,7 +139,7 @@ DVM_Object* GarbageCollect::AllocObject(DVM_VirtualMachine *pVirtualMachine, Obj
 {
     CheckGC(pVirtualMachine);
 
-    DVM_Object *pObj = (DVM_Object*)GARBAGECOLLECT_MEM_Malloc(sizeof(DVM_Object));
+    DVM_Object *pObj = (DVM_Object*)MEM_malloc(sizeof(DVM_Object));
 
     pVirtualMachine->heap.current_heap_size += sizeof(DVM_Object);
     
@@ -243,7 +258,7 @@ void GarbageCollect::DisposeObject(DVM_VirtualMachine *pVirtualMachine, DVM_Obje
         {
             int iLen = pObj->u.string.string == nullptr ? 0 : std::basic_string<DVM_Char>(pObj->u.string.string).length();
             pVirtualMachine->heap.current_heap_size -= sizeof(DVM_Char) * (iLen + 1);
-            GARBAGECOLLECT_MEM_Free(pObj->u.string.string);
+            MEM_free(pObj->u.string.string);
         }
         break;
 
@@ -252,28 +267,28 @@ void GarbageCollect::DisposeObject(DVM_VirtualMachine *pVirtualMachine, DVM_Obje
         {
         case INT_ARRAY :
             pVirtualMachine->heap.current_heap_size -= sizeof(int) * pObj->u.array.alloc_size;
-            GARBAGECOLLECT_MEM_Free(pObj->u.array.u.int_array);
+            MEM_free(pObj->u.array.u.int_array);
             break;
 
         case DOUBLE_ARRAY :
             pVirtualMachine->heap.current_heap_size -= sizeof(double) * pObj->u.array.alloc_size;
-            GARBAGECOLLECT_MEM_Free(pObj->u.array.u.double_array);
+            MEM_free(pObj->u.array.u.double_array);
             break;
 
         case OBJECT_ARRAY :
             pVirtualMachine->heap.current_heap_size -= sizeof(DVM_Object*) * pObj->u.array.alloc_size;
-            GARBAGECOLLECT_MEM_Free(pObj->u.array.u.object);
+            MEM_free(pObj->u.array.u.object);
             break;
 
         default :
-            GARBAGECOLLECT_DBG_Assert(0, ("array.type..", pObj->u.array.type));
+            DBG_assert(0, ("array.type..", pObj->u.array.type));
         }
         break;
 
     default :
-        GARBAGECOLLECT_DBG_Assert(0, ("bad type..", pObj->type));
+        DBG_assert(0, ("bad type..", pObj->type));
     }
 
     pVirtualMachine->heap.current_heap_size -= sizeof(DVM_Object);
-    GARBAGECOLLECT_MEM_Free(pObj);
+    MEM_free(pObj);
 }

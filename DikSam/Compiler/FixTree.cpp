@@ -564,6 +564,44 @@ void FixTree::FixParameterList(ParameterList *pParameterList)
     }
 }
 
+void FixTree::FixTypeSpecifier(TypeSpecifier *pTypeSpecifier)
+{
+    DKC_Compiler *pCompiler = m_Interface.GetCompiler();
+
+    for (TypeDerive *pos = pTypeSpecifier->derive; pos; pos = pos->next)
+    {
+        if (FUNCTION_DERIVE == pos->tag)
+        {
+            FixParameterList(pos->u.function_d.parameter_list);
+        }
+    }
+
+    if (DVM_CLASS_TYPE == pTypeSpecifier->basic_type && nullptr == pTypeSpecifier->class_ref.class_definition)
+    {
+        ClassDefinition *pClassDefinition = m_Util.SearchClass(pTypeSpecifier->class_ref.identifier);
+
+        if (pClassDefinition)
+        {
+            if (!m_Util.ComparePackageName(pClassDefinition->package_name, pCompiler->package_name)
+                && pClassDefinition->access_modifier != DVM_PUBLIC_ACCESS)
+            {
+                m_Error.CompileError(pTypeSpecifier->line_number,
+                    PACKAGE_CLASS_ACCESS_ERR,
+                    STRING_MESSAGE_ARGUMENT, "class_name", pClassDefinition->name,
+                    MESSAGE_ARGUMENT_END);
+            }
+
+            pTypeSpecifier->class_ref.class_definition = pClassDefinition;
+            pTypeSpecifier->class_ref.class_index = AddClass(pClassDefinition);
+        }
+
+        m_Error.CompileError(pTypeSpecifier->line_number,
+            TYPE_NAME_NOT_FOUND_ERR,
+            STRING_MESSAGE_ARGUMENT, "name", pTypeSpecifier->class_ref.identifier,
+            MESSAGE_ARGUMENT_END);
+    }
+}
+
 void FixTree::FixIfStatement(Block *pBlock, IfStatement *pIfStatement, FunctionDefinition *pFunctionDefinition)
 {
     FixExpression(pBlock, pIfStatement->condition, nullptr);
@@ -1295,4 +1333,20 @@ bool FixTree::IsSuperClass(ClassDefinition *pChild, ClassDefinition *pParent, bo
 
     *pIsInterface = true;
     return IsSuperInterface(pChild, pParent, pInterfaceIndex);
+}
+
+ClassDefinition* FixTree::SearchAndAddClass(int iLine, char *lpstrName, int *pClassIndex)
+{
+    ClassDefinition *pClassDefinition = m_Util.SearchClass(lpstrName);
+
+    if (nullptr == pClassDefinition)
+    {
+        m_Error.CompileError(iLine, CLASS_NOT_FOUND_ERR,
+            STRING_MESSAGE_ARGUMENT, "name", name,
+            MESSAGE_ARGUMENT_END);
+    }
+
+    *pClassIndex = AddClass(pClassDefinition);
+
+    return pClassDefinition;
 }

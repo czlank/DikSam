@@ -4,6 +4,11 @@
 #include "Debug.h"
 #include "Util.h"
 
+#ifdef DBG_panic
+#undef DBG_panic
+#endif
+#define DBG_panic(arg)                      (m_Debug.Panic(__FILE__, __LINE__, arg))
+
 Error::Error(Debug& debug, Util& util)
     : m_Debug(debug)
     , m_Util(util)
@@ -162,12 +167,12 @@ void Error::SelfCheck()
 {
     if (std::wstring(m_ErrorMessageFormat[0]) != TEXT("dummy"))
     {
-        ERROR_DBG_Panic(("message format error."));
+        DBG_panic(("message format error."));
     }
 
     if (std::wstring(m_ErrorMessageFormat[DIKSAM_ERROR_COUNT_PLUS_1]) != TEXT("dummy"))
     {
-        ERROR_DBG_Panic(("message format error. DIKSAM_ERROR_COUNT_PLUS_1..", DIKSAM_ERROR_COUNT_PLUS_1));
+        DBG_panic(("message format error. DIKSAM_ERROR_COUNT_PLUS_1..", DIKSAM_ERROR_COUNT_PLUS_1));
     }
 }
 

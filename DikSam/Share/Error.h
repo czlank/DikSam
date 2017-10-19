@@ -8,9 +8,6 @@ class Util;
 
 class Error
 {
-#define ERROR_DBG_Assert(expression, arg) ((expression) ? (void)(0) : (m_Debug.Assert(__FILE__, __LINE__, #expression, arg)))
-#define ERROR_DBG_Panic(arg) (m_Debug.Panic(__FILE__, __LINE__, arg))
-
 public:
     Error(Debug& debug, Util& util);
     ~Error();

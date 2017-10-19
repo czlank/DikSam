@@ -36,6 +36,7 @@ private:
     Expression* FixArrayCreationExpression(Block *pBlock, Expression *pExpression);
     
     void FixParameterList(ParameterList *pParameterList);
+    void FixTypeSpecifier(TypeSpecifier *pTypeSpecifier);
     void FixIfStatement(Block *pBlock, IfStatement *pIfStatement, FunctionDefinition *pFunctionDefinition);
     void FixReturnStatement(Block *pBlock, ReturnStatement *pReturnStatement, FunctionDefinition *pFunctionDefinition);
     void FixStatementList(Block *pBlock, StatementList *pStatementList, FunctionDefinition *pFunctionDefinition);
@@ -65,6 +66,7 @@ private:
     int AddClass(ClassDefinition *pSrc);
     bool IsSuperInterface(ClassDefinition *pChild, ClassDefinition *pParent, int *pInterfaceIndexOut);
     bool IsSuperClass(ClassDefinition *pChild, ClassDefinition *pParent, bool *pIsInterface, int *pInterfaceIndex);
+    ClassDefinition* SearchAndAddClass(int iLine, char *lpstrName, int *pClassIndex);
 
     inline bool IsInt(TypeSpecifier *pType) { return (DVM_INT_TYPE == pType->basic_type && nullptr == pType->derive); }
     inline bool IsDouble(TypeSpecifier *pType) { return (DVM_DOUBLE_TYPE == pType->basic_type && nullptr == pType->derive); }

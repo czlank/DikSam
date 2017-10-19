@@ -42,6 +42,23 @@ char* dkc_create_identifier(char *str)
 }
 #endif // __cplusplus
 
+#define STRING_ALLOC_SIZE                       (256)
+
+#ifdef MEM_malloc
+#undef MEM_malloc
+#endif
+#define MEM_malloc(size)                    (m_Memory.Malloc(__FILE__, __LINE__, size))
+
+#ifdef MEM_realloc
+#undef MEM_realloc
+#endif
+#define MEM_realloc(ptr, size)              (m_Memory.Realloc(__FILE__, __LINE__, ptr, size))
+
+#ifdef dkc_malloc
+#undef dkc_malloc
+#endif
+#define dkc_malloc(size)                    (m_Util.Malloc(__FILE__, __LINE__, size))
+
 StringLiteral::StringLiteral(Memory& memory, Storage& storage, Util& util, Error& error)
     : m_iIndex(0)
     , m_iBufferSize(0)
@@ -69,7 +86,7 @@ void StringLiteral::Add(int letter)
     if (m_iIndex == m_iBufferSize)
     {
         m_iBufferSize += STRING_ALLOC_SIZE;
-        m_pBuffer = (char*)STRING_MEM_Realloc(m_pBuffer, m_iBufferSize);
+        m_pBuffer = (char*)MEM_realloc(m_pBuffer, m_iBufferSize);
     }
 
     m_pBuffer[m_iIndex++] = letter;
@@ -87,7 +104,7 @@ DVM_Char* StringLiteral::CloseString()
     std::wstring str(_Dest);
     delete [] _Dest;
 
-    DVM_Char *pNewStr = (DVM_Char*)STRING_MEM_Malloc(sizeof(DVM_Char) * (str.length() + 1));
+    DVM_Char *pNewStr = (DVM_Char*)MEM_malloc(sizeof(DVM_Char) * (str.length() + 1));
     for (size_t i = 0; i < str.length(); i++)
     {
         pNewStr[i] = str[i];
@@ -115,7 +132,7 @@ void StringLiteral::Reset()
 char* StringLiteral::CreateIdentifier(const char *lpcstrStr)
 {
     int iSize = lpcstrStr ? std::string(lpcstrStr).length() + 1 : 1;
-    char *pNewStr = (char*)STRING_UTIL_Malloc(iSize);
+    char *pNewStr = (char*)dkc_malloc(iSize);
     
     strcpy_s(pNewStr, iSize, lpcstrStr);
     return pNewStr;

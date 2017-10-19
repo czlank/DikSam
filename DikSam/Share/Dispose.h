@@ -7,9 +7,6 @@ class Memory;
 
 class Dispose
 {
-#define DISPOSE_MEM_Free(ptr)                  (m_Memory.Free(ptr))
-#define DISPOSE_DBG_Assert(expression, arg)    ((expression) ? (void)(0) : (m_Debug.Assert(__FILE__, __LINE__, #expression, arg)))
-
 public:
     Dispose(Debug& debug, Memory& memory);
     ~Dispose();

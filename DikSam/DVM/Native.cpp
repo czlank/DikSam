@@ -4,6 +4,21 @@
 #include "Debug.h"
 #include "Memory.h"
 
+#ifdef DBG_assert
+#undef DBG_assert
+#endif
+#define DBG_assert(expression, arg) ((expression) ? (void)(0) : (m_Debug.Assert(__FILE__, __LINE__, #expression, arg)))
+
+#ifdef MEM_realloc
+#undef MEM_realloc
+#endif
+#define MEM_realloc(ptr, size)              (m_Memory.Realloc(__FILE__, __LINE__, ptr, size))
+
+#ifdef MEM_strdup
+#undef MEM_strdup
+#endif
+#define MEM_strdup(ptr)                     (m_Memory.StrDUP(__FILE__, __LINE__, ptr))
+
 Native::Native(Debug& debug, Memory& memory)
     : m_Debug(debug), m_Memory(memory)
 {
@@ -23,8 +38,8 @@ void Native::AddNativeFunctions(DVM_VirtualMachine *pVirtualMachine)
 
 void Native::AddNativeFunction(DVM_VirtualMachine *pVirtualMachine, const char *lpcstrFuncName, DVM_NativeFunctionProc *pProc, int iArgCount)
 {
-    pVirtualMachine->function = (Function*)NATIVE_MEM_Realloc(pVirtualMachine->function, sizeof(Function) * (pVirtualMachine->function_count + 1));
-    pVirtualMachine->function[pVirtualMachine->function_count].name = NATIVE_MEM_StrDUP(lpcstrFuncName);
+    pVirtualMachine->function = (Function*)MEM_realloc(pVirtualMachine->function, sizeof(Function) * (pVirtualMachine->function_count + 1));
+    pVirtualMachine->function[pVirtualMachine->function_count].name = MEM_strdup(lpcstrFuncName);
     pVirtualMachine->function[pVirtualMachine->function_count].kind = NATIVE_FUNCTION;
     pVirtualMachine->function[pVirtualMachine->function_count].u.native_f.proc = pProc;
     pVirtualMachine->function[pVirtualMachine->function_count].u.native_f.pThis = this;
@@ -44,7 +59,7 @@ DVM_Value Native::SleepProc(Native *pThis, DVM_VirtualMachine *pVirtualMachine, 
 
 DVM_Value Native::Print(DVM_VirtualMachine *pVirtualMachine, int iArgCount, DVM_Value *pArgs)
 {
-    NATIVE_DBG_Assert(iArgCount == 1, ("iArgCount..", iArgCount));
+    DBG_assert(iArgCount == 1, ("iArgCount..", iArgCount));
 
     if (pArgs[0].object)
     {
@@ -59,7 +74,7 @@ DVM_Value Native::Print(DVM_VirtualMachine *pVirtualMachine, int iArgCount, DVM_
 
 DVM_Value Native::Sleep(DVM_VirtualMachine *pVirtualMachine, int iArgCount, DVM_Value *pArgs)
 {
-    NATIVE_DBG_Assert(iArgCount == 1, ("iArgCount..", iArgCount));
+    DBG_assert(iArgCount == 1, ("iArgCount..", iArgCount));
 
     ::Sleep(pArgs[0].int_value);
 

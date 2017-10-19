@@ -7,6 +7,63 @@
 #include "Dispose.h"
 #include "OpcodeInfo.h"
 
+#ifdef DBG_assert
+#undef DBG_assert
+#endif
+#define DBG_assert(expression, arg) ((expression) ? (void)(0) : (m_Debug.Assert(__FILE__, __LINE__, #expression, arg)))
+
+#ifdef MEM_malloc
+#undef MEM_malloc
+#endif
+#define MEM_malloc(size)                    (m_Memory.Malloc(__FILE__, __LINE__, size))
+
+#ifdef MEM_realloc
+#undef MEM_realloc
+#endif
+#define MEM_realloc(ptr, size)              (m_Memory.Realloc(__FILE__, __LINE__, ptr, size))
+
+#ifdef MEM_free
+#undef MEM_free
+#endif
+#define MEM_free(ptr)                       (m_Memory.Free(ptr))
+
+#ifdef MEM_strdup
+#undef MEM_strdup
+#endif
+#define MEM_strdup(ptr)                     (m_Memory.StrDUP(__FILE__, __LINE__, ptr))
+
+
+#define GET_2BYTE_INT(p)            (((p)[0] << 8) + (p)[1])
+#define SET_2BYTE_INT(p, value)     (((p)[0] = (value) >> 8), ((p)[1] = value & 0xff))
+
+#define STI(sp)     ((m_pVirtualMachine)->stack.stack[(m_pVirtualMachine)->stack.stack_pointer + (sp)].int_value)
+#define STD(sp)     ((m_pVirtualMachine)->stack.stack[(m_pVirtualMachine)->stack.stack_pointer + (sp)].double_value)
+#define STO(sp)     ((m_pVirtualMachine)->stack.stack[(m_pVirtualMachine)->stack.stack_pointer + (sp)].object)
+
+#define STI_I(sp)   ((m_pVirtualMachine)->stack.stack[(sp)].int_value)
+#define STD_I(sp)   ((m_pVirtualMachine)->stack.stack[(sp)].double_value)
+#define STO_I(sp)   ((m_pVirtualMachine)->stack.stack[(sp)].object)
+
+#define STI_WRITE(sp, r) \
+    ((m_pVirtualMachine)->stack.stack[(m_pVirtualMachine)->stack.stack_pointer + (sp)].int_value = r, \
+    (m_pVirtualMachine)->stack.pointer_flags[(m_pVirtualMachine)->stack.stack_pointer + (sp)] = DVM_FALSE)
+#define STD_WRITE(sp, r) \
+    ((m_pVirtualMachine)->stack.stack[(m_pVirtualMachine)->stack.stack_pointer + (sp)].double_value = r, \
+    (m_pVirtualMachine)->stack.pointer_flags[(m_pVirtualMachine)->stack.stack_pointer + (sp)] = DVM_FALSE)
+#define STO_WRITE(sp, r) \
+    ((m_pVirtualMachine)->stack.stack[(m_pVirtualMachine)->stack.stack_pointer + (sp)].object = r, \
+    (m_pVirtualMachine)->stack.pointer_flags[(m_pVirtualMachine)->stack.stack_pointer + (sp)] = DVM_TRUE)
+
+#define STI_WRITE_I(sp, r) \
+    ((m_pVirtualMachine)->stack.stack[(sp)].int_value = r, \
+    (m_pVirtualMachine)->stack.pointer_flags[(sp)] = DVM_FALSE)
+#define STD_WRITE_I(sp, r) \
+    ((m_pVirtualMachine)->stack.stack[(sp)].double_value = r, \
+    (m_pVirtualMachine)->stack.pointer_flags[(sp)] = DVM_FALSE)
+#define STO_WRITE_I(sp, r) \
+    ((m_pVirtualMachine)->stack.stack[(sp)].object = r, \
+    (m_pVirtualMachine)->stack.pointer_flags[(sp)] = DVM_TRUE)
+
 Execute::Execute(Debug& debug, Memory& memory, Error& error)
     : m_Debug(debug)
     , m_Memory(memory)
@@ -137,14 +194,14 @@ void Execute::AddFunctions(DVM_Executable *pExecutable)
         }
     }
 
-    m_pVirtualMachine->function = (Function*)EXECUTE_MEM_Realloc(m_pVirtualMachine->function, sizeof(Function) * (m_pVirtualMachine->function_count + iFunctionCount));
+    m_pVirtualMachine->function = (Function*)MEM_realloc(m_pVirtualMachine->function, sizeof(Function) * (m_pVirtualMachine->function_count + iFunctionCount));
 
     for (iSrcIdx = 0, iDestIdx = m_pVirtualMachine->function_count; iSrcIdx < pExecutable->function_count; iSrcIdx++)
     {
         if (DVM_FALSE == pExecutable->function[iSrcIdx].is_implemented)
             continue;
 
-        m_pVirtualMachine->function[iDestIdx].name = EXECUTE_MEM_StrDUP(pExecutable->function[iSrcIdx].name);
+        m_pVirtualMachine->function[iDestIdx].name = MEM_strdup(pExecutable->function[iSrcIdx].name);
         m_pVirtualMachine->function[iDestIdx].kind = DIKSAM_FUNCTION;
         m_pVirtualMachine->function[iDestIdx].u.diksam_f.executable = pExecutable;
         m_pVirtualMachine->function[iDestIdx].u.diksam_f.index = iSrcIdx;
@@ -183,7 +240,7 @@ void Execute::ConvertCode(DVM_Executable *pExecutable, DVM_Byte *pCode, int iCod
             || DVM_POP_STACK_DOUBLE == pCode[i]
             || DVM_POP_STACK_OBJECT == pCode[i])
         {
-            EXECUTE_DBG_Assert(pFunction != nullptr, ("pFunction == nullptr"));
+            DBG_assert(pFunction != nullptr, ("pFunction == nullptr"));
 
             int iSrcIdx = GET_2BYTE_INT(&pCode[i + 1]);
             unsigned int iDestIdx;
@@ -222,7 +279,7 @@ void Execute::ConvertCode(DVM_Executable *pExecutable, DVM_Byte *pCode, int iCod
                 break;
 
             default :
-                EXECUTE_DBG_Assert(0, ("param..", Info.parameter, ", idx..", idx));
+                DBG_assert(0, ("param..", Info.parameter, ", idx..", idx));
             }
         }
     }
@@ -238,7 +295,7 @@ void Execute::InitializeValue(DVM_TypeSpecifier *pTypeSpecifier, DVM_Value *pVal
         }
         else
         {
-            EXECUTE_DBG_Assert(0, ("tag..", pTypeSpecifier->derive[0].tag));
+            DBG_assert(0, ("tag..", pTypeSpecifier->derive[0].tag));
         }
     }
     else
@@ -259,14 +316,14 @@ void Execute::InitializeValue(DVM_TypeSpecifier *pTypeSpecifier, DVM_Value *pVal
             break;
 
         default:
-            EXECUTE_DBG_Assert(0, ("enType..", pTypeSpecifier->basic_type));
+            DBG_assert(0, ("enType..", pTypeSpecifier->basic_type));
         }
     }
 }
 
 void Execute::AddStaticVariables(DVM_Executable *pExecutable)
 {
-    m_pVirtualMachine->static_v.variable = (DVM_Value*)EXECUTE_MEM_Malloc(sizeof(DVM_Value) * pExecutable->global_variable_count);
+    m_pVirtualMachine->static_v.variable = (DVM_Value*)MEM_malloc(sizeof(DVM_Value) * pExecutable->global_variable_count);
     m_pVirtualMachine->static_v.variable_count = pExecutable->global_variable_count;
 
     for (int i = 0; i < pExecutable->global_variable_count; i++)
@@ -297,7 +354,7 @@ DVM_Object* Execute::ChainString(DVM_Object *str1, DVM_Object *str2)
         iLen += str2->u.string.string ? std::wstring(str2->u.string.string).length() : 0;
     }
     
-    DVM_Char *str = (DVM_Char*)EXECUTE_MEM_Malloc(sizeof(DVM_Char) * (iLen + 1));
+    DVM_Char *str = (DVM_Char*)MEM_malloc(sizeof(DVM_Char) * (iLen + 1));
 
     int iLen1 = 0;
     if (str1)
@@ -357,13 +414,13 @@ void Execute::ExpandStack(int iNeedStackSize)
     int iRevalueUp = ((iRest / STACK_ALLOC_SIZE) + 1) * STACK_ALLOC_SIZE;
 
     m_pVirtualMachine->stack.alloc_size += iRevalueUp;
-    m_pVirtualMachine->stack.stack = (DVM_Value*)EXECUTE_MEM_Realloc(m_pVirtualMachine->stack.stack, sizeof(DVM_Value) * m_pVirtualMachine->stack.alloc_size);
-    m_pVirtualMachine->stack.pointer_flags = (DVM_Boolean*)EXECUTE_MEM_Realloc(m_pVirtualMachine->stack.pointer_flags, sizeof(DVM_Boolean) * m_pVirtualMachine->stack.alloc_size);
+    m_pVirtualMachine->stack.stack = (DVM_Value*)MEM_realloc(m_pVirtualMachine->stack.stack, sizeof(DVM_Value) * m_pVirtualMachine->stack.alloc_size);
+    m_pVirtualMachine->stack.pointer_flags = (DVM_Boolean*)MEM_realloc(m_pVirtualMachine->stack.pointer_flags, sizeof(DVM_Boolean) * m_pVirtualMachine->stack.alloc_size);
 }
 
 void Execute::InvokeNativeFunction(Function *pFunction, int *pSP)
 {
-    EXECUTE_DBG_Assert(NATIVE_FUNCTION == pFunction->kind, ("pFunction->kind..", pFunction->kind));
+    DBG_assert(NATIVE_FUNCTION == pFunction->kind, ("pFunction->kind..", pFunction->kind));
 
     DVM_Value *stack = m_pVirtualMachine->stack.stack;
     int sp = *pSP;
@@ -459,7 +516,7 @@ DVM_Object* Execute::CreateArraySub(int iDim, int iDimIndex, DVM_TypeSpecifier *
 
         case DVM_NULL_TYPE :
         default :
-            EXECUTE_DBG_Assert(0, ("pType->basic_type..", pType->basic_type));
+            DBG_assert(0, ("pType->basic_type..", pType->basic_type));
         }
     }
     else if (DVM_FUNCTION_DERIVE == pType->derive[iDimIndex].tag)
@@ -868,7 +925,7 @@ DVM_Value Execute::ExecuteCode(Function *pFunction, DVM_Byte *pCode, int iCodeSi
                 ss << STI(-1);
                 std::wstring wstr(ss.str());
 
-                DVM_Char *str = (DVM_Char*)EXECUTE_MEM_Malloc(sizeof(DVM_Char) * (wstr.length() + 1));
+                DVM_Char *str = (DVM_Char*)MEM_malloc(sizeof(DVM_Char) * (wstr.length() + 1));
                 
                 for (size_t i = 0; i < wstr.length(); i++)
                 {
@@ -889,7 +946,7 @@ DVM_Value Execute::ExecuteCode(Function *pFunction, DVM_Byte *pCode, int iCodeSi
                 ss << STD(-1);
                 std::wstring wstr(ss.str());
 
-                DVM_Char *str = (DVM_Char*)EXECUTE_MEM_Malloc(sizeof(DVM_Char) * (wstr.length() + 1));
+                DVM_Char *str = (DVM_Char*)MEM_malloc(sizeof(DVM_Char) * (wstr.length() + 1));
                 
                 for (size_t i = 0; i < wstr.length(); i++)
                 {
@@ -1193,7 +1250,7 @@ DVM_Value Execute::ExecuteCode(Function *pFunction, DVM_Byte *pCode, int iCodeSi
             break;
 
         default :
-            EXECUTE_DBG_Assert(0, ("pCode[pc]..", pCode[pc]));
+            DBG_assert(0, ("pCode[pc]..", pCode[pc]));
         }
     }
 
@@ -1202,11 +1259,11 @@ DVM_Value Execute::ExecuteCode(Function *pFunction, DVM_Byte *pCode, int iCodeSi
 
 void Execute::CreateVirtualMachine()
 {
-    m_pVirtualMachine = (DVM_VirtualMachine*)EXECUTE_MEM_Malloc(sizeof(DVM_VirtualMachine));
+    m_pVirtualMachine = (DVM_VirtualMachine*)MEM_malloc(sizeof(DVM_VirtualMachine));
     
     m_pVirtualMachine->stack.alloc_size = STACK_ALLOC_SIZE;
-    m_pVirtualMachine->stack.stack = (DVM_Value*)EXECUTE_MEM_Malloc(sizeof(DVM_Value) * STACK_ALLOC_SIZE);
-    m_pVirtualMachine->stack.pointer_flags = (DVM_Boolean*)EXECUTE_MEM_Malloc(sizeof(DVM_Boolean) * STACK_ALLOC_SIZE);
+    m_pVirtualMachine->stack.stack = (DVM_Value*)MEM_malloc(sizeof(DVM_Value) * STACK_ALLOC_SIZE);
+    m_pVirtualMachine->stack.pointer_flags = (DVM_Boolean*)MEM_malloc(sizeof(DVM_Boolean) * STACK_ALLOC_SIZE);
     m_pVirtualMachine->stack.stack_pointer = 0;
 
     m_pVirtualMachine->heap.current_heap_size = 0;
@@ -1226,21 +1283,21 @@ void Execute::DisposeVirtualMachine()
     m_pVirtualMachine->static_v.variable_count = 0;
     m_GarbageCollect.GC(m_pVirtualMachine);
 
-    EXECUTE_MEM_Free(m_pVirtualMachine->stack.stack);
-    EXECUTE_MEM_Free(m_pVirtualMachine->stack.pointer_flags);
+    MEM_free(m_pVirtualMachine->stack.stack);
+    MEM_free(m_pVirtualMachine->stack.pointer_flags);
 
-    EXECUTE_MEM_Free(m_pVirtualMachine->static_v.variable);
+    MEM_free(m_pVirtualMachine->static_v.variable);
 
     for (int i = 0; i < m_pVirtualMachine->function_count; i++)
     {
-        EXECUTE_MEM_Free(m_pVirtualMachine->function[i].name);
+        MEM_free(m_pVirtualMachine->function[i].name);
     }
 
-    EXECUTE_MEM_Free(m_pVirtualMachine->function);
+    MEM_free(m_pVirtualMachine->function);
 
     Dispose(m_Debug, m_Memory)(m_pVirtualMachine->executable);
 
-    EXECUTE_MEM_Free(m_pVirtualMachine);
+    MEM_free(m_pVirtualMachine);
 
     m_pVirtualMachine = nullptr;
 }
