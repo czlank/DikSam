@@ -9,7 +9,7 @@ extern char* yytext;
 int yyerror(char const *str)
 {
     DikSam::GetClassObject(g_iCurrentThreadIndex)->GetError()->CompileError(
-        DikSam::GetClassObject(g_iCurrentThreadIndex)->GetInterface()->GetCompiler()->current_line_number,
+        DikSam::GetClassObject(g_iCurrentThreadIndex)->GetInterface()->GetCurrentCompiler()->current_line_number,
         PARSE_ERR, STRING_MESSAGE_ARGUMENT, "token", yytext, MESSAGE_ARGUMENT_END);
 
     return 0;

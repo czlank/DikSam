@@ -23,7 +23,7 @@ extern int  g_iCurrentThreadIndex;
 
 DKC_Compiler* dkc_get_current_compiler(void)
 {
-    return DikSam::GetClassObject(g_iCurrentThreadIndex)->GetInterface()->GetCompiler();
+    return DikSam::GetClassObject(g_iCurrentThreadIndex)->GetInterface()->GetCurrentCompiler();
 }
 
 #ifdef __cplusplus

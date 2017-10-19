@@ -42,7 +42,7 @@ Util::~Util()
 
 void* Util::Malloc(const char *lpcstrFileName, int iLine, size_t szSize)
 {
-    void *p = m_Storage.Malloc(lpcstrFileName, iLine, m_Interface.GetCompiler()->compile_storage, szSize);
+    void *p = m_Storage.Malloc(lpcstrFileName, iLine, m_Interface.GetCurrentCompiler()->compile_storage, szSize);
     return p;
 }
 
@@ -160,7 +160,7 @@ FunctionDefinition* Util::SearchFunction(const char *lpcstrName)
 {
     FunctionDefinition  *pos = nullptr;
 
-    for (pos = m_Interface.GetCompiler()->function_list; pos; pos = pos->next)
+    for (pos = m_Interface.GetCurrentCompiler()->function_list; pos; pos = pos->next)
     {
         if (std::string(pos->name) == lpcstrName)
             break;
@@ -182,7 +182,7 @@ Declaration* Util::SearchDeclaration(const char *lpcstrIdentifier, Block *pBlock
         }
     }
 
-    for (DeclarationList *dPos = m_Interface.GetCompiler()->declaration_list; dPos; dPos = dPos->next)
+    for (DeclarationList *dPos = m_Interface.GetCurrentCompiler()->declaration_list; dPos; dPos = dPos->next)
     {
         if (std::string(lpcstrIdentifier) == dPos->declaration->name)
         {
@@ -202,6 +202,43 @@ Declaration* Util::FunctionSearchDeclaration(const char *lpcstrIdentifier, Block
             if (std::string(lpcstrIdentifier) == dPos->declaration->name)
             {
                 return dPos->declaration;
+            }
+        }
+    }
+
+    return nullptr;
+}
+
+ClassDefinition* Util::SearchClass(char *lpstrIdentifier)
+{
+    DKC_Compiler *pCompiler = m_Interface.GetCurrentCompiler();
+
+    for (ClassDefinition *pos = pCompiler->class_definition_list; pos; pos = pos->next)
+    {
+        if (lpstrIdentifier == std::string(pos->name))
+        {
+            return pos;
+        }
+    }
+
+    for (RenameList *pos = pCompiler->rename_list; pos; pos = pos->next)
+    {
+        if (lpstrIdentifier == std::string(pos->renamed_name))
+        {
+            if (ClassDefinition *pClassDefinition = SearchRenamedClass(pCompiler, pos))
+            {
+                return pClassDefinition;
+            }
+        }
+    }
+
+    for (CompilerList *pos = pCompiler->required_list; pos; pos = pos->next)
+    {
+        for (ClassDefinition *pClassDefinition = pos->compiler->class_definition_list; pClassDefinition; pClassDefinition = pClassDefinition->next)
+        {
+            if (lpstrIdentifier == std::string(pClassDefinition->name))
+            {
+                return pClassDefinition;
             }
         }
     }
@@ -484,4 +521,25 @@ int Util::StrLen(const DVM_Char *str)
         return 0;
 
     return std::basic_string<DVM_Char>(str).length();
+}
+
+ClassDefinition* Util::SearchRenamedClass(DKC_Compiler *pCompiler, RenameList *pRename)
+{
+    for (CompilerList *pos = pCompiler->required_list; pos; pos = pos->next)
+    {
+        if (!ComparePackageName(pRename->package_name, pos->compiler->package_name))
+        {
+            continue;
+        }
+
+        for (ClassDefinition *pClassDefinition = pos->compiler->class_definition_list; pClassDefinition; pClassDefinition = pClassDefinition->next)
+        {
+            if (std::string(pClassDefinition->name) == pRename->original_name)
+            {
+                return pClassDefinition;
+            }
+        }
+    }
+
+    return nullptr;
 }

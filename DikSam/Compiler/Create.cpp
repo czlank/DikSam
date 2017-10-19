@@ -74,7 +74,7 @@ void Create::FunctionDefine(TypeSpecifier *pType, char *lpstrIdentifier, Paramet
 {
     if (m_Util.SearchFunction(lpstrIdentifier) || m_Util.SearchDeclaration(lpstrIdentifier, nullptr))
     {
-        m_Error.CompileError(m_Interface.GetCompiler()->current_line_number,
+        m_Error.CompileError(m_Interface.GetCurrentCompiler()->current_line_number,
             FUNCTION_MULTIPLE_DEFINE_ERR,
             STRING_MESSAGE_ARGUMENT, "name", lpstrIdentifier,
             MESSAGE_ARGUMENT_END);
@@ -85,7 +85,7 @@ void Create::FunctionDefine(TypeSpecifier *pType, char *lpstrIdentifier, Paramet
 
 FunctionDefinition* Create::CreateFunctionDefinition(TypeSpecifier *pType, char *lpstrIdentifier, ParameterList *pParameterList, Block *pBlock)
 {
-    DKC_Compiler *pCompiler = m_Interface.GetCompiler();
+    DKC_Compiler *pCompiler = m_Interface.GetCurrentCompiler();
     FunctionDefinition *pFD = (FunctionDefinition*)dkc_malloc(sizeof(FunctionDefinition));
 
     pFD->type = pType;
@@ -116,7 +116,7 @@ ParameterList* Create::CreateParameter(TypeSpecifier *pType, char *lpstrIdentifi
 
     p->name = lpstrIdentifier;
     p->type = pType;
-    p->line_number = m_Interface.GetCompiler()->current_line_number;
+    p->line_number = m_Interface.GetCurrentCompiler()->current_line_number;
     p->next = nullptr;
 
     return p;
@@ -202,7 +202,7 @@ StatementList* Create::ChainStatementList(StatementList *pList, Statement *pStat
 TypeSpecifier* Create::CreateTypeSpecifier(DVM_BasicType enType)
 {
     TypeSpecifier *pTypeSpecifier = m_Util.AllocTypeSpecifier(enType);
-    pTypeSpecifier->line_number = m_Interface.GetCompiler()->current_line_number;
+    pTypeSpecifier->line_number = m_Interface.GetCurrentCompiler()->current_line_number;
 
     return pTypeSpecifier;
 }
@@ -232,7 +232,7 @@ TypeSpecifier* Create::CreateClassTypeSpecifier(char *lpstrIdentifier)
 
     pTypeSpecifier->class_ref.identifier = lpstrIdentifier;
     pTypeSpecifier->class_ref.class_definition = nullptr;
-    pTypeSpecifier->line_number = m_Interface.GetCompiler()->current_line_number;
+    pTypeSpecifier->line_number = m_Interface.GetCurrentCompiler()->current_line_number;
 
     return pTypeSpecifier;
 }
@@ -243,7 +243,7 @@ Expression* Create::AllocExpression(ExpressionKind enKind)
 
     pExpression->type = nullptr;
     pExpression->kind = enKind;
-    pExpression->line_number = m_Interface.GetCompiler()->current_line_number;
+    pExpression->line_number = m_Interface.GetCurrentCompiler()->current_line_number;
 
     return pExpression;
 }
@@ -252,7 +252,7 @@ Expression* Create::CreateCommaExpression(Expression *pLeft, Expression *pRight)
 {
     if (pRight->kind != ASSIGN_EXPRESSION)
     {
-        m_Error.CompileError(m_Interface.GetCompiler()->current_line_number, NOT_LVALUE_ERR, MESSAGE_ARGUMENT_END);
+        m_Error.CompileError(m_Interface.GetCurrentCompiler()->current_line_number, NOT_LVALUE_ERR, MESSAGE_ARGUMENT_END);
     }
 
     Expression *pExpression = AllocExpression(COMMA_EXPRESSION);
@@ -475,7 +475,7 @@ Statement* Create::AllocStatement(StatementType enType)
     Statement *pStatement = (Statement*)dkc_malloc(sizeof(Statement));
 
     pStatement->type = enType;
-    pStatement->line_number = m_Interface.GetCompiler()->current_line_number;
+    pStatement->line_number = m_Interface.GetCurrentCompiler()->current_line_number;
 
     return pStatement;
 }
@@ -572,18 +572,18 @@ Block* Create::OpenBlock()
 {
     Block *pBlock = AllocBlock();
 
-    pBlock->outer_block = m_Interface.GetCompiler()->current_block;
-    m_Interface.GetCompiler()->current_block = pBlock;
+    pBlock->outer_block = m_Interface.GetCurrentCompiler()->current_block;
+    m_Interface.GetCurrentCompiler()->current_block = pBlock;
 
     return pBlock;
 }
 
 Block* Create::CloseBlock(Block *pBlock, StatementList *pStatementList)
 {
-    DBG_assert(pBlock == m_Interface.GetCompiler()->current_block, ("block mismatch."));
+    DBG_assert(pBlock == m_Interface.GetCurrentCompiler()->current_block, ("block mismatch."));
 
     pBlock->statement_list = pStatementList;
-    m_Interface.GetCompiler()->current_block = pBlock->outer_block;
+    m_Interface.GetCurrentCompiler()->current_block = pBlock->outer_block;
 
     return pBlock;
 }
@@ -676,7 +676,7 @@ Statement* Create::CreateDeclarationStatement(TypeSpecifier *pType, char *lpstrI
 
 void Create::StartClassDefinition(ClassOrMemberModifierList *pModifier, DVM_ClassOrInterface enClassOrInterface, char *lpstrIdentifier, ExtendsList *pExtends)
 {
-    DKC_Compiler *pCompiler = m_Interface.GetCompiler();
+    DKC_Compiler *pCompiler = m_Interface.GetCurrentCompiler();
 
     ClassDefinition *pClassDefinition = (ClassDefinition*)dkc_malloc(sizeof(ClassDefinition));
 
@@ -709,7 +709,7 @@ void Create::StartClassDefinition(ClassOrMemberModifierList *pModifier, DVM_Clas
 
 void Create::ClassDefine(MemberDeclaration *pMemberList)
 {
-    DKC_Compiler *pCompiler = m_Interface.GetCompiler();
+    DKC_Compiler *pCompiler = m_Interface.GetCurrentCompiler();
     ClassDefinition *pClassDefinition = pCompiler->current_class_definition;
 
     DBG_assert(pClassDefinition != nullptr, ("current_class_definition is null."));
@@ -802,7 +802,7 @@ ClassOrMemberModifierList Create::ChainClassOrMemberModifier(ClassOrMemberModifi
 
         if (List.is_abstract != NOT_SPECIFIED_MODIFIER)
         {
-            m_Error.CompileError(m_Interface.GetCompiler()->current_line_number, ABSTRACT_MULTIPILE_SPECIFIED_ERR, MESSAGE_ARGUMENT_END);
+            m_Error.CompileError(m_Interface.GetCurrentCompiler()->current_line_number, ABSTRACT_MULTIPILE_SPECIFIED_ERR, MESSAGE_ARGUMENT_END);
         }
 
         List.is_abstract = ABSTRACT_MODIFIER;
@@ -813,7 +813,7 @@ ClassOrMemberModifierList Create::ChainClassOrMemberModifier(ClassOrMemberModifi
 
         if (List.access_modifier != NOT_SPECIFIED_MODIFIER)
         {
-            m_Error.CompileError(m_Interface.GetCompiler()->current_line_number, ACCESS_MODIFIER_MULTIPLE_SPECIFIED_ERR, MESSAGE_ARGUMENT_END);
+            m_Error.CompileError(m_Interface.GetCurrentCompiler()->current_line_number, ACCESS_MODIFIER_MULTIPLE_SPECIFIED_ERR, MESSAGE_ARGUMENT_END);
         }
 
         List.access_modifier = Add.access_modifier;
@@ -824,7 +824,7 @@ ClassOrMemberModifierList Create::ChainClassOrMemberModifier(ClassOrMemberModifi
 
         if (List.is_override != NOT_SPECIFIED_MODIFIER)
         {
-            m_Error.CompileError(m_Interface.GetCompiler()->current_line_number, OVERRIDE_MODIFIER_MULTIPLE_SPECIFIED_ERR, MESSAGE_ARGUMENT_END);
+            m_Error.CompileError(m_Interface.GetCurrentCompiler()->current_line_number, OVERRIDE_MODIFIER_MULTIPLE_SPECIFIED_ERR, MESSAGE_ARGUMENT_END);
         }
 
         List.is_override = Add.is_override;
@@ -835,7 +835,7 @@ ClassOrMemberModifierList Create::ChainClassOrMemberModifier(ClassOrMemberModifi
 
         if (List.is_virtual != NOT_SPECIFIED_MODIFIER)
         {
-            m_Error.CompileError(m_Interface.GetCompiler()->current_line_number, VIRTUAL_MODIFIER_MULTIPLE_SPECIFIED_ERR, MESSAGE_ARGUMENT_END);
+            m_Error.CompileError(m_Interface.GetCurrentCompiler()->current_line_number, VIRTUAL_MODIFIER_MULTIPLE_SPECIFIED_ERR, MESSAGE_ARGUMENT_END);
         }
 
         List.is_virtual = Add.is_virtual;
@@ -883,7 +883,7 @@ MemberDeclaration* Create::CreateMethodMember(ClassOrMemberModifierList *pModifi
         }
     }
 
-    DKC_Compiler *pCompiler = m_Interface.GetCompiler();
+    DKC_Compiler *pCompiler = m_Interface.GetCurrentCompiler();
 
     if (DVM_INTERFACE_DEFINITION == pCompiler->current_class_definition->class_or_interface)
     {
@@ -962,7 +962,7 @@ PackageName* Create::ChainPackageName(PackageName *pPackageNameList, char *lpstr
 
 RequireList* Create::CreateRequireList(PackageName *pPackageName)
 {
-    DKC_Compiler *pCompiler = m_Interface.GetCompiler();
+    DKC_Compiler *pCompiler = m_Interface.GetCurrentCompiler();
     char *pCurrPackageName = m_Util.PackageNameToString(pCompiler->package_name);
     char *pReqPackageName = m_Util.PackageNameToString(pPackageName);
 
@@ -994,7 +994,7 @@ RequireList* Create::ChainRequireList(RequireList *pList, RequireList *pAdd)
             std::string sPackageName(pPackageName);
             MEM_Free(pPackageName);
 
-            m_Error.CompileError(m_Interface.GetCompiler()->current_line_number,
+            m_Error.CompileError(m_Interface.GetCurrentCompiler()->current_line_number,
                 REQUIRE_DUPLICATE_ERR, STRING_MESSAGE_ARGUMENT, "package_name", sPackageName.c_str(),
                 MESSAGE_ARGUMENT_END);
         }
@@ -1016,7 +1016,7 @@ RenameList* Create::CreateRenameList(PackageName *pPackageName, char *lpstrIdent
 
     if (nullptr == pPreTail)
     {
-        m_Error.CompileError(m_Interface.GetCompiler()->current_line_number, RENAME_HAS_NO_PACKAGED_NAME_ERR, MESSAGE_ARGUMENT_END);
+        m_Error.CompileError(m_Interface.GetCurrentCompiler()->current_line_number, RENAME_HAS_NO_PACKAGED_NAME_ERR, MESSAGE_ARGUMENT_END);
     }
 
     pPreTail->next = nullptr;
@@ -1026,7 +1026,7 @@ RenameList* Create::CreateRenameList(PackageName *pPackageName, char *lpstrIdent
     pRenameList->package_name = pPackageName;
     pRenameList->original_name = pTail->name;
     pRenameList->renamed_name = lpstrIdentifier;
-    pRenameList->line_number = m_Interface.GetCompiler()->current_line_number;
+    pRenameList->line_number = m_Interface.GetCurrentCompiler()->current_line_number;
     pRenameList->next = nullptr;
 
     return pRenameList;
@@ -1046,7 +1046,7 @@ RenameList* Create::ChainRenameList(RenameList *pList, RenameList *pAdd)
 
 void Create::SetRequireAndRenameList(RequireList *pRequireList, RenameList *pRenameList)
 {
-    DKC_Compiler *pCompiler = m_Interface.GetCompiler();
+    DKC_Compiler *pCompiler = m_Interface.GetCurrentCompiler();
     char *pCurrentPackageName = m_Util.PackageNameToString(pCompiler->package_name);
 
     if (!m_Util.CompareString(pCurrentPackageName, DVM_DIKSAM_DEFAULT_PACKAGE))
@@ -1089,7 +1089,7 @@ RequireList* Create::AddDefaultPackage(RequireList *pRequireList)
 
 void Create::AddFunctionToCompiler(FunctionDefinition *pFunctionDefinition)
 {
-    DKC_Compiler *pCompiler = m_Interface.GetCompiler();
+    DKC_Compiler *pCompiler = m_Interface.GetCurrentCompiler();
 
     if (pCompiler->function_list)
     {
@@ -1138,7 +1138,7 @@ MemberDeclaration* Create::AllocMemberDeclaration(MemberKind enKind, ClassOrMemb
         pMemberDeclaration->access_modifier = DVM_FILE_ACCESS;
     }
 
-    pMemberDeclaration->line_number = m_Interface.GetCompiler()->current_line_number;
+    pMemberDeclaration->line_number = m_Interface.GetCurrentCompiler()->current_line_number;
     pMemberDeclaration->next = nullptr;
 
     return pMemberDeclaration;

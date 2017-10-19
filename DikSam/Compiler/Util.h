@@ -26,6 +26,7 @@ public:
     FunctionDefinition* SearchFunction(const char *lpcstrName);
     Declaration* SearchDeclaration(const char *lpcstrIdentifier, Block *pBlock);
     Declaration* FunctionSearchDeclaration(const char *lpcstrIdentifier, Block *pBlock);
+    ClassDefinition* SearchClass(char *lpstrIdentifier);
 
     void VStrClear(VString *vStr);
     void VStrAppandString(VString *vStr, const DVM_Char *lpcstrStr);
@@ -41,6 +42,7 @@ public:
 
 private:
     int StrLen(const DVM_Char *str);
+    ClassDefinition* SearchRenamedClass(DKC_Compiler *pCompiler, RenameList *pRename);
 
 private:
     Debug           &m_Debug;

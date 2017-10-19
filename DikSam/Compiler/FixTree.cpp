@@ -262,7 +262,7 @@ Expression* FixTree::FixIdentifierExpression(Block *pBlock, Expression *pExpress
     if (pDeclaration)
     {
         pExpression->type = pDeclaration->type;
-        pExpression->u.identifier.is_function = DVM_FALSE;
+        pExpression->u.identifier.kind = VARIABLE_IDENTIFIER;
         pExpression->u.identifier.u.declaration = pDeclaration;
         
         return pExpression;
@@ -277,9 +277,12 @@ Expression* FixTree::FixIdentifierExpression(Block *pBlock, Expression *pExpress
             MESSAGE_ARGUMENT_END);
     }
 
-    pExpression->type = pFunctionDefinition->type;
-    pExpression->u.identifier.is_function = DVM_TRUE;
-    pExpression->u.identifier.u.function = pFunctionDefinition;
+    pExpression->type = CreateFunctionDeriveType(pFunctionDefinition);
+    pExpression->u.identifier.kind = FUNCTION_IDENTIFIER;
+    pExpression->u.identifier.u.function.function_definition = pFunctionDefinition;
+    pExpression->u.identifier.u.function.function_index = ReservFunctionIndex(m_Interface.GetCurrentCompiler(), pFunctionDefinition);
+    
+    FixTypeSpecifier(pExpression->type);
 
     return pExpression;
 }
@@ -566,7 +569,7 @@ void FixTree::FixParameterList(ParameterList *pParameterList)
 
 void FixTree::FixTypeSpecifier(TypeSpecifier *pTypeSpecifier)
 {
-    DKC_Compiler *pCompiler = m_Interface.GetCompiler();
+    DKC_Compiler *pCompiler = m_Interface.GetCurrentCompiler();
 
     for (TypeDerive *pos = pTypeSpecifier->derive; pos; pos = pos->next)
     {
@@ -1166,7 +1169,7 @@ void FixTree::AddDeclaration(Block *pBlock, Declaration *pDeclaration, FunctionD
     }
     else
     {
-        DKC_Compiler *pCompiler = m_Interface.GetCompiler();
+        DKC_Compiler *pCompiler = m_Interface.GetCurrentCompiler();
         pCompiler->declaration_list = m_Create.ChainDeclaration(pCompiler->declaration_list, pDeclaration);
         pDeclaration->is_local = DVM_FALSE;
     }
@@ -1272,7 +1275,7 @@ int FixTree::ReservFunctionIndex(DKC_Compiler *pCompiler, FunctionDefinition *pS
 
 int FixTree::AddClass(ClassDefinition *pSrc)
 {
-    DKC_Compiler *pCompiler = m_Interface.GetCompiler();
+    DKC_Compiler *pCompiler = m_Interface.GetCurrentCompiler();
     char *lpstrPackageName = m_Util.PackageNameToString(pSrc->package_name);
 
     for (int i = 0; i < pCompiler->dvm_class_count; i++)
@@ -1349,4 +1352,16 @@ ClassDefinition* FixTree::SearchAndAddClass(int iLine, char *lpstrName, int *pCl
     *pClassIndex = AddClass(pClassDefinition);
 
     return pClassDefinition;
+}
+
+TypeSpecifier* FixTree::CreateFunctionDeriveType(FunctionDefinition *pFunctionDefinition)
+{
+    TypeSpecifier *pTypeSpecifier = m_Util.AllocTypeSpecifier(pFunctionDefinition->type->basic_type);
+
+    *pTypeSpecifier = *pFunctionDefinition->type;
+    pTypeSpecifier->derive = m_Util.AllocTypeDerive(FUNCTION_DERIVE);
+    pTypeSpecifier->derive->u.function_d.parameter_list = pFunctionDefinition->parameter;
+    pTypeSpecifier->derive->next = pFunctionDefinition->type->derive;
+
+    return pTypeSpecifier;
 }

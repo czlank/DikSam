@@ -18,7 +18,7 @@ public:
     Interface(Debug& debug, Memory& memory, Storage& storage, Util& util, Error& error, StringLiteral& stringliteral, Create& create, int iThreadIndex);
     ~Interface();
 
-    DKC_Compiler* GetCompiler() { return m_pCompiler; }
+    DKC_Compiler* GetCurrentCompiler() { return m_pCompiler; }
 
     void RunScript(FILE *pFile, const char *lpstrPath);
     void RunScript(char **ppLines, const char *lpstrPath);

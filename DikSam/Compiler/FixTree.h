@@ -67,6 +67,7 @@ private:
     bool IsSuperInterface(ClassDefinition *pChild, ClassDefinition *pParent, int *pInterfaceIndexOut);
     bool IsSuperClass(ClassDefinition *pChild, ClassDefinition *pParent, bool *pIsInterface, int *pInterfaceIndex);
     ClassDefinition* SearchAndAddClass(int iLine, char *lpstrName, int *pClassIndex);
+    TypeSpecifier* CreateFunctionDeriveType(FunctionDefinition *pFunctionDefinition);
 
     inline bool IsInt(TypeSpecifier *pType) { return (DVM_INT_TYPE == pType->basic_type && nullptr == pType->derive); }
     inline bool IsDouble(TypeSpecifier *pType) { return (DVM_DOUBLE_TYPE == pType->basic_type && nullptr == pType->derive); }
