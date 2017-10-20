@@ -275,21 +275,27 @@ typedef struct
 
 struct DVM_Executable_tag
 {
-    char                *package_name;
-    DVM_Boolean          is_required;
-    char                *path;
-    int                  constant_pool_count;
-    DVM_ConstantPool    *constant_pool;
-    int                  global_variable_count;
-    DVM_Variable        *global_variable;
-    int                  function_count;
-    DVM_Function        *function;
-    int                  type_specifier_count;
-    DVM_TypeSpecifier   *type_specifier;
+    char                *package_name;          // 包名称
+    DVM_Boolean          is_required;           // 是否依赖别的包
+    char                *path;                  // 路径
+    int                  constant_pool_count;   // 常量池的数量
+    DVM_ConstantPool    *constant_pool;         // 常量池
+    int                  global_variable_count; // 全局变量的数量
+    DVM_Variable        *global_variable;       // 全局变量
+    int                  function_count;        // 函数的数量
+    DVM_Function        *function;              // 函数
+    int                  type_specifier_count;  // 类型说明符的数量
+    DVM_TypeSpecifier   *type_specifier;        // 类型说明符
     int                  code_size;
     DVM_Byte            *code;
-    int                  class_count;
-    DVM_Class           *class_definition;
+    int                  class_count;           // 类的数量
+    DVM_Class           *class_definition;      // 类的定义
+                                                // 枚举的数量 enum_count
+                                                // 枚举的定义 enum_definition
+                                                // 常量的数量 constant_count
+                                                // 常量的定义 constant_definition
+                                                // 顶层的代码块 top_level
+                                                // 常量初始化的代码块--构造器 constant_initializer
     int                  line_number_size;
     DVM_LineNumber      *line_number;
     int                  need_stack_size;

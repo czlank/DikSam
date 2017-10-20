@@ -178,26 +178,29 @@ typedef enum
     EXPRESSION_KIND_COUNT_PLUS_1
 } ExpressionKind;
 
+// 包的定义
 typedef struct PackageName_tag
 {
-    char                    *name;
-    struct PackageName_tag  *next;
+    char                    *name;  // 包名称
+    struct PackageName_tag  *next;  // 下一个包
 } PackageName;
 
+// 依赖包列表
 typedef struct RequireList_tag
 {
-    PackageName             *package_name;
-    int                      line_number;
-    struct RequireList_tag  *next;
+    PackageName             *package_name;  // 包名称
+    int                      line_number;   // 行号
+    struct RequireList_tag  *next;          // 下一个依赖包
 } RequireList;
 
+// 包重命名列表
 typedef struct RenameList_tag
 {
-    PackageName             *package_name;
-    char                    *original_name;
-    char                    *renamed_name;
-    int                      line_number;
-    struct RenameList_tag   *next;
+    PackageName             *package_name;      // 真实的包名称
+    char                    *original_name;     // 原始的包名称
+    char                    *renamed_name;      // 重命名后的包名称
+    int                      line_number;       // 行号
+    struct RenameList_tag   *next;              // 下一个重命名对象
 } RenameList;
 
 typedef struct ArgumentList_tag
@@ -606,19 +609,21 @@ struct Statement_tag
     } u;
 };
 
+// 函数的定义
 struct FunctionDefinition_tag
 {
-    TypeSpecifier   *type;
-    PackageName     *package_name;
-    char            *name;
-    ParameterList   *parameter;
-    Block           *block;
-    int              local_variable_count;
-    Declaration    **local_variable;
-    ClassDefinition *class_definition;
+    TypeSpecifier   *type;                  // 函数的返回值类型
+    PackageName     *package_name;          // 函数所属的包名称
+    char            *name;                  // 函数的名字
+    ParameterList   *parameter;             // 形式参数列表
+    Block           *block;                 // 函数体
+    int              local_variable_count;  // 局部变量的数量
+    Declaration    **local_variable;        // 局部变量
+    ClassDefinition *class_definition;      // 函数所属的类定义
+                                            // 像Java一样可以声明衣蛾throw来抛出异常 throws
     int              index;
-    int              end_line_number;
-    struct FunctionDefinition_tag   *next;
+    int              end_line_number;       // 函数结束的行号
+    struct FunctionDefinition_tag   *next;  // 下一个函数定义
 };
 
 typedef enum
@@ -712,10 +717,11 @@ typedef struct CompilerList_tag
     struct CompilerList_tag *next;
 } CompilerList;
 
+// 源文件的后缀名
 typedef enum
 {
-    DKH_SOURCE,
-    DKM_SOURCE
+    DKH_SOURCE,     // 头文件
+    DKM_SOURCE      // 实现文件
 } SourceSuffix;
 
 typedef enum
@@ -743,33 +749,40 @@ typedef struct
 
 struct DKC_Compiler_tag
 {
-    MEM_Storage          compile_storage;
-    PackageName         *package_name;
-    SourceSuffix         source_suffix;
-    char                *path;
-    RequireList         *require_list;
-    RenameList          *rename_list;
-    FunctionDefinition  *function_list;
-    int                  dvm_function_count;
-    DVM_Function        *dvm_function;
-    int                  dvm_class_count;
-    DVM_Class           *dvm_class;
-    DeclarationList     *declaration_list;
-    StatementList       *statement_list;
-    ClassDefinition     *class_definition_list;
-    int                  current_line_number;
-    Block               *current_block;
-    ClassDefinition     *current_class_definition;
-    TryStatement        *current_try_statement;
-    CatchClause         *current_catch_clause;
-    int                  current_finally_label;
-    InputMode            input_mode;
-    CompilerList        *required_list;
-    int                  array_method_count;
-    FunctionDefinition  *array_method;
-    int                  string_method_count;
-    FunctionDefinition  *string_method;
-    Encoding             source_encoding;
+    MEM_Storage          compile_storage;           // compiler用的存储器
+    PackageName         *package_name;              // 包名称
+    SourceSuffix         source_suffix;             // 源文件的后缀名
+    char                *path;                      // 源代码的路径
+    RequireList         *require_list;              // 依赖包列表
+    RenameList          *rename_list;               // 重命名列表
+    FunctionDefinition  *function_list;             // 函数定义列表
+    int                  dvm_function_count;        // 虚拟机的函数的数量
+    DVM_Function        *dvm_function;              // 虚拟机的函数
+                                                    // 虚拟机枚举的数量 dvm_enum_count
+                                                    // 虚拟机的枚举 dvm_enum
+                                                    // 虚拟机常量的数量 dvm_constant_count
+                                                    // 虚拟机的常量 dvm_constant
+    int                  dvm_class_count;           // 虚拟机类的数量
+    DVM_Class           *dvm_class;                 // 虚拟机的类
+    DeclarationList     *declaration_list;          // 声明列表
+    StatementList       *statement_list;            // 语句列表
+    ClassDefinition     *class_definition_list;     // 类的定义列表
+                                                    // 委托定义列表 delegate_definition_list
+                                                    // 枚举的定义列表 enum_definition_list
+                                                    // 常量定义 constant_definition_list
+    int                  current_line_number;       // 当前行数
+    Block               *current_block;             // 当前的语句块
+    ClassDefinition     *current_class_definition;  // 当前的类定义
+    TryStatement        *current_try_statement;     // 当前的try语句
+    CatchClause         *current_catch_clause;      // 当前的catch语句
+    int                  current_finally_label;     // 当前finally语句的标签
+    InputMode            input_mode;                // 源代码的输入方式
+    CompilerList        *required_list;             // 依赖包对应的编译器（每一个依赖包都对应一个编译器）
+    int                  array_method_count;        // 内置方法-数组 的数量
+    FunctionDefinition  *array_method;              // 内置方法-数组
+    int                  string_method_count;       // 内置方法-字符串 的数量
+    FunctionDefinition  *string_method;             // 内置方法-字符串
+    Encoding             source_encoding;           // 源代码文件的编码方式
 };
 
 typedef struct 

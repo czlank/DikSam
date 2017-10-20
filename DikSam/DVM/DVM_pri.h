@@ -128,14 +128,28 @@ typedef struct
 
 struct DVM_VirtualMachine_tag
 {
-    Stack            stack;
-    Heap             heap;
+    Stack            stack;                 // 栈
+    Heap             heap;                  // 堆
     Static           static_v;
-    DVM_Executable  *current_executable;
-    Function        *current_function;
-    int              pc;
-    Function        *function;
-    int              function_count;
+    DVM_Executable  *current_executable;    // 当前的可执行对象
+    Function        *current_function;      // 当前正在执行的函数
+                                            // 当前的exception current_exception
+    int              pc;                    // 程序计数器
+    Function        *function;              // 函数
+    int              function_count;        // 函数的数量
+                                            // 类 classes
+                                            // 类的数量 class_count
+                                            // 枚举 enums
+                                            // 枚举的数量 enum_count
+                                            // 常量 constant
+                                            // 常量的数量 constant_count
+                                            // 可执行对象列表 executable_list
+                                            // 可执行的入口 executable_entry
+                                            // 顶层 top_level
+                                            // 数组表 array_v_table
+                                            // 字符串表 string_v_table
+                                            // 当前的上下文 current_context
+                                            // 已经释放的上下文 free_context
     DVM_Executable  *executable;
 };
 
