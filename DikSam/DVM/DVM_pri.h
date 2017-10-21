@@ -37,14 +37,17 @@ typedef struct
     int                     index;
 } DiksamFunction;
 
-typedef struct 
+// 在虚拟机中执行的函数
+typedef struct
 {
-    char            *name;
-    FunctionKind     kind;
+    //char            *package_name;  // 所属的包名称
+    char            *name;          // 名字
+    FunctionKind     kind;          // 类型
+                                    // 是否已经实现 is_implemented
     union
     {
-        NativeFunction  native_f;
-        DiksamFunction  diksam_f;
+        NativeFunction  native_f;   // diksam内置函数
+        DiksamFunction  diksam_f;   // 用户自定义函数
     } u;
 } Function;
 
@@ -58,12 +61,13 @@ typedef struct
 #define revalue_up_align(val)   ((val) ? (((val) - 1) / sizeof(DVM_Value) + 1) : 0)
 #define CALL_INFO_ALIGN_SIZE    (revalue_up_align(sizeof(CallInfo)))
 
+// 在虚拟机中执行代码用到的栈
 typedef struct 
 {
-    int              alloc_size;
-    int              stack_pointer;
-    DVM_Value       *stack;
-    DVM_Boolean     *pointer_flags;
+    int              alloc_size;        // 分配内存的大小
+    int              stack_pointer;     // 栈顶
+    DVM_Value       *stack;             // 栈实际的内存
+    DVM_Boolean     *pointer_flags;     // 标志
 } Stack;
 
 typedef enum
@@ -113,11 +117,12 @@ struct DVM_Object_tag
     struct DVM_Object_tag   *next;
 };
 
+// 虚拟机执行代码用到的堆
 typedef struct 
 {
-    int          current_heap_size;
-    int          current_threshold;
-    DVM_Object  *header;
+    int          current_heap_size;     // 当前堆的大小
+    int          current_threshold;     // 阀值
+    DVM_Object  *header;                // 堆的起始位置
 } Heap;
 
 typedef struct 

@@ -263,14 +263,15 @@ struct TypeSpecifier_tag
 
 typedef struct FunctionDefinition_tag   FunctionDefinition;
 
+// 声明
 typedef struct 
 {
-    char            *name;
-    TypeSpecifier   *type;
-    DVM_Boolean      is_final;
-    Expression      *initializer;
-    int              variable_index;
-    DVM_Boolean      is_local;
+    char            *name;              // 名字
+    TypeSpecifier   *type;              // 类型
+    DVM_Boolean      is_final;          // 是否为final变量或者函数
+    Expression      *initializer;       // 初始化的表达式
+    int              variable_index;    // 变量的索引
+    DVM_Boolean      is_local;          // 是否为局部的变量/函数
 } Declaration;
 
 typedef struct DeclarationList_tag
@@ -484,13 +485,14 @@ typedef struct
     int                  end_label;
 } FunctionBlockInfo;
 
+// 语句块
 typedef struct Block_tag
 {
-    BlockType            type;
-    struct Block_tag    *outer_block;
-    StatementList       *statement_list;
-    DeclarationList     *declaration_list;
-    union
+    BlockType            type;              // 语句块的类型
+    struct Block_tag    *outer_block;       // 外部块
+    StatementList       *statement_list;    // 语句列表
+    DeclarationList     *declaration_list;  // 声明列表
+    union                                   // 父语句块
     {
         StatementBlockInfo  statement;
         FunctionBlockInfo   function;
@@ -550,21 +552,23 @@ typedef struct
     Expression  *return_value;
 } ReturnStatement;
 
+// catch从句
 typedef struct CatchClause_tag
 {
-    TypeSpecifier           *type;
-    char                    *variable_name;
-    Declaration             *variable_declaration;
-    Block                   *block;
-    int                      line_number;
-    struct CatchClause_tag  *next;
+    TypeSpecifier           *type;                  // 类型
+    char                    *variable_name;         // 变量名
+    Declaration             *variable_declaration;  // 变量的定义
+    Block                   *block;                 // catch语句块
+    int                      line_number;           // 行号
+    struct CatchClause_tag  *next;                  // 下一个catch从句
 } CatchClause;
 
+// try语句
 typedef struct 
 {
-    Block           *try_block;
-    CatchClause     *catch_clause;
-    Block           *finally_block;
+    Block           *try_block;         // try的语句块
+    CatchClause     *catch_clause;      // catch从句
+    Block           *finally_block;     // finally语句块
 } TryStatement;
 
 typedef struct 
@@ -589,23 +593,24 @@ typedef enum
     STATEMENT_TYPE_COUNT_PLUS_1
 } StatementType;
 
+// 语句
 struct Statement_tag
 {
-    StatementType   type;
-    int             line_number;
+    StatementType   type;                   // 语句类型
+    int             line_number;            // 行号
     union
     {
-        Expression          *expression_s;
-        IfStatement          if_s;
-        WhileStatement       while_s;
-        ForStatement         for_s;
-        DoWhileStatement     do_while_s;
-        BreakStatement       break_s;
-        ContinueStatement    continue_s;
-        ReturnStatement      return_s;
-        TryStatement         try_s;
-        ThrowStatement       throw_s;
-        Declaration         *declaration_s;
+        Expression          *expression_s;  // 一般的表达式
+        IfStatement          if_s;          // if语句
+        WhileStatement       while_s;       // switch语句
+        ForStatement         for_s;         // for语句
+        DoWhileStatement     do_while_s;    // do_while语句
+        BreakStatement       break_s;       // break语句
+        ContinueStatement    continue_s;    // continue语句
+        ReturnStatement      return_s;      // return语句
+        TryStatement         try_s;         // try语句
+        ThrowStatement       throw_s;       // throw语句
+        Declaration         *declaration_s; // 普通的声明
     } u;
 };
 
@@ -694,19 +699,20 @@ struct MemberDeclaration_tag
     struct MemberDeclaration_tag    *next;
 };
 
+// 类的定义
 struct ClassDefinition_tag
 {
-    DVM_Boolean                  is_abstract;
-    DVM_AccessModifier           access_modifier;
-    DVM_ClassOrInterface         class_or_interface;
-    PackageName                 *package_name;
-    char                        *name;
-    ExtendsList                 *extends;
-    ClassDefinition             *super_class;
-    ExtendsList                 *interface_list;
-    MemberDeclaration           *member;
-    int                          line_number;
-    struct ClassDefinition_tag  *next;
+    DVM_Boolean                  is_abstract;           // 是否为抽象类
+    DVM_AccessModifier           access_modifier;       // 访问修饰符
+    DVM_ClassOrInterface         class_or_interface;    // 类还是接口
+    PackageName                 *package_name;          // 包名称
+    char                        *name;                  // 类名称
+    ExtendsList                 *extends;               // 继承列表
+    ClassDefinition             *super_class;           // 父类
+    ExtendsList                 *interface_list;        // 继承的接口列表
+    MemberDeclaration           *member;                // 成员的声明
+    int                          line_number;           // 行号
+    struct ClassDefinition_tag  *next;                  // 下一个类的定义
 };
 
 typedef struct DKC_Compiler_tag DKC_Compiler;

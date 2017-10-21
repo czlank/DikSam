@@ -56,12 +56,13 @@ typedef struct DVM_TypeDerive_tag
     } u;
 } DVM_TypeDerive;
 
+// 数据类型指示符
 struct DVM_TypeSpecifier_tag
 {
-    DVM_BasicType        basic_type;
+    DVM_BasicType        basic_type;    // 基础类型
     int                  class_index;
-    int                  derive_count;
-    DVM_TypeDerive      *derive;
+    int                  derive_count;  // 子类的数量
+    DVM_TypeDerive      *derive;        // 子类
 };
 
 typedef wchar_t DVM_Char;
@@ -179,10 +180,11 @@ typedef enum
     DVM_CONSTANT_STRING
 } DVM_ConstantPoolTag;
 
+// 常量池
 typedef struct 
 {
-    DVM_ConstantPoolTag tag;
-    union
+    DVM_ConstantPoolTag tag;    // 类型
+    union                       // 实际的数据：整型、浮点型、字符串
     {
         int          c_int;
         double       c_double;
@@ -190,10 +192,11 @@ typedef struct
     } u;
 } DVM_ConstantPool;
 
+// 变量
 typedef struct 
 {
-    char                *name;
-    DVM_TypeSpecifier   *type;
+    char                *name;  // 变量名
+    DVM_TypeSpecifier   *type;  // 类型
 } DVM_Variable;
 
 typedef struct 
@@ -203,23 +206,44 @@ typedef struct
     int pc_count;
 } DVM_LineNumber;
 
+// 虚拟机的函数
 typedef struct 
 {
-    DVM_TypeSpecifier   *type;
-    char                *package_name;
-    char                *name;
-    int                  parameter_count;
-    DVM_LocalVariable   *parameter;
-    DVM_Boolean          is_implemented;
-    DVM_Boolean          is_method;
-    int                  local_variable_count;
-    DVM_LocalVariable   *local_variable;
+    DVM_TypeSpecifier   *type;                  // 类型
+    char                *package_name;          // 所属的包名称
+    char                *name;                  // 函数的名字
+    int                  parameter_count;       // 形式参数个数
+    DVM_LocalVariable   *parameter;             // 形式参数
+    DVM_Boolean          is_implemented;        // 是否已经实现
+    DVM_Boolean          is_method;             // 是否为类的方法
+    int                  local_variable_count;  // 局部变量的数量
+    DVM_LocalVariable   *local_variable;        // 局部变量
+                                                // 对应的代码块
     int                  code_size;
     DVM_Byte            *code;
     int                  line_number_size;
     DVM_LineNumber      *line_number;
     int                  need_stack_size;
 } DVM_Function;
+
+// 虚拟机枚举
+typedef struct
+{
+    char            *package_name;      // 所属的包名称
+    char            *name;              // 枚举的名字
+    DVM_Boolean      is_defined;        // 是否已经定义
+    int              enumerator_count;  // 枚举内枚举值的数量
+    char           **enumerator;        // 枚举值
+} DVM_Enum;
+
+// 虚拟机的常量
+typedef struct
+{
+    DVM_TypeSpecifier   *type;          // 类型
+    char                *package_name;  // 所属的包名称
+    char                *name;          // 常量的名字
+    DVM_Boolean          is_defined;    // 是否已经定义
+} DVM_Constant;
 
 typedef enum
 {
@@ -256,21 +280,23 @@ typedef struct
     char    *name;
 } DVM_ClassIdentifier;
 
+// 虚拟机的类的定义
 typedef struct
 {
-    DVM_Boolean             is_abstract;
-    DVM_AccessModifier      access_modifier;
-    DVM_ClassOrInterface    class_or_interface;
-    char                   *package_name;
-    char                   *name;
-    DVM_Boolean             is_implemented;
-    DVM_ClassIdentifier    *super_class;
-    int                     interface_count;
-    DVM_ClassIdentifier    *interface_;
-    int                     field_count;
-    DVM_Field              *field;
-    int                     method_count;
-    DVM_Method             *method;
+    DVM_Boolean             is_abstract;        // 是否为抽象类
+    DVM_AccessModifier      access_modifier;    // 访问修饰符
+    DVM_ClassOrInterface    class_or_interface; // 类还是接口
+    char                   *package_name;       // 所属的包名称
+    char                   *name;               // 类的名字
+    DVM_Boolean             is_implemented;     // 是否实现了
+    DVM_ClassIdentifier    *super_class;        // 父类
+    int                     interface_count;    // 继承的接口的数量
+    DVM_ClassIdentifier    *interface_;         // 继承的接口
+    int                     field_count;        // 类内部变量（域）的数量
+    DVM_Field              *field;              // 类内部变量
+    int                     method_count;       // 方法的数量
+    DVM_Method             *method;             // 方法
+                                                // 构造函数 field_initializer
 } DVM_Class;
 
 struct DVM_Executable_tag
