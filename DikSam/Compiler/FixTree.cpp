@@ -12,6 +12,11 @@
 #endif
 #define DBG_assert(expression, arg) ((expression) ? (void)(0) : (m_Debug.Assert(__FILE__, __LINE__, #expression, arg)))
 
+#ifdef DBG_panic
+#undef DBG_panic
+#endif
+#define DBG_panic(arg)                      (m_Debug.Panic(__FILE__, __LINE__, arg))
+
 #ifdef MEM_malloc
 #undef MEM_malloc
 #endif
@@ -1011,9 +1016,30 @@ Expression* FixTree::AllocCastExpression(CastType enType, Expression *pOperand)
     case DOUBLE_TO_STRING_CAST :
         pCastExpression->type = m_Util.AllocTypeSpecifier(DVM_STRING_TYPE);
         break;
+
+    default :
+        DBG_panic(("cast_type..", enType));
     }
 
     return pCastExpression;
+}
+
+Expression* FixTree::CreateUpCast(Expression *pSrc, ClassDefinition *pDestInterface, int iInterfaceIndex)
+{
+    TypeSpecifier *pTypeSpecifier = m_Util.AllocTypeSpecifier(DVM_CLASS_TYPE);
+
+    pTypeSpecifier->class_ref.identifier = pDestInterface->name;
+    pTypeSpecifier->class_ref.class_definition = pDestInterface;
+    pTypeSpecifier->class_ref.class_index = iInterfaceIndex;
+
+    Expression *pExpression = m_Create.AllocExpression(UP_CAST_EXPRESSION);
+    
+    pExpression->type = pTypeSpecifier;
+    pExpression->u.up_cast.interface_definition = pDestInterface;
+    pExpression->u.up_cast.operand = pSrc;
+    pExpression->u.up_cast.interface_index = iInterfaceIndex;
+
+    return pExpression;
 }
 
 Expression* FixTree::CreateAssignCast(Expression *pSrc, TypeSpecifier *pDest)
@@ -1101,6 +1127,26 @@ Expression* FixTree::CastBinaryExpression(Expression *pExpression)
     }
 
     return pExpression;
+}
+
+Expression* FixTree::CreateToStringCast(Expression *pExpression)
+{
+    if (IsBoolean(pExpression->type))
+    {
+        return AllocCastExpression(BOOLEAN_TO_STRING_CAST, pExpression);
+    }
+    else if (IsInt(pExpression->type))
+    {
+        return AllocCastExpression(INT_TO_STRING_CAST, pExpression);
+    }
+    else if (IsDouble(pExpression->type))
+    {
+        return AllocCastExpression(DOUBLE_TO_STRING_CAST, pExpression);
+    }
+    else
+    {
+        return nullptr;
+    }
 }
 
 void FixTree::CheckArgument(Block *pBlock, FunctionDefinition *pFunctionDefinition, Expression *pExpression)
@@ -1313,7 +1359,11 @@ bool FixTree::IsSuperInterface(ClassDefinition *pChild, ClassDefinition *pParent
     {
         if (pos->class_definition == pParent)
         {
-            *pInterfaceIndexOut = iInterfaceIndex;
+            if (pInterfaceIndexOut)
+            {
+                *pInterfaceIndexOut = iInterfaceIndex;
+            }
+
             return true;
         }
 
@@ -1329,12 +1379,20 @@ bool FixTree::IsSuperClass(ClassDefinition *pChild, ClassDefinition *pParent, bo
     {
         if (pos == pParent)
         {
-            *pIsInterface = false;
+            if (pIsInterface)
+            {
+                *pIsInterface = false;
+            }
+
             return true;
         }
     }
 
-    *pIsInterface = true;
+    if (pIsInterface)
+    {
+        *pIsInterface = true;
+    }
+
     return IsSuperInterface(pChild, pParent, pInterfaceIndex);
 }
 
@@ -1364,4 +1422,65 @@ TypeSpecifier* FixTree::CreateFunctionDeriveType(FunctionDefinition *pFunctionDe
     pTypeSpecifier->derive->next = pFunctionDefinition->type->derive;
 
     return pTypeSpecifier;
+}
+
+bool FixTree::CheckTypeCompatibility(TypeSpecifier *pSuper, TypeSpecifier *pSub)
+{
+    if (!IsClassObject(pSuper))
+    {
+        return m_Util.CompareType(pSuper, pSub);
+    }
+
+    if (!IsClassObject(pSub))
+    {
+        return false;
+    }
+
+    if (pSuper->class_ref.class_definition == pSub->class_ref.class_definition
+        || IsSuperClass(pSub->class_ref.class_definition, pSuper->class_ref.class_definition, nullptr, nullptr))
+    {
+        return true;
+    }
+
+    return false;
+}
+
+void FixTree::CheckFunctionCompatibility(int iLine, char *lpstrName, TypeSpecifier *pType1, ParameterList *pParam1, TypeSpecifier *pType2, ParameterList *pParam2)
+{
+    ParameterList *pos1 = pParam1;
+    ParameterList *pos2 = pParam2;
+    int iIndex = 1;
+
+    for (; pos1 && pos2; pos1 = pos1->next, pos2 = pos2->next)
+    {
+        if (!CheckTypeCompatibility(pos2->type, pos1->type))
+        {
+            m_Error.CompileError(iLine, BAD_PARAMETER_TYPE_ERR,
+                STRING_MESSAGE_ARGUMENT, "func_name", lpstrName, INT_MESSAGE_ARGUMENT, "index", iIndex, STRING_MESSAGE_ARGUMENT, "param_name", pos2->name,
+                MESSAGE_ARGUMENT_END);
+        }
+
+        iIndex++;
+    }
+
+    if (pos1 || pos2)
+    {
+        m_Error.CompileError(iLine, BAD_PARAMETER_COUNT_ERR,
+            STRING_MESSAGE_ARGUMENT, "name", lpstrName,
+            MESSAGE_ARGUMENT_END);
+    }
+
+    if (!CheckTypeCompatibility(pType1, pType2))
+    {
+        m_Error.CompileError(iLine, BAD_RETURN_TYPE_ERR,
+            STRING_MESSAGE_ARGUMENT, "name", lpstrName,
+            MESSAGE_ARGUMENT_END);
+    }
+}
+
+void FixTree::CheckFunctionCompatibility(FunctionDefinition *pFunctionDefine1, FunctionDefinition *pFunctionDefine2)
+{
+    CheckFunctionCompatibility(pFunctionDefine2->end_line_number, pFunctionDefine2->name,
+        pFunctionDefine1->type, pFunctionDefine1->parameter,
+        pFunctionDefine2->type, pFunctionDefine2->parameter);
 }

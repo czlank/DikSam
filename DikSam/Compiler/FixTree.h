@@ -51,9 +51,11 @@ private:
     Expression* EvalCompareExpression(Expression *pExpression);
 
     Expression* AllocCastExpression(CastType enType, Expression *pOperand);
+    Expression* CreateUpCast(Expression *pSrc, ClassDefinition *pDestInterface, int iInterfaceIndex);
     Expression* CreateAssignCast(Expression *pSrc, TypeSpecifier *pDest);
     Expression* ChainString(Expression *pExpression);
     Expression* CastBinaryExpression(Expression *pExpression);
+    Expression* CreateToStringCast(Expression *pExpression);
 
     void CheckArgument(Block *pBlock, FunctionDefinition *pFunctionDefinition, Expression *pExpression);
     void AddLocalVariable(FunctionDefinition *pFunctionDefinition, Declaration *pDeclaration);
@@ -68,6 +70,9 @@ private:
     bool IsSuperClass(ClassDefinition *pChild, ClassDefinition *pParent, bool *pIsInterface, int *pInterfaceIndex);
     ClassDefinition* SearchAndAddClass(int iLine, char *lpstrName, int *pClassIndex);
     TypeSpecifier* CreateFunctionDeriveType(FunctionDefinition *pFunctionDefinition);
+    bool CheckTypeCompatibility(TypeSpecifier *pSuper, TypeSpecifier *pSub);
+    void CheckFunctionCompatibility(int iLine, char *lpstrName, TypeSpecifier *pType1, ParameterList *pParam1, TypeSpecifier *pType2, ParameterList *pParam2);
+    void CheckFunctionCompatibility(FunctionDefinition *pFunctionDefine1, FunctionDefinition *pFunctionDefine2);
 
     inline bool IsInt(TypeSpecifier *pType) { return (DVM_INT_TYPE == pType->basic_type && nullptr == pType->derive); }
     inline bool IsDouble(TypeSpecifier *pType) { return (DVM_DOUBLE_TYPE == pType->basic_type && nullptr == pType->derive); }
