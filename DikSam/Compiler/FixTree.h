@@ -57,7 +57,7 @@ private:
     Expression* CastBinaryExpression(Expression *pExpression);
     Expression* CreateToStringCast(Expression *pExpression);
 
-    void CheckArgument(Block *pBlock, FunctionDefinition *pFunctionDefinition, Expression *pExpression);
+    void CheckArgument(Block *pBlock, int iLine, ParameterList *pParamList, ArgumentList *pArg, TypeSpecifier *pArrayBase);
     void AddLocalVariable(FunctionDefinition *pFunctionDefinition, Declaration *pDeclaration);
     void AddDeclaration(Block *pBlock, Declaration *pDeclaration, FunctionDefinition *pFunctionDefinition, int iLine);
     void AddParameterAsDeclaration(FunctionDefinition *pFunctionDefinition);

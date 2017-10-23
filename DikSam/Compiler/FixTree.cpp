@@ -305,7 +305,8 @@ Expression* FixTree::FixCommaExpression(Block *pBlock, Expression *pExpression)
 Expression* FixTree::FixAssignExpression(Block *pBlock, Expression *pExpression)
 {
     if (pExpression->u.assign_expression.left->kind != IDENTIFIER_EXPRESSION
-        && pExpression->u.assign_expression.left->kind != INDEX_EXPRESSION)
+        && pExpression->u.assign_expression.left->kind |= INDEX_EXPRESSION
+        && pExpression->u.assign_expression.left->kind != MEMBER_EXPRESSION)
     {
         m_Error.CompileError(pExpression->u.assign_expression.left->line_number,
             NOT_LVALUE_ERR, MESSAGE_ARGUMENT_END);
@@ -432,6 +433,7 @@ Expression* FixTree::FixLogicalNotExpression(Block *pBlock, Expression *pExpress
     {
         pExpression->kind = BOOLEAN_EXPRESSION;
         pExpression->u.boolean_value = pExpression->u.logical_not->u.boolean_value == DVM_TRUE ? DVM_FALSE : DVM_TRUE;
+        pExpression->type = m_Util.AllocTypeSpecifier(DVM_BOOLEAN_TYPE);
 
         return pExpression;
     }
@@ -449,27 +451,79 @@ Expression* FixTree::FixLogicalNotExpression(Block *pBlock, Expression *pExpress
 
 Expression* FixTree::FixFunctionCallExpression(Block *pBlock, Expression *pExpression)
 {
-    Expression *pFunctionExpression = FixExpression(pBlock, pExpression->u.function_call_expression.function, pExpression);
+    TypeSpecifier arrayBase;
+    TypeSpecifier *pArrayBase = nullptr;
 
-    if (pFunctionExpression->kind != IDENTIFIER_EXPRESSION)
+    DKC_Compiler *pCompiler = m_Interface.GetCurrentCompiler();
+
+    Expression *pFunctionExpression = FixExpression(pBlock, pExpression->u.function_call_expression.function, pExpression);
+    pExpression->u.function_call_expression.function = pFunctionExpression;
+
+    FunctionDefinition *pFunctionDefinition = nullptr;
+
+    if (IDENTIFIER_EXPRESSION == pFunctionExpression->kind)
     {
-        m_Error.CompileError(pExpression->line_number,
-            FUNCTION_NOT_IDENTIFIER_ERR, MESSAGE_ARGUMENT_END);
+        pFunctionDefinition = m_Util.SearchFunction(pFunctionExpression->u.identifier.name);
+    }
+    else if (MEMBER_EXPRESSION == pFunctionExpression->kind)
+    {
+        if (IsArray(pFunctionExpression->u.member_expression.expression->type))
+        {
+            pFunctionDefinition = &pCompiler->array_method[pFunctionExpression->u.member_expression.method_index];
+
+            arrayBase = *pFunctionExpression->u.member_expression.expression->type;
+            arrayBase.derive = pFunctionExpression->u.member_expression.expression->type->derive->next;
+            pArrayBase = &arrayBase;
+        }
+        else if (IsString(pFunctionExpression->u.member_expression.expression->type))
+        {
+            pFunctionDefinition = &pCompiler->string_method[pFunctionExpression->u.member_expression.method_index];
+        }
+        else
+        {
+            if (FIELD_MEMBER == pFunctionExpression->u.member_expression.declaration->kind)
+            {
+                m_Error.CompileError(pExpression->line_number, FIELD_CAN_NOT_CALL_ERR,
+                    STRING_MESSAGE_ARGUMENT, "member_name", pFunctionExpression->u.member_expression.declaration->u.field.name,
+                    MESSAGE_ARGUMENT_END);
+            }
+
+            if (pFunctionExpression->u.member_expression.declaration->u.method.is_constructor)
+            {
+                Expression *pObj = pFunctionExpression->u.member_expression.expression;
+
+                if (pObj->kind != SUPER_EXPRESSION && pObj->kind != THIS_EXPRESSION)
+                {
+                    m_Error.CompileError(pExpression->line_number, CONSTRUCTOR_CALLED_ERR,
+                        STRING_MESSAGE_ARGUMENT, "member_name", pFunctionExpression->u.member_expression.declaration->u.field.name,
+                        MESSAGE_ARGUMENT_END);
+                }
+            }
+
+            pFunctionDefinition = pFunctionExpression->u.member_expression.declaration->u.method.function_definition;
+        }
     }
 
-    FunctionDefinition *pFunctionDefinition = m_Util.SearchFunction(pFunctionExpression->u.identifier.name);
     if (nullptr == pFunctionDefinition)
     {
-        m_Error.CompileError(pExpression->line_number,
-            FUNCTION_NOT_FOUND_ERR,
+        m_Error.CompileError(pExpression->line_number, FUNCTION_NOT_FOUND_ERR,
             STRING_MESSAGE_ARGUMENT, "name", pFunctionExpression->u.identifier.name,
             MESSAGE_ARGUMENT_END);
     }
 
-    CheckArgument(pBlock, pFunctionDefinition, pExpression);
+    TypeSpecifier *pFuncType = pFunctionDefinition->type;
+    ParameterList *pFuncParam = pFunctionDefinition->parameter;
 
-    pExpression->type = m_Util.AllocTypeSpecifier(pFunctionDefinition->type->basic_type);
-    pExpression->type->derive = pFunctionDefinition->type->derive;
+    CheckArgument(pBlock, pExpression->line_number, pFuncParam, pExpression->u.function_call_expression.argument, pArrayBase);
+    pExpression->type = m_Util.AllocTypeSpecifier(pFuncType->basic_type);
+    *pExpression->type = *pFuncType;
+    pExpression->type->derive = pFuncType->derive;
+
+    if (DVM_CLASS_TYPE == pFuncType->basic_type)
+    {
+        pExpression->type->class_ref.identifier = pFuncType->class_ref.identifier;
+        FixTypeSpecifier(pExpression->type);
+    }
 
     return pExpression;
 }
@@ -1051,24 +1105,49 @@ Expression* FixTree::CreateAssignCast(Expression *pSrc, TypeSpecifier *pDest)
 
     if (IsObject(pDest) && DVM_NULL_TYPE == pSrc->type->basic_type)
     {
-        UTIL_DBG_Assert(nullptr == pSrc->type->derive, ("pSrc derive != nullptr"));
+        DBG_assert(nullptr == pSrc->type->derive, ("pSrc derive != nullptr"));
         return pSrc;
     }
 
-    if (DVM_INT_TYPE == pSrc->type->basic_type && DVM_DOUBLE_TYPE == pDest->basic_type)
+    if (IsClassObject(pSrc->type) && IsClassObject(pDest))
     {
-        Expression *pCastExpression = AllocCastExpression(INT_TO_DOUBLE_CAST, pSrc);
-        return pCastExpression;
+        bool bIsInterface;
+        int iInterfaceIndex;
+
+        if (IsSuperClass(pSrc->type->class_ref.class_definition, pDest->class_ref.class_definition, &bIsInterface, &iInterfaceIndex))
+        {
+            if (bIsInterface)
+            {
+                return CreateUpCast(pSrc, pDest->class_ref.class_definition, iInterfaceIndex);
+            }
+
+            return pSrc;
+        }
+        else
+        {
+            CastMismatchError(pSrc->line_number, pSrc->type, pDest);
+        }
     }
-    else if (DVM_DOUBLE_TYPE == pSrc->type->basic_type && DVM_INT_TYPE == pDest->basic_type)
+
+    if (IsInt(pSrc->type) && IsDouble(pDest))
     {
-        Expression *pCastExpression = AllocCastExpression(DOUBLE_TO_INT_CAST, pSrc);
-        return pCastExpression;
+        return AllocCastExpression(INT_TO_DOUBLE_CAST, pSrc);
     }
-    else
+    else if (IsDouble(pSrc->type) && IsInt(pDest))
     {
-        CastMismatchError(pSrc->line_number, pSrc->type, pDest);
+        return AllocCastExpression(DOUBLE_TO_INT_CAST, pSrc);
     }
+    else if (IsString(pDest))
+    {
+        Expression *pCastExpression = CreateToStringCast(pSrc);
+
+        if (pCastExpression)
+        {
+            return pCastExpression;
+        }
+    }
+
+    CastMismatchError(pSrc->line_number, pSrc->type, pDest);
 
     return nullptr;
 }
@@ -1100,30 +1179,32 @@ Expression* FixTree::ChainString(Expression *pExpression)
 
 Expression* FixTree::CastBinaryExpression(Expression *pExpression)
 {
+    Expression *pCastExpression = nullptr;
+
     if (IsInt(pExpression->u.binary_expression.left->type) && IsDouble(pExpression->u.binary_expression.right->type))
     {
-        Expression *pCastExpression = AllocCastExpression(INT_TO_DOUBLE_CAST, pExpression->u.binary_expression.left);
+        pCastExpression = AllocCastExpression(INT_TO_DOUBLE_CAST, pExpression->u.binary_expression.left);
         pExpression->u.binary_expression.left = pCastExpression;
     }
     else if (IsDouble(pExpression->u.binary_expression.left->type) && IsInt(pExpression->u.binary_expression.right->type))
     {
-        Expression *pCastExpression = AllocCastExpression(INT_TO_DOUBLE_CAST, pExpression->u.binary_expression.right);
+        pCastExpression = AllocCastExpression(INT_TO_DOUBLE_CAST, pExpression->u.binary_expression.right);
         pExpression->u.binary_expression.right = pCastExpression;
     }
-    else if (IsString(pExpression->u.binary_expression.left->type) && IsBoolean(pExpression->u.binary_expression.right->type))
+
+    if (pCastExpression)
     {
-        Expression *pCastExpression = AllocCastExpression(BOOLEAN_TO_STRING_CAST, pExpression->u.binary_expression.right);
-        pExpression->u.binary_expression.right = pCastExpression;
+        return pExpression;
     }
-    else if (IsString(pExpression->u.binary_expression.left->type) && IsInt(pExpression->u.binary_expression.right->type))
+
+    if (IsString(pExpression->u.binary_expression.left->type) && ADD_EXPRESSION == pExpression->kind)
     {
-        Expression *pCastExpression = AllocCastExpression(INT_TO_STRING_CAST, pExpression->u.binary_expression.right);
-        pExpression->u.binary_expression.right = pCastExpression;
-    }
-    else if (IsString(pExpression->u.binary_expression.left->type) && IsDouble(pExpression->u.binary_expression.right->type))
-    {
-        Expression *pCastExpression = AllocCastExpression(DOUBLE_TO_STRING_CAST, pExpression->u.binary_expression.right);
-        pExpression->u.binary_expression.right = pCastExpression;
+        pCastExpression = CreateToStringCast(pExpression->u.binary_expression.right);
+
+        if (pCastExpression)
+        {
+            pExpression->u.binary_expression.right = pCastExpression;
+        }
     }
 
     return pExpression;
@@ -1149,21 +1230,32 @@ Expression* FixTree::CreateToStringCast(Expression *pExpression)
     }
 }
 
-void FixTree::CheckArgument(Block *pBlock, FunctionDefinition *pFunctionDefinition, Expression *pExpression)
+void FixTree::CheckArgument(Block *pBlock, int iLine, ParameterList *pParamList, ArgumentList *pArg, TypeSpecifier *pArrayBase)
 {
-    ParameterList *pParameter = pFunctionDefinition->parameter;
-    ArgumentList *pArgument = pExpression->u.function_call_expression.argument;
+    ParameterList *pParam = pParamList;
 
-    for (; pParameter && pArgument; pParameter = pParameter->next, pArgument = pArgument->next)
+    for (; pParam && pArg; pParam = pParam->next, pArg = pArg->next)
     {
-        pArgument->expression = FixExpression(pBlock, pArgument->expression, pExpression);
-        pArgument->expression = CreateAssignCast(pArgument->expression, pParameter->type);
+        pArg->expression = FixExpression(pBlock, pArg->expression, nullptr);
+
+        TypeSpecifier *pTypeSpecifier;
+
+        if (DVM_BASE_TYPE == pParam->type->basic_type)
+        {
+            DBG_assert(pArrayBase, ("pArrayBase == nullptr"));
+            pTypeSpecifier = pArrayBase;
+        }
+        else
+        {
+            pTypeSpecifier = pParam->type;
+        }
+
+        pArg->expression = CreateAssignCast(pArg->expression, pTypeSpecifier);
     }
 
-    if (pParameter || pArgument)
+    if (pParam || pArg)
     {
-        m_Error.CompileError(pExpression->line_number,
-            ARGUMENT_COUNT_MISMATCH_ERR, MESSAGE_ARGUMENT_END);
+        m_Error.CompileError(iLine, ARGUMENT_COUNT_MISMATCH_ERR, MESSAGE_ARGUMENT_END);
     }
 }
 

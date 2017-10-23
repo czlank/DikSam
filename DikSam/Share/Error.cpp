@@ -118,8 +118,8 @@ void Error::InitMessageFormat()
     m_ErrorMessageFormat[CLASS_NOT_FOUND_ERR]                       = TEXT("没有找到类$(name)。");
     m_ErrorMessageFormat[CONSTRUCTOR_IS_NOT_METHOD_ERR]             = TEXT("被指定为构造方法的成员$(member_name)不是一个方法。");
     m_ErrorMessageFormat[NOT_CONSTRUCTOR_ERR]                       = TEXT("用来new的方法$(member_name)并不是构造方法。");
-    m_ErrorMessageFormat[FIELD_CAN_NOT_CALLLED_ERR]                 = TEXT("不能调用字段$(member_name)。");
-    m_ErrorMessageFormat[METHOD_CAN_NOT_CALLED_ERR]                 = TEXT("方法$(member_name)不能出现在函数调用之外的位置。");
+    m_ErrorMessageFormat[FIELD_CAN_NOT_CALL_ERR]                    = TEXT("不能调用字段$(member_name)。");
+    m_ErrorMessageFormat[METHOD_CAN_NOT_CALL_ERR]                   = TEXT("方法$(member_name)不能出现在函数调用之外的位置。");
     m_ErrorMessageFormat[ASSIGN_TO_METHOD_ERR]                      = TEXT("不能赋值给方法$(member_name)。");
     m_ErrorMessageFormat[NON_VIRTUAL_METHOD_OVERRIDED_ERR]          = TEXT("不能覆盖非virtual方法$(name)。");
     m_ErrorMessageFormat[NEED_OVERRIDE_ERR]                         = TEXT("覆盖方法时必须使用override关键字($(name))。");
