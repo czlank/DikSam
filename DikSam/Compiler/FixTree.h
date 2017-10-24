@@ -35,6 +35,9 @@ private:
     Expression* FixIndexExpression(Block *pBlock, Expression *pExpression);
     Expression* FixArrayCreationExpression(Block *pBlock, Expression *pExpression);
     Expression* FixClassMemberExpression(Expression *pExpression, Expression *pObj, char *lpstrMemberName);
+    Expression* FixArrayMethodExpression(Expression *pExpression, Expression *pObj, char *lpstrMemberName);
+    Expression* FixStringMethodExpression(Expression *pExpression, Expression *pObj, char *lpstrMemberName);
+    Expression* FixMemberExpression(Block *pBlock, Expression *pExpression);
     
     void FixParameterList(ParameterList *pParameterList);
     void FixTypeSpecifier(TypeSpecifier *pTypeSpecifier);

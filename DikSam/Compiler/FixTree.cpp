@@ -665,6 +665,82 @@ Expression* FixTree::FixClassMemberExpression(Expression *pExpression, Expressio
     return pExpression;
 }
 
+Expression* FixTree::FixArrayMethodExpression(Expression *pExpression, Expression *pObj, char *lpstrMemberName)
+{
+    DKC_Compiler *pCompiler = m_Interface.GetCurrentCompiler();
+
+    int i = 0;
+    for (; i < pCompiler->array_method_count; i++)
+    {
+        if (std::string(pCompiler->array_method[i].name) == lpstrMemberName)
+            break;
+    }
+
+    if (i == pCompiler->array_method_count)
+    {
+        m_Error.CompileError(pExpression->line_number, ARRAY_METHOD_NOT_FOUND_ERR,
+            STRING_MESSAGE_ARGUMENT, "name", lpstrMemberName,
+            MESSAGE_ARGUMENT_END);
+    }
+
+    FunctionDefinition *pFunctionDefinition = &pCompiler->array_method[i];
+
+    pExpression->u.member_expression.method_index = i;
+    pExpression->type = CreateFunctionDeriveType(pFunctionDefinition);
+
+    return pExpression;
+}
+
+Expression* FixTree::FixStringMethodExpression(Expression *pExpression, Expression *pObj, char *lpstrMemberName)
+{
+    DKC_Compiler *pCompiler = m_Interface.GetCurrentCompiler();
+
+    int i = 0;
+    for (; i < pCompiler->string_method_count; i++)
+    {
+        if (std::string(pCompiler->string_method[i].name) == lpstrMemberName)
+            break;
+    }
+
+    if (i == pCompiler->string_method_count)
+    {
+        m_Error.CompileError(pExpression->line_number, STRING_METHOD_NOT_FOUND_ERR,
+            STRING_MESSAGE_ARGUMENT, "name", lpstrMemberName,
+            MESSAGE_ARGUMENT_END);
+    }
+
+    FunctionDefinition *pFunctionDefinition = &pCompiler->string_method[i];
+
+    pExpression->u.member_expression.method_index = i;
+    pExpression->type = CreateFunctionDeriveType(pFunctionDefinition);
+
+    return pExpression;
+}
+
+Expression* FixTree::FixMemberExpression(Block *pBlock, Expression *pExpression)
+{
+    Expression *pObj = pExpression->u.member_expression.expression = FixExpression(pBlock, pExpression->u.member_expression.expression, pExpression);
+
+    if (IsClassObject(pObj->type))
+    {
+        return FixClassMemberExpression(pExpression, pObj, pExpression->u.member_expression.member_name);
+    }
+    else if (IsArray(pObj->type))
+    {
+        return FixArrayMethodExpression(pExpression, pObj, pExpression->u.member_expression.member_name);
+    }
+    else if (IsString(pObj->type))
+    {
+        return FixStringMethodExpression(pExpression, pObj, pExpression->u.member_expression.member_name);
+    }
+    else
+    {
+        m_Error.CompileError(pExpression->line_number, MEMBER_EXPRESSION_TYPE_ERR, MESSAGE_ARGUMENT_END);
+    }
+
+    return nullptr;
+}
+
 void FixTree::FixParameterList(ParameterList *pParameterList)
 {
     for (ParameterList *pos = pParameterList; pos; pos = pos->next)
