@@ -246,6 +246,58 @@ ClassDefinition* Util::SearchClass(char *lpstrIdentifier)
     return nullptr;
 }
 
+MemberDeclaration* Util::SearchMember(ClassDefinition *pClassDefinition, char *lpstrMemberName)
+{
+    MemberDeclaration *pMemberDeclaration = pClassDefinition->member;
+
+    for (; pMemberDeclaration; pMemberDeclaration = pMemberDeclaration->next)
+    {
+        if (METHOD_MEMBER == pMemberDeclaration->kind)
+        {
+            if (std::string(pMemberDeclaration->u.method.function_definition->name) == lpstrMemberName)
+            {
+                break;
+            }
+        }
+        else
+        {
+            DBG_assert(FIELD_MEMBER == pMemberDeclaration->kind, ("member..", pMemberDeclaration->kind));
+
+            if (std::string(pMemberDeclaration->u.field.name) == lpstrMemberName)
+            {
+                break;
+            }
+        }
+    }
+
+    if (pMemberDeclaration)
+    {
+        return pMemberDeclaration;
+    }
+
+    if (pClassDefinition->super_class)
+    {
+        pMemberDeclaration = SearchMember(pClassDefinition->super_class, lpstrMemberName);
+    }
+
+    if (pMemberDeclaration)
+    {
+        return pMemberDeclaration;
+    }
+
+    for (ExtendsList *pExtends = pClassDefinition->interface_list; pExtends; pExtends = pExtends->next)
+    {
+        pMemberDeclaration = SearchMember(pExtends->class_definition, lpstrMemberName);
+
+        if (pMemberDeclaration)
+        {
+            return pMemberDeclaration;
+        }
+    }
+
+    return nullptr;
+}
+
 void Util::VStrClear(VString *vStr)
 {
     if (nullptr == vStr->string)

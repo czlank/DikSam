@@ -27,6 +27,7 @@ public:
     Declaration* SearchDeclaration(const char *lpcstrIdentifier, Block *pBlock);
     Declaration* FunctionSearchDeclaration(const char *lpcstrIdentifier, Block *pBlock);
     ClassDefinition* SearchClass(char *lpstrIdentifier);
+    MemberDeclaration* SearchMember(ClassDefinition *pClassDefinition, char *lpstrMemberName);
 
     void VStrClear(VString *vStr);
     void VStrAppandString(VString *vStr, const DVM_Char *lpcstrStr);

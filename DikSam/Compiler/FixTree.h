@@ -34,6 +34,7 @@ private:
     Expression* FixArrayLiteralExpression(Block *pBlock, Expression *pExpression);
     Expression* FixIndexExpression(Block *pBlock, Expression *pExpression);
     Expression* FixArrayCreationExpression(Block *pBlock, Expression *pExpression);
+    Expression* FixClassMemberExpression(Expression *pExpression, Expression *pObj, char *lpstrMemberName);
     
     void FixParameterList(ParameterList *pParameterList);
     void FixTypeSpecifier(TypeSpecifier *pTypeSpecifier);
@@ -68,11 +69,13 @@ private:
     int AddClass(ClassDefinition *pSrc);
     bool IsSuperInterface(ClassDefinition *pChild, ClassDefinition *pParent, int *pInterfaceIndexOut);
     bool IsSuperClass(ClassDefinition *pChild, ClassDefinition *pParent, bool *pIsInterface, int *pInterfaceIndex);
+    bool IsInterfaceMethod(ClassDefinition *pClassDefinition, MemberDeclaration *pMemberDeclaration, ClassDefinition **ppTargetInterface, int *pInterfaceIndexOut);
     ClassDefinition* SearchAndAddClass(int iLine, char *lpstrName, int *pClassIndex);
     TypeSpecifier* CreateFunctionDeriveType(FunctionDefinition *pFunctionDefinition);
     bool CheckTypeCompatibility(TypeSpecifier *pSuper, TypeSpecifier *pSub);
     void CheckFunctionCompatibility(int iLine, char *lpstrName, TypeSpecifier *pType1, ParameterList *pParam1, TypeSpecifier *pType2, ParameterList *pParam2);
     void CheckFunctionCompatibility(FunctionDefinition *pFunctionDefine1, FunctionDefinition *pFunctionDefine2);
+    void CheckMemberAccessibility(int iLine, ClassDefinition *pTargetClass, MemberDeclaration *pMember, char *lpstrMemberName);
 
     inline bool IsInt(TypeSpecifier *pType) { return (DVM_INT_TYPE == pType->basic_type && nullptr == pType->derive); }
     inline bool IsDouble(TypeSpecifier *pType) { return (DVM_DOUBLE_TYPE == pType->basic_type && nullptr == pType->derive); }

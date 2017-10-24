@@ -618,6 +618,53 @@ Expression* FixTree::FixArrayCreationExpression(Block *pBlock, Expression *pExpr
     return pExpression;
 }
 
+Expression* FixTree::FixClassMemberExpression(Expression *pExpression, Expression *pObj, char *lpstrMemberName)
+{
+    FixTypeSpecifier(pObj->type);
+
+    MemberDeclaration *pMemberDeclaration = m_Util.SearchMember(pObj->type->class_ref.class_definition, lpstrMemberName);
+
+    if (nullptr == pMemberDeclaration)
+    {
+        m_Error.CompileError(pExpression->line_number, MEMBER_NOT_FOUND_ERR,
+            STRING_MESSAGE_ARGUMENT, "class_name", pObj->type->class_ref.class_definition->name,
+            STRING_MESSAGE_ARGUMENT, "member_name", lpstrMemberName,
+            MESSAGE_ARGUMENT_END);
+    }
+
+    CheckMemberAccessibility(pObj->line_number, pObj->type->class_ref.class_definition, pMemberDeclaration, lpstrMemberName);
+    
+    pExpression->u.member_expression.declaration = pMemberDeclaration;
+
+    switch (pMemberDeclaration->kind)
+    {
+    case METHOD_MEMBER :
+        {
+            ClassDefinition *pTargetInterface = nullptr;
+            int iInterfaceIndex;
+
+            pExpression->type = CreateFunctionDeriveType(pMemberDeclaration->u.method.function_definition);
+
+            if (DVM_CLASS_DEFINITION == pObj->type->class_ref.class_definition->class_or_interface
+                && IsInterfaceMethod(pObj->type->class_ref.class_definition, pMemberDeclaration, &pTargetInterface, &iInterfaceIndex))
+            {
+                pExpression->u.member_expression.expression = CreateUpCast(pObj, pTargetInterface, iInterfaceIndex);
+            }
+        }
+        break;
+
+    case FIELD_MEMBER :
+        if (SUPER_EXPRESSION == pObj->kind)
+        {
+            m_Error.CompileError(pExpression->line_number, FIELD_OF_SUPER_REFERENCED_ERR, MESSAGE_ARGUMENT_END);
+        }
+
+        pExpression->type = pMemberDeclaration->u.field.type;
+    }
+
+    return pExpression;
+}
+
 void FixTree::FixParameterList(ParameterList *pParameterList)
 {
     for (ParameterList *pos = pParameterList; pos; pos = pos->next)
@@ -1488,6 +1535,38 @@ bool FixTree::IsSuperClass(ClassDefinition *pChild, ClassDefinition *pParent, bo
     return IsSuperInterface(pChild, pParent, pInterfaceIndex);
 }
 
+bool FixTree::IsInterfaceMethod(ClassDefinition *pClassDefinition, MemberDeclaration *pMemberDeclaration, ClassDefinition **ppTargetInterface, int *pInterfaceIndexOut)
+{
+    ExtendsList *pExtendPos = pClassDefinition->interface_list;
+    int iInterfaceIndex = 0;
+
+    for (; pExtendPos; pExtendPos = pExtendPos->next, iInterfaceIndex++)
+    {
+        for (MemberDeclaration *pMemberPos = pExtendPos->class_definition->member; pMemberPos; pMemberPos = pMemberPos->next)
+        {
+            if (pMemberPos->kind != METHOD_MEMBER)
+                continue;
+
+            if (std::string(pMemberDeclaration->u.method.function_definition->name) == pMemberPos->u.method.function_definition->name)
+            {
+                if (ppTargetInterface)
+                {
+                    *ppTargetInterface = pExtendPos->class_definition;
+                }
+
+                if (pInterfaceIndexOut)
+                {
+                    *pInterfaceIndexOut = iInterfaceIndex;
+                }
+
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 ClassDefinition* FixTree::SearchAndAddClass(int iLine, char *lpstrName, int *pClassIndex)
 {
     ClassDefinition *pClassDefinition = m_Util.SearchClass(lpstrName);
@@ -1575,4 +1654,26 @@ void FixTree::CheckFunctionCompatibility(FunctionDefinition *pFunctionDefine1, F
     CheckFunctionCompatibility(pFunctionDefine2->end_line_number, pFunctionDefine2->name,
         pFunctionDefine1->type, pFunctionDefine1->parameter,
         pFunctionDefine2->type, pFunctionDefine2->parameter);
+}
+
+void FixTree::CheckMemberAccessibility(int iLine, ClassDefinition *pTargetClass, MemberDeclaration *pMember, char *lpstrMemberName)
+{
+    DKC_Compiler *pCompiler = m_Interface.GetCurrentCompiler();
+
+    if (nullptr == pCompiler->current_class_definition || pCompiler->current_class_definition != pTargetClass)
+    {
+        if (DVM_PRIVATE_ACCESS == pMember->access_modifier)
+        {
+            m_Error.CompileError(iLine, PRIVATE_MEMBER_ACCESS_ERR,
+                STRING_MESSAGE_ARGUMENT, "member_name", lpstrMemberName,
+                MESSAGE_ARGUMENT_END);
+        }
+    }
+
+    if (!m_Util.ComparePackageName(pCompiler->package_name, pTargetClass->package_name) && pMember->access_modifier != DVM_PUBLIC_ACCESS)
+    {
+        m_Error.CompileError(iLine, PACKAGE_MEMBER_ACCESS_ERR,
+            STRING_MESSAGE_ARGUMENT, "member_name", lpstrMemberName,
+            MESSAGE_ARGUMENT_END);
+    }
 }
