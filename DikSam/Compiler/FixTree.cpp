@@ -563,6 +563,7 @@ Expression* FixTree::FixArrayLiteralExpression(Block *pBlock, Expression *pExpre
     }
 
     pExpression->type = m_Util.AllocTypeSpecifier(pTypeSpecifier->basic_type);
+    *pExpression->type = *pTypeSpecifier;
     pExpression->type->derive = m_Util.AllocTypeDerive(ARRAY_DERIVE);
     pExpression->type->derive->next = pTypeSpecifier->derive;
 
@@ -576,7 +577,12 @@ Expression* FixTree::FixIndexExpression(Block *pBlock, Expression *pExpression)
     pIndexExpression->array = FixExpression(pBlock, pIndexExpression->array, pExpression);
     pIndexExpression->index = FixExpression(pBlock, pIndexExpression->index, pExpression);
 
-    if (nullptr == pIndexExpression->array->type->derive || pIndexExpression->array->type->derive->tag != ARRAY_DERIVE)
+    if (pIndexExpression->array->type->derive && ARRAY_DERIVE == pIndexExpression->array->type->derive->tag)
+    {
+        pExpression->type = m_Util.AllocTypeSpecifier(pIndexExpression->array->type);
+        pExpression->type->derive = pIndexExpression->array->type->derive->next;
+    }
+    else
     {
         m_Error.CompileError(pExpression->line_number, INDEX_LEFT_OPERAND_NOT_ARRAY_ERR, MESSAGE_ARGUMENT_END);
     }
@@ -585,9 +591,6 @@ Expression* FixTree::FixIndexExpression(Block *pBlock, Expression *pExpression)
     {
         m_Error.CompileError(pExpression->line_number, INDEX_NOT_INT_ERR, MESSAGE_ARGUMENT_END);
     }
-
-    pExpression->type = m_Util.AllocTypeSpecifier(pIndexExpression->array->type->basic_type);
-    pExpression->type->derive = pIndexExpression->array->type->derive->next;
 
     return pExpression;
 }
@@ -739,6 +742,52 @@ Expression* FixTree::FixMemberExpression(Block *pBlock, Expression *pExpression)
     }
 
     return nullptr;
+}
+
+Expression* FixTree::FixThisExpression(Expression *pExpression)
+{
+    ClassDefinition *pClassDefinition = m_Interface.GetCurrentCompiler()->current_class_definition;
+
+    if (nullptr == pClassDefinition)
+    {
+        m_Error.CompileError(pExpression->line_number, THIS_OUT_OF_CLASS_ERR, MESSAGE_ARGUMENT_END);
+    }
+
+    TypeSpecifier *pTypeSpecifier = m_Util.AllocTypeSpecifier(DVM_CLASS_TYPE);
+
+    pTypeSpecifier->class_ref.identifier = pClassDefinition->name;
+    pTypeSpecifier->class_ref.class_definition = pClassDefinition;
+    pExpression->type = pTypeSpecifier;
+
+    return pExpression;
+}
+
+Expression* FixTree::FixSuperExpression(Expression *pExpression, Expression *pParent)
+{
+    ClassDefinition *pClassDefinition = m_Interface.GetCurrentCompiler()->current_class_definition;
+
+    if (nullptr == pClassDefinition)
+    {
+        m_Error.CompileError(pExpression->line_number, SUPER_OUT_OF_CLASS_ERR, MESSAGE_ARGUMENT_END);
+    }
+
+    if (nullptr == pClassDefinition->super_class)
+    {
+        m_Error.CompileError(pExpression->line_number, HASNT_SUPER_CLASS_ERR, MESSAGE_ARGUMENT_END);
+    }
+
+    if (nullptr == pParent || pParent->kind != MEMBER_EXPRESSION)
+    {
+        m_Error.CompileError(pParent ? pParent->line_number : -1, SUPER_NOT_IN_MEMBER_EXPRESSION_ERR, MESSAGE_ARGUMENT_END);
+    }
+
+    TypeSpecifier *pTypeSpecifier = m_Util.AllocTypeSpecifier(DVM_CLASS_TYPE);
+
+    pTypeSpecifier->class_ref.identifier = pClassDefinition->super_class->name;
+    pTypeSpecifier->class_ref.class_definition = pClassDefinition->super_class;
+    pExpression->type = pTypeSpecifier;
+
+    return pExpression;
 }
 
 void FixTree::FixParameterList(ParameterList *pParameterList)

@@ -38,6 +38,8 @@ private:
     Expression* FixArrayMethodExpression(Expression *pExpression, Expression *pObj, char *lpstrMemberName);
     Expression* FixStringMethodExpression(Expression *pExpression, Expression *pObj, char *lpstrMemberName);
     Expression* FixMemberExpression(Block *pBlock, Expression *pExpression);
+    Expression* FixThisExpression(Expression *pExpression);
+    Expression* FixSuperExpression(Expression *pExpression, Expression *pParent);
     
     void FixParameterList(ParameterList *pParameterList);
     void FixTypeSpecifier(TypeSpecifier *pTypeSpecifier);
