@@ -16,6 +16,7 @@ public:
 
     void* Malloc(const char *lpcstrFileName, int iLine, size_t szSize);
     TypeSpecifier* AllocTypeSpecifier(DVM_BasicType enType);
+    TypeSpecifier* AllocTypeSpecifier(TypeSpecifier *pSrc);
     TypeDerive* AllocTypeDerive(DeriveTag enTag);
     bool CompareParameter(ParameterList *param1, ParameterList *param2);
     bool CompareType(TypeSpecifier *type1, TypeSpecifier *type2);

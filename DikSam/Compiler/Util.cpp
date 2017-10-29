@@ -56,6 +56,15 @@ TypeSpecifier* Util::AllocTypeSpecifier(DVM_BasicType enType)
     return pTypeSpecifier;
 }
 
+TypeSpecifier* Util::AllocTypeSpecifier(TypeSpecifier *pSrc)
+{
+    TypeSpecifier *pTypeSpecifier = (TypeSpecifier*)dkc_malloc(sizeof(TypeSpecifier));
+
+    *pTypeSpecifier = *pSrc;
+
+    return pTypeSpecifier;
+}
+
 TypeDerive* Util::AllocTypeDerive(DeriveTag enTag)
 {
     TypeDerive *pTypeDerive = (TypeDerive*)dkc_malloc(sizeof(TypeDerive));

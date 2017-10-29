@@ -149,10 +149,19 @@ Expression* FixTree::FixExpression(Block *pBlock, Expression *pExpression, Expre
         break;
 
     case MEMBER_EXPRESSION :
+        pExpression = FixMemberExpression(pBlock, pExpression);
         break;
 
     case NULL_EXPRESSION :
         pExpression->type = m_Util.AllocTypeSpecifier(DVM_NULL_TYPE);
+        break;
+
+    case THIS_EXPRESSION :
+        pExpression = FixThisExpression(pExpression);
+        break;
+
+    case SUPER_EXPRESSION :
+        pExpression = FixSuperExpression(pExpression, pParentExpression);
         break;
 
     case ARRAY_LITERAL_EXPRESSION :
@@ -168,7 +177,22 @@ Expression* FixTree::FixExpression(Block *pBlock, Expression *pExpression, Expre
         pExpression = FixIncDecExpression(pBlock, pExpression);
         break;
 
+    case INSTANCEOF_EXPRESSION :
+        pExpression = FixInstanceofExpression(pBlock, pExpression);
+        break;
+
+    case DOWN_CAST_EXPRESSION :
+        pExpression = FixDownCastExpression(pBlock, pExpression);
+        break;
+
     case CAST_EXPRESSION :
+        break;
+
+    case UP_CAST_EXPRESSION :
+        break;
+
+    case NEW_EXPRESSION :
+        pExpression = FixNewExpression(pBlock, pExpression);
         break;
 
     case ARRAY_CREATION_EXPRESSION :
@@ -179,6 +203,8 @@ Expression* FixTree::FixExpression(Block *pBlock, Expression *pExpression, Expre
         DBG_assert(0, ("bad case. kind..", pExpression->kind));
     }
 
+    FixTypeSpecifier(pExpression->type);
+
     return pExpression;
 }
 
@@ -187,7 +213,7 @@ void FixTree::FixStatement(Block *pBlock, Statement *pStatement, FunctionDefinit
     switch (pStatement->type)
     {
     case EXPRESSION_STATEMENT :
-        FixExpression(pBlock, pStatement->u.expression_s, nullptr);
+        pStatement->u.expression_s = FixExpression(pBlock, pStatement->u.expression_s, nullptr);
         break;
 
     case IF_STATEMENT :
@@ -195,19 +221,19 @@ void FixTree::FixStatement(Block *pBlock, Statement *pStatement, FunctionDefinit
         break;
 
     case WHILE_STATEMENT :
-        FixExpression(pBlock, pStatement->u.while_s.condition, nullptr);
-        FixStatementList(pStatement->u.while_s.block, pStatement->u.while_s.block->statement_list, pFunctionDefinition);
+        FixWhileStatement(pBlock, &pStatement->u.while_s, pFunctionDefinition);
+        break;
+
+    case DO_WHILE_STATEMENT :
+        FixDoWhileStatement(pBlock, &pStatement->u.do_while_s, pFunctionDefinition);
         break;
 
     case FOR_STATEMENT :
-        FixExpression(pBlock, pStatement->u.for_s.init, nullptr);
-        FixExpression(pBlock, pStatement->u.for_s.condition, nullptr);
-        FixExpression(pBlock, pStatement->u.for_s.post, nullptr);
-        FixStatementList(pStatement->u.for_s.block, pStatement->u.for_s.block->statement_list, pFunctionDefinition);
+        FixForStatement(pBlock, &pStatement->u.for_s, pFunctionDefinition);
         break;
 
     case RETURN_STATEMENT :
-        FixReturnStatement(pBlock, &pStatement->u.return_s, pFunctionDefinition);
+        FixReturnStatement(pBlock, pStatement, pFunctionDefinition);
         break;
 
     case BREAK_STATEMENT :
@@ -224,7 +250,8 @@ void FixTree::FixStatement(Block *pBlock, Statement *pStatement, FunctionDefinit
         break;
 
     case DECLARATION_STATEMENT :
-        AddDeclaration(pBlock, pStatement->u.declaration_s, pFunctionDefinition, pStatement->line_number);
+        AddDeclaration(pBlock, pStatement->u.declaration_s, pFunctionDefinition, pStatement->line_number, false);
+        FixTypeSpecifier(pStatement->u.declaration_s->type);
 
         do 
         {
@@ -241,7 +268,7 @@ void FixTree::FixStatement(Block *pBlock, Statement *pStatement, FunctionDefinit
             {
                 Declaration *pDeclaration = stkDeclaration.top();
 
-                AddDeclaration(pBlock, pDeclaration, pFunctionDefinition, pStatement->line_number);
+                AddDeclaration(pBlock, pDeclaration, pFunctionDefinition, pStatement->line_number, false);
                 stkDeclaration.pop();
             }
         } while (0);
@@ -250,6 +277,7 @@ void FixTree::FixStatement(Block *pBlock, Statement *pStatement, FunctionDefinit
 
         if (pStatement->u.declaration_s->initializer)
         {
+            pStatement->u.declaration_s->initializer = FixExpression(pBlock, pStatement->u.declaration_s->initializer, nullptr);
             pStatement->u.declaration_s->initializer = CreateAssignCast(pStatement->u.declaration_s->initializer, pStatement->u.declaration_s->type);
         }
 
@@ -599,6 +627,8 @@ Expression* FixTree::FixArrayCreationExpression(Block *pBlock, Expression *pExpr
 {
     TypeDerive *pHeadTypeDerive = nullptr;
 
+    FixTypeSpecifier(pExpression->u.array_creation.type);
+
     for (ArrayDimension *pos = pExpression->u.array_creation.dimension; pos; pos = pos->next)
     {
         if (pos->expression)
@@ -615,7 +645,7 @@ Expression* FixTree::FixArrayCreationExpression(Block *pBlock, Expression *pExpr
         pHeadTypeDerive = pTypeDerive;
     }
 
-    pExpression->type = m_Util.AllocTypeSpecifier(pExpression->u.array_creation.type->basic_type);
+    pExpression->type = m_Util.AllocTypeSpecifier(pExpression->u.array_creation.type);
     pExpression->type->derive = pHeadTypeDerive;
 
     return pExpression;
@@ -790,6 +820,142 @@ Expression* FixTree::FixSuperExpression(Expression *pExpression, Expression *pPa
     return pExpression;
 }
 
+Expression* FixTree::FixInstanceofExpression(Block *pBlock, Expression *pExpression)
+{
+    pExpression->u.instanceof.operand = FixExpression(pBlock, pExpression->u.instanceof.operand, pExpression);
+    FixTypeSpecifier(pExpression->u.instanceof.type);
+
+    Expression *pOperand = pExpression->u.instanceof.operand;
+    TypeSpecifier *pTarget = pExpression->u.instanceof.type;
+
+    if (!IsObject(pOperand->type))
+    {
+        m_Error.CompileError(pExpression->line_number, INSTANCEOF_OPERAND_NOT_REFERENCE_ERR, MESSAGE_ARGUMENT_END);
+    }
+
+    if (!IsObject(pTarget))
+    {
+        m_Error.CompileError(pExpression->line_number, INSTANCEOF_TYPE_NOT_REFERENCE_ERR, MESSAGE_ARGUMENT_END);
+    }
+
+    if (!IsClassObject(pOperand->type) || !IsClassObject(pTarget))
+    {
+        m_Error.CompileError(pExpression->line_number, INSTANCEOF_FOR_NOT_CLASS_ERR, MESSAGE_ARGUMENT_END);
+    }
+
+    if (m_Util.CompareType(pOperand->type, pTarget))
+    {
+        m_Error.CompileError(pExpression->line_number, INSTANCEOF_MUST_RETURN_TRUE_ERR, MESSAGE_ARGUMENT_END);
+    }
+
+    if (IsSuperClass(pOperand->type->class_ref.class_definition, pTarget->class_ref.class_definition, nullptr, nullptr))
+    {
+        m_Error.CompileError(pExpression->line_number, INSTANCEOF_MUST_RETURN_TRUE_ERR, MESSAGE_ARGUMENT_END);
+    }
+
+    if (DVM_CLASS_DEFINITION == pTarget->class_ref.class_definition->class_or_interface
+        && !IsSuperClass(pTarget->class_ref.class_definition, pOperand->type->class_ref.class_definition, nullptr, nullptr))
+    {
+        m_Error.CompileError(pExpression->line_number, INSTANCEOF_MUST_RETURN_FALSE_ERR, MESSAGE_ARGUMENT_END);
+    }
+
+    pExpression->type = m_Util.AllocTypeSpecifier(DVM_BOOLEAN_TYPE);
+
+    return pExpression;
+}
+
+Expression* FixTree::FixDownCastExpression(Block *pBlock, Expression *pExpression)
+{
+    pExpression->u.down_cast.operand = FixExpression(pBlock, pExpression->u.down_cast.operand, pExpression);
+    FixTypeSpecifier(pExpression->u.down_cast.type);
+
+    TypeSpecifier *pOriginType = pExpression->u.down_cast.type;
+    TypeSpecifier *pTargetType = pExpression->u.down_cast.type;
+
+    if (!IsClassObject(pOriginType))
+    {
+        m_Error.CompileError(pExpression->line_number, DOWN_CAST_OPERAND_IS_NOT_CLASS_ERR, MESSAGE_ARGUMENT_END);
+    }
+
+    if (!IsClassObject(pTargetType))
+    {
+        m_Error.CompileError(pExpression->line_number, DOWN_CAST_TARGET_IS_NOT_CLASS_ERR, MESSAGE_ARGUMENT_END);
+    }
+
+    if (m_Util.CompareType(pOriginType, pTargetType))
+    {
+        m_Error.CompileError(pExpression->line_number, DOWN_CAST_DO_NOTHING_ERR, MESSAGE_ARGUMENT_END);
+    }
+
+    if (DVM_CLASS_DEFINITION == pTargetType->class_ref.class_definition->class_or_interface
+        && !IsSuperClass(pTargetType->class_ref.class_definition, pOriginType->class_ref.class_definition, nullptr, nullptr))
+    {
+        m_Error.CompileError(pExpression->line_number, DOWN_CAST_TO_BAD_CLASS_ERR, MESSAGE_ARGUMENT_END);
+    }
+
+    pExpression->type = pTargetType;
+
+    return pExpression;
+}
+
+Expression* FixTree::FixNewExpression(Block *pBlock, Expression *pExpression)
+{
+    pExpression->u.new_e.class_definition = SearchAndAddClass(pExpression->line_number, pExpression->u.new_e.class_name, &pExpression->u.new_e.class_index);
+
+    if (DVM_TRUE == pExpression->u.new_e.class_definition->is_abstract)
+    {
+        m_Error.CompileError(pExpression->line_number, NEW_ABSTRACT_CLASS_ERR,
+            STRING_MESSAGE_ARGUMENT, "name", pExpression->u.new_e.class_name,
+            MESSAGE_ARGUMENT_END);
+    }
+
+    if (!pExpression->u.new_e.method_name)
+    {
+        pExpression->u.new_e.method_name = DEFAULT_CONSTRUCTOR_NAME;
+    }
+
+    MemberDeclaration *pMember = m_Util.SearchMember(pExpression->u.new_e.class_definition, pExpression->u.new_e.method_name);
+
+    if (nullptr == pMember)
+    {
+        m_Error.CompileError(pExpression->line_number, MEMBER_NOT_FOUND_ERR,
+            STRING_MESSAGE_ARGUMENT, "class_name", pExpression->u.new_e.class_name,
+            STRING_MESSAGE_ARGUMENT, "member_name", pExpression->u.new_e.method_name,
+            MESSAGE_ARGUMENT_END);
+    }
+
+    if (pMember->kind != METHOD_MEMBER)
+    {
+        m_Error.CompileError(pExpression->line_number, CONSTRUCTOR_IS_NOT_METHOD_ERR,
+            STRING_MESSAGE_ARGUMENT, "member_name", pExpression->u.new_e.method_name,
+            MESSAGE_ARGUMENT_END);
+    }
+
+    if (pMember->u.method.is_constructor != DVM_TRUE)
+    {
+        m_Error.CompileError(pExpression->line_number, NOT_CONSTRUCTOR_ERR,
+            STRING_MESSAGE_ARGUMENT, "member_name", pExpression->u.new_e.method_name,
+            MESSAGE_ARGUMENT_END);
+    }
+
+    CheckMemberAccessibility(pExpression->line_number, pExpression->u.new_e.class_definition, pMember, pExpression->u.new_e.method_name);
+
+    DBG_assert(nullptr == pMember->u.method.function_definition->type->derive
+        && DVM_VOID_TYPE == pMember->u.method.function_definition->type->basic_type,
+        ("constructor is not void."));
+
+    CheckArgument(pBlock, pExpression->line_number, pMember->u.method.function_definition->parameter, pExpression->u.new_e.argument, nullptr);
+
+    pExpression->u.new_e.method_declaration = pMember;
+
+    TypeSpecifier *pTypeSpecifier = m_Util.AllocTypeSpecifier(DVM_CLASS_TYPE);
+    pTypeSpecifier->class_ref.identifier = pExpression->u.new_e.class_definition->name;
+    pTypeSpecifier->class_ref.class_definition = pExpression->u.new_e.class_definition;
+    pExpression->type = pTypeSpecifier;
+
+    return pExpression;
+}
+
 void FixTree::FixParameterList(ParameterList *pParameterList)
 {
     for (ParameterList *pos = pParameterList; pos; pos = pos->next)
@@ -838,12 +1004,18 @@ void FixTree::FixTypeSpecifier(TypeSpecifier *pTypeSpecifier)
 
 void FixTree::FixIfStatement(Block *pBlock, IfStatement *pIfStatement, FunctionDefinition *pFunctionDefinition)
 {
-    FixExpression(pBlock, pIfStatement->condition, nullptr);
+    pIfStatement->condition = FixExpression(pBlock, pIfStatement->condition, nullptr);
+
+    if (!IsBoolean(pIfStatement->condition->type))
+    {
+        m_Error.CompileError(pIfStatement->condition->line_number, IF_CONDITION_NOT_BOOLEAN_ERR, MESSAGE_ARGUMENT_END);
+    }
+
     FixStatementList(pIfStatement->then_block, pIfStatement->then_block->statement_list, pFunctionDefinition);
 
     for (Elsif *pos = pIfStatement->elsif_list; pos; pos = pos->next)
     {
-        FixExpression(pBlock, pos->condition, nullptr);
+        pos->condition = FixExpression(pBlock, pos->condition, nullptr);
 
         if (pos->block)
         {
@@ -857,9 +1029,52 @@ void FixTree::FixIfStatement(Block *pBlock, IfStatement *pIfStatement, FunctionD
     }
 }
 
-void FixTree::FixReturnStatement(Block *pBlock, ReturnStatement *pReturnStatement, FunctionDefinition *pFunctionDefinition)
+void FixTree::FixWhileStatement(Block *pBlock, WhileStatement *pWhileStatement, FunctionDefinition *pFunctionDefinition)
 {
-    Expression *pReturnValue = FixExpression(pBlock, pReturnStatement->return_value, nullptr);
+    pWhileStatement->condition = FixExpression(pBlock, pWhileStatement->condition, nullptr);
+
+    if (!IsBoolean(pWhileStatement->condition->type))
+    {
+        m_Error.CompileError(pWhileStatement->condition->line_number, WHILE_CONDITION_NOT_BOOLEAN_ERR, MESSAGE_ARGUMENT_END);
+    }
+
+    FixStatementList(pWhileStatement->block, pWhileStatement->block->statement_list, pFunctionDefinition);
+}
+
+void FixTree::FixDoWhileStatement(Block *pBlock, DoWhileStatement *pDoWhileStatement, FunctionDefinition *pFunctionDefinition)
+{
+    pDoWhileStatement->condition = FixExpression(pBlock, pDoWhileStatement->condition, nullptr);
+
+    if (!IsBoolean(pDoWhileStatement->condition->type))
+    {
+        m_Error.CompileError(pDoWhileStatement->condition->line_number, DO_WHILE_CONDITION_NOT_BOOLEAN_ERR, MESSAGE_ARGUMENT_END);
+    }
+
+    FixStatementList(pDoWhileStatement->block, pDoWhileStatement->block->statement_list, pFunctionDefinition);
+}
+
+void FixTree::FixForStatement(Block *pBlock, ForStatement *pForStatement, FunctionDefinition *pFunctionDefinition)
+{
+    pForStatement->init = FixExpression(pBlock, pForStatement->init, nullptr);
+    pForStatement->condition = FixExpression(pBlock, pForStatement->condition, nullptr);
+
+    if (pForStatement->condition != nullptr && !IsBoolean(pForStatement->condition->type))
+    {
+        m_Error.CompileError(pForStatement->condition->line_number, FOR_CONDITION_NOT_BOOLEAN_ERR, MESSAGE_ARGUMENT_END);
+    }
+
+    pForStatement->post = FixExpression(pBlock, pForStatement->post, nullptr);
+    FixStatementList(pForStatement->block, pForStatement->block->statement_list, pFunctionDefinition);
+}
+
+void FixTree::FixReturnStatement(Block *pBlock, Statement *pStatement, FunctionDefinition *pFunctionDefinition)
+{
+    Expression *pReturnValue = FixExpression(pBlock, pStatement->u.return_s.return_value, nullptr);
+
+    if (nullptr == pFunctionDefinition->type->derive && DVM_VOID_TYPE == pFunctionDefinition->type->basic_type && pReturnValue)
+    {
+        m_Error.CompileError(pStatement->line_number, RETURN_IN_VOID_FUNCTION_ERR, MESSAGE_ARGUMENT_END);
+    }
 
     if (nullptr == pReturnValue)
     {
@@ -871,13 +1086,18 @@ void FixTree::FixReturnStatement(Block *pBlock, ReturnStatement *pReturnStatemen
             }
             else
             {
-                UTIL_DBG_Assert(0, ("pFunctionDefinition->type->derive..", pFunctionDefinition->type->derive));
+                DBG_assert(0, ("pFunctionDefinition->type->derive..", pFunctionDefinition->type->derive));
             }
         }
         else
         {
             switch (pFunctionDefinition->type->basic_type)
             {
+            case DVM_VOID_TYPE :
+                pReturnValue = m_Create.AllocExpression(INT_EXPRESSION);
+                pReturnValue->u.int_value = 0;
+                break;
+
             case DVM_BOOLEAN_TYPE :
                 pReturnValue = m_Create.AllocExpression(BOOLEAN_EXPRESSION);
                 pReturnValue->u.boolean_value = DVM_FALSE;
@@ -894,21 +1114,23 @@ void FixTree::FixReturnStatement(Block *pBlock, ReturnStatement *pReturnStatemen
                 break;
 
             case DVM_STRING_TYPE :
+            case DVM_CLASS_TYPE :
                 pReturnValue = m_Create.AllocExpression(NULL_EXPRESSION);
-                pReturnValue->u.string_value = L"";
                 break;
 
+            case DVM_NULL_TYPE :
+            case DVM_BASE_TYPE :
             default :
-                UTIL_DBG_Assert(0, ("basic_type..", pFunctionDefinition->type->basic_type));
+                DBG_assert(0, ("basic_type..", pFunctionDefinition->type->basic_type));
             }
         }
 
-        pReturnStatement->return_value = pReturnValue;
+        pStatement->u.return_s.return_value = pReturnValue;
         return;
     }
 
-    Expression *pCastExpression = CreateAssignCast(pReturnStatement->return_value, pFunctionDefinition->type);
-    pReturnStatement->return_value = pCastExpression;
+    Expression *pCastExpression = CreateAssignCast(pStatement->u.return_s.return_value, pFunctionDefinition->type);
+    pStatement->u.return_s.return_value = pCastExpression;
 }
 
 void FixTree::FixStatementList(Block *pBlock, StatementList *pStatementList, FunctionDefinition *pFunctionDefinition)
@@ -916,6 +1138,156 @@ void FixTree::FixStatementList(Block *pBlock, StatementList *pStatementList, Fun
     for (StatementList *pos = pStatementList; pos; pos = pos->next)
     {
         FixStatement(pBlock, pos->statement, pFunctionDefinition);
+    }
+}
+
+void FixTree::FixFunction(FunctionDefinition *pFunctionDefinition)
+{
+    AddParameterAsDeclaration(pFunctionDefinition);
+    FixTypeSpecifier(pFunctionDefinition->type);
+
+    if (pFunctionDefinition->block)
+    {
+        FixStatementList(pFunctionDefinition->block, pFunctionDefinition->block->statement_list, pFunctionDefinition);
+        AddReturnFunction(pFunctionDefinition);
+    }
+}
+
+void FixTree::AddSuperInterface(ClassDefinition *pClassDefinition)
+{
+    ExtendsList *pTail = nullptr;
+
+    if (pClassDefinition->interface_list)
+    {
+        for (pTail = pClassDefinition->interface_list; pTail->next; pTail = pTail->next)
+            ;
+    }
+
+    for (ClassDefinition *pos = pClassDefinition->super_class; pos; pos = pos->super_class)
+    {
+        for (ExtendsList *pIfPos = pos->interface_list; pIfPos; pIfPos = pIfPos->next)
+        {
+            ExtendsList *pNewExtends = (ExtendsList*)dkc_malloc(sizeof(ExtendsList));
+
+            *pNewExtends = *pIfPos;
+            pNewExtends->next = nullptr;
+
+            if (pTail)
+            {
+                pTail->next = pNewExtends;
+            }
+            else
+            {
+                pClassDefinition->interface_list = pNewExtends;
+            }
+
+            pTail = pNewExtends;
+        }
+    }
+}
+
+void FixTree::FixExtends(ClassDefinition *pClassDefinition)
+{
+    if (DVM_INTERFACE_DEFINITION == pClassDefinition->class_or_interface && pClassDefinition->extends)
+    {
+        m_Error.CompileError(pClassDefinition->line_number, INTERFACE_INHERIT_ERR, MESSAGE_ARGUMENT_END);
+    }
+
+    pClassDefinition->interface_list = nullptr;
+
+    for (ExtendsList *pos = pClassDefinition->extends; pos; pos = pos->next)
+    {
+        ClassDefinition *pSuper = SearchAndAddClass(pClassDefinition->line_number, pos->identifier, nullptr);
+
+        pos->class_definition = pSuper;
+
+        ExtendsList *pNewExtendsList = (ExtendsList*)dkc_malloc(sizeof(ExtendsList));
+        ExtendsList *pLastExtendsList = nullptr;
+
+        *pNewExtendsList = *pos;
+        pNewExtendsList->next = nullptr;
+
+        if (DVM_CLASS_DEFINITION == pSuper->class_or_interface)
+        {
+            if (pClassDefinition->super_class)
+            {
+                m_Error.CompileError(pClassDefinition->line_number, MULTIPLE_INHERITANCE_ERR,
+                    STRING_MESSAGE_ARGUMENT, "name", pSuper->name,
+                    MESSAGE_ARGUMENT_END);
+            }
+
+            if (DVM_FALSE == pSuper->is_abstract)
+            {
+                m_Error.CompileError(pClassDefinition->line_number, INHERIT_CONCRETE_CLASS_ERR,
+                    STRING_MESSAGE_ARGUMENT, "name", pSuper->name,
+                    MESSAGE_ARGUMENT_END);
+            }
+
+            pClassDefinition->super_class = pSuper;
+        }
+        else
+        {
+            DBG_assert(DVM_INTERFACE_DEFINITION == pSuper->class_or_interface, ("super..", pSuper->class_or_interface));
+
+            if (nullptr == pClassDefinition->interface_list)
+            {
+                pClassDefinition->interface_list = pNewExtendsList;
+            }
+            else
+            {
+                pLastExtendsList->next = pNewExtendsList;
+            }
+
+            pLastExtendsList = pNewExtendsList;
+        }
+    }
+}
+
+void FixTree::AddDefaultConstructor(ClassDefinition *pClassDefinition)
+{
+    MemberDeclaration *pTail = nullptr;
+
+    for (MemberDeclaration *pos = pClassDefinition->member; pos; pos = pos->next)
+    {
+        if (METHOD_MEMBER == pos->kind && DVM_TRUE == pos->u.method.is_constructor)
+        {
+            return;
+        }
+
+        pTail = pos;
+    }
+
+    TypeSpecifier *pTypeSpecifier = m_Util.AllocTypeSpecifier(DVM_VOID_TYPE);
+    Block *pBlock = m_Create.AllocBlock();
+    ClassOrMemberModifierList modifier = m_Create.CreateClassOrMemberModifier(VIRTUAL_MODIFIER);
+
+    if (pClassDefinition->super_class)
+    {
+        Statement *pStatement = m_Create.AllocStatement(EXPRESSION_STATEMENT);
+        Expression *pSuperExpression = m_Create.CreateSuperExpression();
+        Expression *pMemberExpression = m_Create.CreateMemberExpression(pSuperExpression, DEFAULT_CONSTRUCTOR_NAME);
+        Expression *pFunctionCallExpression = m_Create.CreateFunctionCallExpression(pMemberExpression, nullptr);
+
+        pStatement->u.expression_s = pFunctionCallExpression;
+        pBlock->statement_list = m_Create.CreateStatementList(pStatement);
+
+        modifier = m_Create.ChainClassOrMemberModifier(modifier, m_Create.CreateClassOrMemberModifier(OVERRIDE_MODIFIER));
+        modifier = m_Create.ChainClassOrMemberModifier(modifier, m_Create.CreateClassOrMemberModifier(PUBLIC_MODIFIER));
+    }
+    else
+    {
+        pBlock->statement_list = nullptr;
+    }
+
+    FunctionDefinition *pFunctionDefinition = m_Create.CreateFunctionDefinition(pTypeSpecifier, DEFAULT_CONSTRUCTOR_NAME, nullptr, pBlock);
+
+    if (pTail)
+    {
+        pTail->next = m_Create.CreateMethodMember(&modifier, pFunctionDefinition, DVM_TRUE);
+    }
+    else
+    {
+        pClassDefinition->member = m_Create.CreateMethodMember(&modifier, pFunctionDefinition, DVM_TRUE);
     }
 }
 
@@ -1431,16 +1803,26 @@ void FixTree::CheckArgument(Block *pBlock, int iLine, ParameterList *pParamList,
     }
 }
 
-void FixTree::AddLocalVariable(FunctionDefinition *pFunctionDefinition, Declaration *pDeclaration)
+void FixTree::AddLocalVariable(FunctionDefinition *pFunctionDefinition, Declaration *pDeclaration, bool bIsParameter)
 {
     pFunctionDefinition->local_variable = (Declaration**)MEM_realloc(pFunctionDefinition->local_variable,
         sizeof(Declaration*) * (pFunctionDefinition->local_variable_count + 1));
 
     pFunctionDefinition->local_variable[pFunctionDefinition->local_variable_count] = pDeclaration;
-    pDeclaration->variable_index = pFunctionDefinition->local_variable_count++;
+
+    if (pFunctionDefinition->class_definition && !bIsParameter)
+    {
+        pDeclaration->variable_index = pFunctionDefinition->local_variable_count + 1;
+    }
+    else
+    {
+        pDeclaration->variable_index = pFunctionDefinition->local_variable_count;
+    }
+
+    pFunctionDefinition->local_variable_count++;
 }
 
-void FixTree::AddDeclaration(Block *pBlock, Declaration *pDeclaration, FunctionDefinition *pFunctionDefinition, int iLine)
+void FixTree::AddDeclaration(Block *pBlock, Declaration *pDeclaration, FunctionDefinition *pFunctionDefinition, int iLine, bool bIsParameter)
 {
     if (pFunctionDefinition)
     {
@@ -1473,15 +1855,18 @@ void FixTree::AddDeclaration(Block *pBlock, Declaration *pDeclaration, FunctionD
                 STRING_MESSAGE_ARGUMENT, "name", pDeclaration->name,
                 MESSAGE_ARGUMENT_END);
         }
+    }
 
-        AddLocalVariable(pFunctionDefinition, pDeclaration);
+    if (pFunctionDefinition)
+    {
         pDeclaration->is_local = DVM_TRUE;
+        AddLocalVariable(pFunctionDefinition, pDeclaration, bIsParameter);
     }
     else
     {
         DKC_Compiler *pCompiler = m_Interface.GetCurrentCompiler();
-        pCompiler->declaration_list = m_Create.ChainDeclaration(pCompiler->declaration_list, pDeclaration);
         pDeclaration->is_local = DVM_FALSE;
+        pCompiler->declaration_list = m_Create.ChainDeclaration(pCompiler->declaration_list, pDeclaration);
     }
 }
 
@@ -1497,8 +1882,14 @@ void FixTree::AddParameterAsDeclaration(FunctionDefinition *pFunctionDefinition)
                 MESSAGE_ARGUMENT_END);
         }
 
+        FixTypeSpecifier(pParam->type);
+
         Declaration *pDeclaration = m_Create.AllocDeclaration(pParam->type, pParam->name);
-        AddDeclaration(pFunctionDefinition->block, pDeclaration, pFunctionDefinition, pParam->line_number);
+
+        if (nullptr == pFunctionDefinition || pFunctionDefinition->block)
+        {
+            AddDeclaration(pFunctionDefinition->block, pDeclaration, pFunctionDefinition, pParam->line_number, true);
+        }
     }
 }
 
@@ -1532,7 +1923,7 @@ void FixTree::AddReturnFunction(FunctionDefinition *pFunctionDefinition)
         pRetStatement->u.return_s.return_value->line_number = pFunctionDefinition->end_line_number;
     }
 
-    FixReturnStatement(pFunctionDefinition->block, &pRetStatement->u.return_s, pFunctionDefinition);
+    FixReturnStatement(pFunctionDefinition->block, pRetStatement, pFunctionDefinition);
     *ppLastStatementList = m_Create.CreateStatementList(pRetStatement);
 }
 

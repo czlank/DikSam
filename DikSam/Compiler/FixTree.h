@@ -40,12 +40,22 @@ private:
     Expression* FixMemberExpression(Block *pBlock, Expression *pExpression);
     Expression* FixThisExpression(Expression *pExpression);
     Expression* FixSuperExpression(Expression *pExpression, Expression *pParent);
+    Expression* FixInstanceofExpression(Block *pBlock, Expression *pExpression);
+    Expression* FixDownCastExpression(Block *pBlock, Expression *pExpression);
+    Expression* FixNewExpression(Block *pBlock, Expression *pExpression);
     
     void FixParameterList(ParameterList *pParameterList);
     void FixTypeSpecifier(TypeSpecifier *pTypeSpecifier);
     void FixIfStatement(Block *pBlock, IfStatement *pIfStatement, FunctionDefinition *pFunctionDefinition);
-    void FixReturnStatement(Block *pBlock, ReturnStatement *pReturnStatement, FunctionDefinition *pFunctionDefinition);
+    void FixWhileStatement(Block *pBlock, WhileStatement *pWhileStatement, FunctionDefinition *pFunctionDefinition);
+    void FixDoWhileStatement(Block *pBlock, DoWhileStatement *pDoWhileStatement, FunctionDefinition *pFunctionDefinition);
+    void FixForStatement(Block *pBlock, ForStatement *pForStatement, FunctionDefinition *pFunctionDefinition);
+    void FixReturnStatement(Block *pBlock, Statement *pStatement, FunctionDefinition *pFunctionDefinition);
     void FixStatementList(Block *pBlock, StatementList *pStatementList, FunctionDefinition *pFunctionDefinition);
+    void FixFunction(FunctionDefinition *pFunctionDefinition);
+    void AddSuperInterface(ClassDefinition *pClassDefinition);
+    void FixExtends(ClassDefinition *pClassDefinition);
+    void AddDefaultConstructor(ClassDefinition *pClassDefinition);
 
     Expression* EvalMathExpressionInt(Expression *pExpression, int left, int right);
     Expression* EvalMathExpressionDouble(Expression *pExpression, double left, double right);
@@ -64,8 +74,8 @@ private:
     Expression* CreateToStringCast(Expression *pExpression);
 
     void CheckArgument(Block *pBlock, int iLine, ParameterList *pParamList, ArgumentList *pArg, TypeSpecifier *pArrayBase);
-    void AddLocalVariable(FunctionDefinition *pFunctionDefinition, Declaration *pDeclaration);
-    void AddDeclaration(Block *pBlock, Declaration *pDeclaration, FunctionDefinition *pFunctionDefinition, int iLine);
+    void AddLocalVariable(FunctionDefinition *pFunctionDefinition, Declaration *pDeclaration, bool bIsParameter);
+    void AddDeclaration(Block *pBlock, Declaration *pDeclaration, FunctionDefinition *pFunctionDefinition, int iLine, bool bIsParameter);
     void AddParameterAsDeclaration(FunctionDefinition *pFunctionDefinition);
     void AddReturnFunction(FunctionDefinition *pFunctionDefinition);
 
