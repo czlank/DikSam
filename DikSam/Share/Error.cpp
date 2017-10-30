@@ -147,6 +147,7 @@ void Error::InitMessageFormat()
     m_ErrorMessageFormat[WHILE_CONDITION_NOT_BOOLEAN_ERR]           = TEXT("while语句的条件表达式不是boolean型。");
     m_ErrorMessageFormat[FOR_CONDITION_NOT_BOOLEAN_ERR]             = TEXT("for语句的条件表达式不是boolean型。");
     m_ErrorMessageFormat[DO_WHILE_CONDITION_NOT_BOOLEAN_ERR]        = TEXT("do while语句的条件表达式不是boolean型。");
+    m_ErrorMessageFormat[OVERRIDE_METHOD_ACCESSIBILITY_ERR]         = TEXT("被覆盖的方法$(name)的访问修饰符必须比超类的更严格。");
     m_ErrorMessageFormat[BAD_PARAMETER_COUNT_ERR]                   = TEXT("方法或函数$(name)的参数数量错误。");
     m_ErrorMessageFormat[BAD_PARAMETER_TYPE_ERR]                    = TEXT("方法或函数$(func_name)的第$(index)个参数$(param_name)的类型错误。");
     m_ErrorMessageFormat[BAD_RETURN_TYPE_ERR]                       = TEXT("方法或函数$(name)的返回值类型错误。");

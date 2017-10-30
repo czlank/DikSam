@@ -1153,39 +1153,6 @@ void FixTree::FixFunction(FunctionDefinition *pFunctionDefinition)
     }
 }
 
-void FixTree::AddSuperInterface(ClassDefinition *pClassDefinition)
-{
-    ExtendsList *pTail = nullptr;
-
-    if (pClassDefinition->interface_list)
-    {
-        for (pTail = pClassDefinition->interface_list; pTail->next; pTail = pTail->next)
-            ;
-    }
-
-    for (ClassDefinition *pos = pClassDefinition->super_class; pos; pos = pos->super_class)
-    {
-        for (ExtendsList *pIfPos = pos->interface_list; pIfPos; pIfPos = pIfPos->next)
-        {
-            ExtendsList *pNewExtends = (ExtendsList*)dkc_malloc(sizeof(ExtendsList));
-
-            *pNewExtends = *pIfPos;
-            pNewExtends->next = nullptr;
-
-            if (pTail)
-            {
-                pTail->next = pNewExtends;
-            }
-            else
-            {
-                pClassDefinition->interface_list = pNewExtends;
-            }
-
-            pTail = pNewExtends;
-        }
-    }
-}
-
 void FixTree::FixExtends(ClassDefinition *pClassDefinition)
 {
     if (DVM_INTERFACE_DEFINITION == pClassDefinition->class_or_interface && pClassDefinition->extends)
@@ -1240,54 +1207,6 @@ void FixTree::FixExtends(ClassDefinition *pClassDefinition)
 
             pLastExtendsList = pNewExtendsList;
         }
-    }
-}
-
-void FixTree::AddDefaultConstructor(ClassDefinition *pClassDefinition)
-{
-    MemberDeclaration *pTail = nullptr;
-
-    for (MemberDeclaration *pos = pClassDefinition->member; pos; pos = pos->next)
-    {
-        if (METHOD_MEMBER == pos->kind && DVM_TRUE == pos->u.method.is_constructor)
-        {
-            return;
-        }
-
-        pTail = pos;
-    }
-
-    TypeSpecifier *pTypeSpecifier = m_Util.AllocTypeSpecifier(DVM_VOID_TYPE);
-    Block *pBlock = m_Create.AllocBlock();
-    ClassOrMemberModifierList modifier = m_Create.CreateClassOrMemberModifier(VIRTUAL_MODIFIER);
-
-    if (pClassDefinition->super_class)
-    {
-        Statement *pStatement = m_Create.AllocStatement(EXPRESSION_STATEMENT);
-        Expression *pSuperExpression = m_Create.CreateSuperExpression();
-        Expression *pMemberExpression = m_Create.CreateMemberExpression(pSuperExpression, DEFAULT_CONSTRUCTOR_NAME);
-        Expression *pFunctionCallExpression = m_Create.CreateFunctionCallExpression(pMemberExpression, nullptr);
-
-        pStatement->u.expression_s = pFunctionCallExpression;
-        pBlock->statement_list = m_Create.CreateStatementList(pStatement);
-
-        modifier = m_Create.ChainClassOrMemberModifier(modifier, m_Create.CreateClassOrMemberModifier(OVERRIDE_MODIFIER));
-        modifier = m_Create.ChainClassOrMemberModifier(modifier, m_Create.CreateClassOrMemberModifier(PUBLIC_MODIFIER));
-    }
-    else
-    {
-        pBlock->statement_list = nullptr;
-    }
-
-    FunctionDefinition *pFunctionDefinition = m_Create.CreateFunctionDefinition(pTypeSpecifier, DEFAULT_CONSTRUCTOR_NAME, nullptr, pBlock);
-
-    if (pTail)
-    {
-        pTail->next = m_Create.CreateMethodMember(&modifier, pFunctionDefinition, DVM_TRUE);
-    }
-    else
-    {
-        pClassDefinition->member = m_Create.CreateMethodMember(&modifier, pFunctionDefinition, DVM_TRUE);
     }
 }
 
@@ -2191,5 +2110,159 @@ void FixTree::CheckMemberAccessibility(int iLine, ClassDefinition *pTargetClass,
         m_Error.CompileError(iLine, PACKAGE_MEMBER_ACCESS_ERR,
             STRING_MESSAGE_ARGUMENT, "member_name", lpstrMemberName,
             MESSAGE_ARGUMENT_END);
+    }
+}
+
+void FixTree::AddSuperInterface(ClassDefinition *pClassDefinition)
+{
+    ExtendsList *pTail = nullptr;
+
+    if (pClassDefinition->interface_list)
+    {
+        for (pTail = pClassDefinition->interface_list; pTail->next; pTail = pTail->next)
+            ;
+    }
+
+    for (ClassDefinition *pos = pClassDefinition->super_class; pos; pos = pos->super_class)
+    {
+        for (ExtendsList *pIfPos = pos->interface_list; pIfPos; pIfPos = pIfPos->next)
+        {
+            ExtendsList *pNewExtends = (ExtendsList*)dkc_malloc(sizeof(ExtendsList));
+
+            *pNewExtends = *pIfPos;
+            pNewExtends->next = nullptr;
+
+            if (pTail)
+            {
+                pTail->next = pNewExtends;
+            }
+            else
+            {
+                pClassDefinition->interface_list = pNewExtends;
+            }
+
+            pTail = pNewExtends;
+        }
+    }
+}
+
+void FixTree::AddDefaultConstructor(ClassDefinition *pClassDefinition)
+{
+    MemberDeclaration *pTail = nullptr;
+
+    for (MemberDeclaration *pos = pClassDefinition->member; pos; pos = pos->next)
+    {
+        if (METHOD_MEMBER == pos->kind && DVM_TRUE == pos->u.method.is_constructor)
+        {
+            return;
+        }
+
+        pTail = pos;
+    }
+
+    TypeSpecifier *pTypeSpecifier = m_Util.AllocTypeSpecifier(DVM_VOID_TYPE);
+    Block *pBlock = m_Create.AllocBlock();
+    ClassOrMemberModifierList modifier = m_Create.CreateClassOrMemberModifier(VIRTUAL_MODIFIER);
+
+    if (pClassDefinition->super_class)
+    {
+        Statement *pStatement = m_Create.AllocStatement(EXPRESSION_STATEMENT);
+        Expression *pSuperExpression = m_Create.CreateSuperExpression();
+        Expression *pMemberExpression = m_Create.CreateMemberExpression(pSuperExpression, DEFAULT_CONSTRUCTOR_NAME);
+        Expression *pFunctionCallExpression = m_Create.CreateFunctionCallExpression(pMemberExpression, nullptr);
+
+        pStatement->u.expression_s = pFunctionCallExpression;
+        pBlock->statement_list = m_Create.CreateStatementList(pStatement);
+
+        modifier = m_Create.ChainClassOrMemberModifier(modifier, m_Create.CreateClassOrMemberModifier(OVERRIDE_MODIFIER));
+        modifier = m_Create.ChainClassOrMemberModifier(modifier, m_Create.CreateClassOrMemberModifier(PUBLIC_MODIFIER));
+    }
+    else
+    {
+        pBlock->statement_list = nullptr;
+    }
+
+    FunctionDefinition *pFunctionDefinition = m_Create.CreateFunctionDefinition(pTypeSpecifier, DEFAULT_CONSTRUCTOR_NAME, nullptr, pBlock);
+
+    if (pTail)
+    {
+        pTail->next = m_Create.CreateMethodMember(&modifier, pFunctionDefinition, DVM_TRUE);
+    }
+    else
+    {
+        pClassDefinition->member = m_Create.CreateMethodMember(&modifier, pFunctionDefinition, DVM_TRUE);
+    }
+}
+
+void FixTree::GetSuperFieldMethodCount(ClassDefinition *pClassDefinition, int *pFieldIndexOut, int *pMethodIndexOut)
+{
+    int iFieldIndex = -1;
+    int iMethodIndex = -1;
+
+    for (ClassDefinition *pCdPos = pClassDefinition->super_class; pCdPos; pCdPos = pCdPos->super_class)
+    {
+        for (MemberDeclaration *pMPos = pCdPos->member; pMPos; pMPos = pMPos->next)
+        {
+            if (METHOD_MEMBER == pMPos->kind)
+            {
+                if (pMPos->u.method.method_index > iMethodIndex)
+                {
+                    iMethodIndex = pMPos->u.method.method_index;
+                }
+            }
+            else
+            {
+                DBG_assert(FIELD_MEMBER == pMPos->kind, ("pMPos->kind..", pMPos->kind));
+
+                if (pMPos->u.field.field_index > iFieldIndex)
+                {
+                    iFieldIndex = pMPos->u.field.field_index;
+                }
+            }
+        }
+    }
+
+    *pFieldIndexOut = iFieldIndex + 1;
+    *pMethodIndexOut = iMethodIndex + 1;
+}
+
+MemberDeclaration* FixTree::SearchMemberInSuper(ClassDefinition *pClassDefinition, char *lpstrMemberName)
+{
+    MemberDeclaration *pMemberDeclaration = nullptr;
+
+    if (pClassDefinition->super_class)
+    {
+        pMemberDeclaration = m_Util.SearchMember(pClassDefinition->super_class, lpstrMemberName);
+    }
+
+    if (pMemberDeclaration)
+    {
+        return pMemberDeclaration;
+    }
+
+    for (ExtendsList *pos = pClassDefinition->interface_list; pos; pos = pos->next)
+    {
+        pMemberDeclaration = m_Util.SearchMember(pos->class_definition, lpstrMemberName);
+
+        if (pMemberDeclaration)
+        {
+            return pMemberDeclaration;
+        }
+    }
+}
+
+void FixTree::CheckMethodOverride(MemberDeclaration *pSuperMethod, MemberDeclaration *pSubMethod)
+{
+    if (DVM_PUBLIC_ACCESS == pSuperMethod->access_modifier && pSubMethod->access_modifier != DVM_PUBLIC_ACCESS
+        || DVM_FILE_ACCESS == pSuperMethod->access_modifier && DVM_PRIVATE_ACCESS == pSubMethod->access_modifier)
+    {
+        m_Error.CompileError(pSubMethod->line_number, OVERRIDE_METHOD_ACCESSIBILITY_ERR,
+            STRING_MESSAGE_ARGUMENT, "name", pSubMethod->u.method.function_definition->name,
+            MESSAGE_ARGUMENT_END);
+    }
+
+    if (DVM_FALSE == pSubMethod->u.method.is_constructor)
+    {
+        CheckFunctionCompatibility(pSuperMethod->u.method.function_definition, pSubMethod->u.method.function_definition);
     }
 }

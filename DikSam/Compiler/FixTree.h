@@ -53,9 +53,7 @@ private:
     void FixReturnStatement(Block *pBlock, Statement *pStatement, FunctionDefinition *pFunctionDefinition);
     void FixStatementList(Block *pBlock, StatementList *pStatementList, FunctionDefinition *pFunctionDefinition);
     void FixFunction(FunctionDefinition *pFunctionDefinition);
-    void AddSuperInterface(ClassDefinition *pClassDefinition);
     void FixExtends(ClassDefinition *pClassDefinition);
-    void AddDefaultConstructor(ClassDefinition *pClassDefinition);
 
     Expression* EvalMathExpressionInt(Expression *pExpression, int left, int right);
     Expression* EvalMathExpressionDouble(Expression *pExpression, double left, double right);
@@ -91,6 +89,11 @@ private:
     void CheckFunctionCompatibility(int iLine, char *lpstrName, TypeSpecifier *pType1, ParameterList *pParam1, TypeSpecifier *pType2, ParameterList *pParam2);
     void CheckFunctionCompatibility(FunctionDefinition *pFunctionDefine1, FunctionDefinition *pFunctionDefine2);
     void CheckMemberAccessibility(int iLine, ClassDefinition *pTargetClass, MemberDeclaration *pMember, char *lpstrMemberName);
+    void AddSuperInterface(ClassDefinition *pClassDefinition);
+    void AddDefaultConstructor(ClassDefinition *pClassDefinition);
+    void GetSuperFieldMethodCount(ClassDefinition *pClassDefinition, int *pFieldIndexOut, int *pMethodIndexOut);
+    MemberDeclaration* SearchMemberInSuper(ClassDefinition *pClassDefinition, char *lpstrMemberName);
+    void CheckMethodOverride(MemberDeclaration *pSuperMethod, MemberDeclaration *pSubMethod);
 
     inline bool IsInt(TypeSpecifier *pType) { return (DVM_INT_TYPE == pType->basic_type && nullptr == pType->derive); }
     inline bool IsDouble(TypeSpecifier *pType) { return (DVM_DOUBLE_TYPE == pType->basic_type && nullptr == pType->derive); }
