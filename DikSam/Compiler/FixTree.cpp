@@ -37,6 +37,11 @@
 #endif
 #define MEM_strdup(ptr)                     (m_Memory.StrDUP(__FILE__, __LINE__, ptr))
 
+#ifdef dkc_malloc
+#undef dkc_malloc
+#endif
+#define dkc_malloc(size)                    (m_Util.Malloc(__FILE__, __LINE__, size))
+
 FixTree::FixTree(Debug& debug, Memory& memory, Util& util, Error& error, Create& create, Interface& refInterface)
     : m_Debug(debug)
     , m_Memory(memory)
@@ -55,23 +60,25 @@ FixTree::~FixTree()
 
 void FixTree::operator () (DKC_Compiler *pCompiler)
 {
-    FixStatementList(nullptr, pCompiler->statement_list, nullptr);
+    FixClassList(pCompiler);
 
-    FunctionDefinition *pFunctionDefinition = pCompiler->function_list;
-    for (; pFunctionDefinition; pFunctionDefinition = pFunctionDefinition->next)
+    for (FunctionDefinition *pos = pCompiler->function_list; pos; pos = pos->next)
     {
-        if (nullptr == pFunctionDefinition->block)
-            continue;
-
-        AddParameterAsDeclaration(pFunctionDefinition);
-        FixStatementList(pFunctionDefinition->block, pFunctionDefinition->block->statement_list, pFunctionDefinition);
-        AddReturnFunction(pFunctionDefinition);
+        ReservFunctionIndex(pCompiler, pos);
     }
 
-    DeclarationList *pDeclarationList = pCompiler->declaration_list;
-    int iVariableCount = 0;
+    FixStatementList(nullptr, pCompiler->statement_list, nullptr);
 
-    for (; pDeclarationList; pDeclarationList = pDeclarationList->next)
+    for (FunctionDefinition *pos = pCompiler->function_list; pos; pos = pos->next)
+    {
+        if (nullptr == pos->class_definition)
+        {
+            FixFunction(pos);
+        }
+    }
+
+    int iVariableCount = 0;
+    for (DeclarationList *pDeclarationList = pCompiler->declaration_list; pDeclarationList; pDeclarationList = pDeclarationList->next)
     {
         pDeclarationList->declaration->variable_index = iVariableCount++;
     }
@@ -333,7 +340,7 @@ Expression* FixTree::FixCommaExpression(Block *pBlock, Expression *pExpression)
 Expression* FixTree::FixAssignExpression(Block *pBlock, Expression *pExpression)
 {
     if (pExpression->u.assign_expression.left->kind != IDENTIFIER_EXPRESSION
-        && pExpression->u.assign_expression.left->kind |= INDEX_EXPRESSION
+        && pExpression->u.assign_expression.left->kind != INDEX_EXPRESSION
         && pExpression->u.assign_expression.left->kind != MEMBER_EXPRESSION)
     {
         m_Error.CompileError(pExpression->u.assign_expression.left->line_number,
@@ -1210,6 +1217,118 @@ void FixTree::FixExtends(ClassDefinition *pClassDefinition)
     }
 }
 
+void FixTree::FixClassList(DKC_Compiler *pCompiler)
+{
+    for (ClassDefinition *pos = pCompiler->class_definition_list; pos; pos = pos->next)
+    {
+        AddClass(pos);
+        FixExtends(pos);
+    }
+
+    for (ClassDefinition *pos = pCompiler->class_definition_list; pos; pos = pos->next)
+    {
+        AddSuperInterface(pos);
+    }
+
+    for (ClassDefinition *pos = pCompiler->class_definition_list; pos; pos = pos->next)
+    {
+        if (pos->class_or_interface != DVM_CLASS_DEFINITION)
+            continue;
+
+        pCompiler->current_class_definition = pos;
+        AddDefaultConstructor(pos);
+        pCompiler->current_class_definition = nullptr;
+    }
+
+    for (ClassDefinition *pos = pCompiler->class_definition_list; pos; pos = pos->next)
+    {
+        int iFieldIndex;
+        int iMethodIndex;
+        char *lpstrAbstractMethodName = nullptr;
+
+        pCompiler->current_class_definition = pos;
+
+        GetSuperFieldMethodCount(pos, &iFieldIndex, &iMethodIndex);
+
+        for (MemberDeclaration *pMemberPos = pos->member; pMemberPos; pMemberPos = pMemberPos->next)
+        {
+            if (METHOD_MEMBER == pMemberPos->kind)
+            {
+                FixFunction(pMemberPos->u.method.function_definition);
+
+                MemberDeclaration *pSuperMember = SearchMemberInSuper(pos, pMemberPos->u.method.function_definition->name);
+
+                if (pSuperMember)
+                {
+                    if (pSuperMember->kind != METHOD_MEMBER)
+                    {
+                        m_Error.CompileError(pMemberPos->line_number, FIELD_OVERRIDED_ERR,
+                            STRING_MESSAGE_ARGUMENT, "name", pSuperMember->u.field.name,
+                            MESSAGE_ARGUMENT_END);
+                    }
+
+                    if (DVM_FALSE == pSuperMember->u.method.is_virtual)
+                    {
+                        m_Error.CompileError(pMemberPos->line_number, NON_VIRTUAL_METHOD_OVERRIDED_ERR,
+                            STRING_MESSAGE_ARGUMENT, "name", pMemberPos->u.method.function_definition->name,
+                            MESSAGE_ARGUMENT_END);
+                    }
+
+                    if (DVM_FALSE == pMemberPos->u.method.is_override)
+                    {
+                        m_Error.CompileError(pMemberPos->line_number, NEED_OVERRIDE_ERR,
+                            STRING_MESSAGE_ARGUMENT, "name", pMemberPos->u.method.function_definition->name,
+                            MESSAGE_ARGUMENT_END);
+                    }
+
+                    CheckMethodOverride(pSuperMember, pMemberPos);
+
+                    pMemberPos->u.method.method_index = pSuperMember->u.method.method_index;
+                }
+                else
+                {
+                    pMemberPos->u.method.method_index = iMethodIndex;
+                    iMethodIndex++;
+                }
+
+                if (DVM_TRUE == pMemberPos->u.method.is_abstract)
+                {
+                    lpstrAbstractMethodName = pMemberPos->u.method.function_definition->name;
+                }
+            }
+            else
+            {
+                DBG_assert(FIELD_MEMBER == pMemberPos->kind, ("pMemberPos->kind..", pMemberPos->kind));
+
+                FixTypeSpecifier(pMemberPos->u.field.type);
+
+                MemberDeclaration *pSuperMember = SearchMemberInSuper(pos, pMemberPos->u.field.name);
+
+                if (pSuperMember)
+                {
+                    m_Error.CompileError(pMemberPos->line_number, FIELD_NAME_DUPLICATE_ERR,
+                        STRING_MESSAGE_ARGUMENT, "name", pMemberPos->u.field.name,
+                        MESSAGE_ARGUMENT_END);
+                }
+                else
+                {
+                    pMemberPos->u.field.field_index = iFieldIndex;
+                    iFieldIndex++;
+                }
+            }
+        }
+
+        if (lpstrAbstractMethodName && DVM_FALSE == pos->is_abstract)
+        {
+            m_Error.CompileError(pos->line_number, ABSTRACT_METHOD_IN_CONCRETE_CLASS_ERR,
+                STRING_MESSAGE_ARGUMENT, "method_name", lpstrAbstractMethodName,
+                MESSAGE_ARGUMENT_END);
+        }
+
+        pCompiler->current_class_definition = nullptr;
+    }
+}
+
 Expression* FixTree::EvalMathExpressionInt(Expression *pExpression, int left, int right)
 {
     switch (pExpression->kind)
@@ -1872,7 +1991,7 @@ int FixTree::ReservFunctionIndex(DKC_Compiler *pCompiler, FunctionDefinition *pS
         if (m_Util.ComparePackageName(srcPackageName, pCompiler->dvm_function[i].package_name)
             && std::string(pSrc->name) == pCompiler->dvm_function[i].name)
         {
-            MEM_Free(srcPackageName);
+            MEM_free(srcPackageName);
             return i;
         }
     }
@@ -2009,7 +2128,7 @@ ClassDefinition* FixTree::SearchAndAddClass(int iLine, char *lpstrName, int *pCl
     if (nullptr == pClassDefinition)
     {
         m_Error.CompileError(iLine, CLASS_NOT_FOUND_ERR,
-            STRING_MESSAGE_ARGUMENT, "name", name,
+            STRING_MESSAGE_ARGUMENT, "name", lpstrName,
             MESSAGE_ARGUMENT_END);
     }
 
@@ -2249,6 +2368,8 @@ MemberDeclaration* FixTree::SearchMemberInSuper(ClassDefinition *pClassDefinitio
             return pMemberDeclaration;
         }
     }
+
+    return nullptr;
 }
 
 void FixTree::CheckMethodOverride(MemberDeclaration *pSuperMethod, MemberDeclaration *pSubMethod)

@@ -54,6 +54,7 @@ private:
     void FixStatementList(Block *pBlock, StatementList *pStatementList, FunctionDefinition *pFunctionDefinition);
     void FixFunction(FunctionDefinition *pFunctionDefinition);
     void FixExtends(ClassDefinition *pClassDefinition);
+    void FixClassList(DKC_Compiler *pCompiler);
 
     Expression* EvalMathExpressionInt(Expression *pExpression, int left, int right);
     Expression* EvalMathExpressionDouble(Expression *pExpression, double left, double right);
