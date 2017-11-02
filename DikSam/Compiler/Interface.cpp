@@ -371,7 +371,7 @@ DVM_Executable* Interface::DoCompile(DKC_Compiler *pCompiler, char **ppLines, DV
     }
 
     FixTree(m_Debug, m_Memory, m_Util, m_Error, m_Create, *this)(pCompiler);
-    DVM_Executable *pExecutable = Generate(m_Debug, m_Memory, m_Error)(pCompiler);
+    DVM_Executable *pExecutable = Generate(m_Debug, m_Memory, m_Util, m_Error)(pCompiler);
 
     if (lpstrPath)
     {

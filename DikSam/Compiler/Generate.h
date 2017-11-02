@@ -4,6 +4,7 @@
 
 class Debug;
 class Memory;
+class Util;
 class Error;
 
 class Generate
@@ -40,7 +41,7 @@ class Generate
     };
 
 public:
-    Generate(Debug& debug, Memory& memory, Error& error);
+    Generate(Debug& debug, Memory& memory, Util& util, Error& error);
     ~Generate();
 
     DVM_Executable* operator () (DKC_Compiler *pCompiler);
@@ -85,7 +86,7 @@ private:
     void GenerateStatement(DVM_Executable *pExecutable, Block *pBlock, Statement *pStatement, OpcodeBuf *pOpcode);
     void GenerateStatementList(DVM_Executable *pExecutable, Block *pBlock, StatementList *pStatementList, OpcodeBuf *pOpcode);
 
-    DVM_Executable* AllocExecutable();
+    DVM_Executable* AllocExecutable(PackageName *pPackageName);
     DVM_LocalVariable* CopyParameterList(ParameterList *pParameterList, int *pParameterCount);
     DVM_LocalVariable* CopyLocalVariables(FunctionDefinition *pFunctionDefinition, int iParameterCount);
     void CopyTypeSpecifierNoAlloc(TypeSpecifier *pSrc, DVM_TypeSpecifier *pDest);
@@ -98,11 +99,16 @@ private:
     DVM_Byte* FixOpcodeBuf(OpcodeBuf *pOpcode);
     int CalcNeedStackSize(DVM_Byte *pCode, int iCodeSize);
     void CopyFunction(FunctionDefinition *pFunctionDefinition, DVM_Function *pFunction);
+    int CountParameter(ParameterList *pSrc);
+    void AddMethod(MemberDeclaration *pMember, DVM_Method *pDest);
+    void AddField(MemberDeclaration *pMember, DVM_Field *pDest);
+    void SetClassIdentifier(ClassDefinition *pClassDefinition, DVM_ClassIdentifier *pClassIdentifier);
 
     inline bool IsString(TypeSpecifier *pType) { return (DVM_STRING_TYPE == pType->basic_type && nullptr == pType->derive); }
 
 private:
     Debug   &m_Debug;
     Memory  &m_Memory;
+    Util    &m_Util;
     Error   &m_Error;
 };

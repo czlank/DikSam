@@ -2,6 +2,7 @@
 #include "Generate.h"
 #include "Debug.h"
 #include "Memory.h"
+#include "Util.h"
 #include "Error.h"
 #include "OpcodeInfo.h"
 
@@ -33,7 +34,7 @@
 #define OPCODE_ALLOC_SIZE       (256)
 #define LABEL_TABLE_ALLOC_SIZE  (256)
 
-Generate::Generate(Debug& debug, Memory& memory, Error& error)
+Generate::Generate(Debug& debug, Memory& memory, Util& util, Error& error)
     : m_Debug(debug)
     , m_Memory(memory)
     , m_Error(error)
@@ -930,10 +931,12 @@ void Generate::GenerateStatementList(DVM_Executable *pExecutable, Block *pBlock,
     }
 }
 
-DVM_Executable* Generate::AllocExecutable()
+DVM_Executable* Generate::AllocExecutable(PackageName *pPackageName)
 {
     DVM_Executable *pExecutable = (DVM_Executable*)MEM_malloc(sizeof(DVM_Executable));
 
+    pExecutable->package_name = m_Util.PackageNameToString(pPackageName);
+    pExecutable->is_required = DVM_FALSE;
     pExecutable->constant_pool_count = 0;
     pExecutable->constant_pool = nullptr;
     pExecutable->global_variable_count = 0;
@@ -950,12 +953,7 @@ DVM_Executable* Generate::AllocExecutable()
 
 DVM_LocalVariable* Generate::CopyParameterList(ParameterList *pParameterList, int *pParameterCount)
 {
-    int iParamCount = 0;
-
-    for (ParameterList *pParam = pParameterList; pParam; pParam = pParam->next)
-    {
-        iParamCount++;
-    }
+    int iParamCount = CountParameter(pParameterList);
 
     *pParameterCount = iParamCount;
 
@@ -988,6 +986,15 @@ DVM_LocalVariable* Generate::CopyLocalVariables(FunctionDefinition *pFunctionDef
 void Generate::CopyTypeSpecifierNoAlloc(TypeSpecifier *pSrc, DVM_TypeSpecifier *pDest)
 {
     pDest->basic_type = pSrc->basic_type;
+
+    if (DVM_CLASS_TYPE == pSrc->basic_type)
+    {
+        pDest->class_index = pSrc->class_ref.class_index;
+    }
+    else
+    {
+        pDest->class_index = -1;
+    }
 
     int iDeriveCount = 0;
     for (TypeDerive *pDerive = pSrc->derive; pDerive; pDerive = pDerive->next)
@@ -1190,4 +1197,38 @@ void Generate::CopyFunction(FunctionDefinition *pFunctionDefinition, DVM_Functio
         pFunction->local_variable = nullptr;
         pFunction->local_variable_count = 0;
     }
+}
+
+int Generate::CountParameter(ParameterList *pSrc)
+{
+    int iParamCount = 0;
+
+    for (ParameterList *pos = pSrc; pos; pos = pos->next)
+    {
+        iParamCount++;
+    }
+
+    return iParamCount;
+}
+
+void Generate::AddMethod(MemberDeclaration *pMember, DVM_Method *pDest)
+{
+    pDest->access_modifier = pMember->access_modifier;
+    pDest->is_abstract = pMember->u.method.is_abstract;
+    pDest->is_virtual = pMember->u.method.is_virtual;
+    pDest->is_override = pMember->u.method.is_override;
+    pDest->name = MEM_strdup(pMember->u.method.function_definition->name);
+}
+
+void Generate::AddField(MemberDeclaration *pMember, DVM_Field *pDest)
+{
+    pDest->access_modifier = pMember->access_modifier;
+    pDest->name = MEM_strdup(pMember->u.field.name);
+    pDest->type = CopyTypeSpecifier(pMember->u.field.type);
+}
+
+void Generate::SetClassIdentifier(ClassDefinition *pClassDefinition, DVM_ClassIdentifier *pClassIdentifier)
+{
+    pClassIdentifier = MEM_strdup(pClassDefinition->name);
+    pClassIdentifier->package_name = m_Util.PackageNameToString(pClassDefinition->package_name);
 }
