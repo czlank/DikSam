@@ -1229,6 +1229,94 @@ void Generate::AddField(MemberDeclaration *pMember, DVM_Field *pDest)
 
 void Generate::SetClassIdentifier(ClassDefinition *pClassDefinition, DVM_ClassIdentifier *pClassIdentifier)
 {
-    pClassIdentifier = MEM_strdup(pClassDefinition->name);
+    pClassIdentifier->name = MEM_strdup(pClassDefinition->name);
     pClassIdentifier->package_name = m_Util.PackageNameToString(pClassDefinition->package_name);
+}
+
+DVM_Class* Generate::SearchClass(DKC_Compiler *pCompiler, ClassDefinition *pSrc)
+{
+    char *lpstrPackageName = m_Util.PackageNameToString(pSrc->package_name);
+
+    for (int i = 0; i < pCompiler->dvm_class_count; i++)
+    {
+        if (m_Util.ComparePackageName(lpstrPackageName, pCompiler->dvm_class[i].package_name)
+            && std::string(pSrc->name) == pCompiler->dvm_class[i].name)
+        {
+            MEM_free(lpstrPackageName);
+
+            return &pCompiler->dvm_class[i];
+        }
+    }
+
+    DBG_assert(0, ("function ", lpstrPackageName, "::", pSrc->name, " not found."));
+
+    return nullptr;
+}
+
+void Generate::AddClass(DVM_Executable *pExecutable, ClassDefinition *pClassDefinition, DVM_Class *pDest)
+{
+    pDest->is_abstract = pClassDefinition->is_abstract;
+    pDest->access_modifier = pClassDefinition->access_modifier;
+    pDest->class_or_interface = pClassDefinition->class_or_interface;
+
+    if (pClassDefinition->super_class)
+    {
+        pDest->super_class = (ClassDefinition*)MEM_malloc(sizeof(DVM_ClassIdentifier));
+        SetClassIdentifier(pClassDefinition->super_class, pDest->super_class);
+    }
+    else
+    {
+        pDest->super_class = nullptr;
+    }
+
+    int iInterfaceCount = 0;
+    for (ExtendsList *pos = pClassDefinition->interface_list; pos; pos = pos->next)
+    {
+        iInterfaceCount++;
+    }
+
+    pDest->interface_count = iInterfaceCount;
+    pDest->interface_ = (DVM_ClassIdentifier*)MEM_malloc(sizeof(DVM_ClassIdentifier) * iInterfaceCount);
+
+    iInterfaceCount = 0;
+    for (ExtendsList *pos = pClassDefinition->interface_list; pos; pos = pos->next)
+    {
+        SetClassIdentifier(pos->class_definition, &pDest->interface_[iInterfaceCount++]);
+    }
+
+    int iMethodCount = 0;
+    int iFieldCount = 0;
+
+    for (MemberDeclaration *pos = pClassDefinition->member; pos; pos = pos->next)
+    {
+        if (METHOD_MEMBER == pos->kind)
+        {
+            iMethodCount++;
+        }
+        else
+        {
+            DBG_assert(FIELD_MEMBER == pos->kind, ("pos->kind..", pos->kind));
+            iFieldCount++;
+        }
+    }
+
+    pDest->field_count = iFieldCount;
+    pDest->field = (DVM_Field*)MEM_malloc(sizeof(DVM_Field) * iFieldCount);
+    pDest->method_count = iMethodCount;
+    pDest->method = (DVM_Method*)MEM_malloc(sizeof(DVM_Method) * iMethodCount);
+
+    iMethodCount = iFieldCount = 0;
+
+    for (MemberDeclaration *pos = pClassDefinition->member; pos; pos = pos->next)
+    {
+        if (METHOD_MEMBER == pos->kind)
+        {
+            AddMethod(pos, &pDest->method[iMethodCount++]);
+        }
+        else
+        {
+            DBG_assert(FIELD_MEMBER == pos->kind, ("pos->kind..", pos->kind));
+            AddField(pos, &pDest->field[iFieldCount++]);
+        }
+    }
 }

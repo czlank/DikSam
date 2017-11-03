@@ -103,6 +103,8 @@ private:
     void AddMethod(MemberDeclaration *pMember, DVM_Method *pDest);
     void AddField(MemberDeclaration *pMember, DVM_Field *pDest);
     void SetClassIdentifier(ClassDefinition *pClassDefinition, DVM_ClassIdentifier *pClassIdentifier);
+    DVM_Class* SearchClass(DKC_Compiler *pCompiler, ClassDefinition *pSrc);
+    void AddClass(DVM_Executable *pExecutable, ClassDefinition *pClassDefinition, DVM_Class *pDest);
 
     inline bool IsString(TypeSpecifier *pType) { return (DVM_STRING_TYPE == pType->basic_type && nullptr == pType->derive); }
 
