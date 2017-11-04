@@ -11,6 +11,11 @@
 #endif
 #define DBG_assert(expression, arg) ((expression) ? (void)(0) : (m_Debug.Assert(__FILE__, __LINE__, #expression, arg)))
 
+#ifdef DBG_panic
+#undef DBG_panic
+#endif
+#define DBG_panic(arg)                      (m_Debug.Panic(__FILE__, __LINE__, arg))
+
 #ifdef MEM_malloc
 #undef MEM_malloc
 #endif
@@ -221,25 +226,25 @@ void Generate::GenerateBooleanExpression(DVM_Executable *pExecutable, Expression
     GenerateCode(pOpcode, pExpression->line_number, DVM_PUSH_INT_1BYTE, (DVM_TRUE == pExpression->u.boolean_value ? 1 : 0));
 }
 
-void Generate::GenerateIntExpression(DVM_Executable *pExecutable, Expression *pExpression, OpcodeBuf *pOpcode)
+void Generate::GenerateIntExpression(DVM_Executable *pExecutable, int iLine, int value, OpcodeBuf *pOpcode)
 {
-    if (pExpression->u.int_value >= 0 && pExpression->u.int_value < 256)
+    if (value >= 0 && value < 256)
     {
-        GenerateCode(pOpcode, pExpression->line_number, DVM_PUSH_INT_1BYTE, pExpression->u.int_value);
+        GenerateCode(pOpcode, iLine, DVM_PUSH_INT_1BYTE, value);
     }
-    else if (pExpression->u.int_value >= 0 && pExpression->u.int_value < 65536)
+    else if (value >= 0 && value < 65536)
     {
-        GenerateCode(pOpcode, pExpression->line_number, DVM_PUSH_INT_2BYTE, pExpression->u.int_value);
+        GenerateCode(pOpcode, iLine, DVM_PUSH_INT_2BYTE, value);
     }
     else
     {
         DVM_ConstantPool cPool;
 
         cPool.tag = DVM_CONSTANT_INT;
-        cPool.u.c_int = pExpression->u.int_value;
+        cPool.u.c_int = value;
         
         int cpIdx = AddConstantPool(pExecutable, &cPool);
-        GenerateCode(pOpcode, pExpression->line_number, DVM_PUSH_INT, cpIdx);
+        GenerateCode(pOpcode, iLine, DVM_PUSH_INT, cpIdx);
     }
 }
 
@@ -276,19 +281,33 @@ void Generate::GenerateStringExpression(DVM_Executable *pExecutable, Expression 
     GenerateCode(pOpcode, pExpression->line_number, DVM_PUSH_STRING, cpIdx);
 }
 
+void Generate::GenerateIdentifier(Declaration *pDeclaration, OpcodeBuf *pOpcode, int iLine)
+{
+    if (DVM_TRUE == pDeclaration->is_local)
+    {
+        GenerateCode(pOpcode, iLine, DVM_Opcode(DVM_PUSH_STACK_INT + GetOpcodeTypeOffset(pDeclaration->type)), pDeclaration->variable_index);
+    }
+    else
+    {
+        GenerateCode(pOpcode, iLine, DVM_Opcode(DVM_PUSH_STATIC_INT + GetOpcodeTypeOffset(pDeclaration->type)), pDeclaration->variable_index);
+    }
+}
+
 void Generate::GenerateIdentifierExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode)
 {
-    if (DVM_TRUE == pExpression->u.identifier.is_function)
+    switch (pExpression->u.identifier.kind)
     {
-        GenerateCode(pOpcode, pExpression->line_number, DVM_PUSH_FUNCTION, pExpression->u.identifier.u.function->index);
-        return;
+    case VARIABLE_IDENTIFIER :
+        GenerateIdentifier(pExpression->u.identifier.u.declaration, pOpcode, pExpression->line_number);
+        break;
+
+    case FUNCTION_IDENTIFIER :
+        GenerateCode(pOpcode, pExpression->line_number, DVM_PUSH_FUNCTION, pExpression->u.identifier.u.function.function_index);
+        break;
+
+    default :
+        DBG_panic(("bad default. kind..", pExpression->u.identifier.kind));
     }
-
-    DVM_Opcode code = pExpression->u.identifier.u.declaration->is_local ? DVM_PUSH_STACK_INT : DVM_PUSH_STATIC_INT;
-
-    GenerateCode(pOpcode, pExpression->line_number,
-        DVM_Opcode(code + GetOpcodeTypeOffset(pExpression->u.identifier.u.declaration->type)),
-        pExpression->u.identifier.u.declaration->variable_index);
 }
 
 void Generate::GeneratePopToIdentifier(Declaration *pDeclaration, int iLine, OpcodeBuf *pOpcode)
@@ -306,14 +325,33 @@ void Generate::GeneratePopToLValue(DVM_Executable *pExecutable, Block *pBlock, E
     {
         GeneratePopToIdentifier(pExpression->u.identifier.u.declaration, pExpression->line_number, pOpcode);
     }
-    else
+    else if (INDEX_EXPRESSION == pExpression->kind)
     {
-        DBG_assert(INDEX_EXPRESSION == pExpression->kind, ("pExpression->kind..", pExpression->kind));
-
         GenerateExpression(pExecutable, pBlock, pExpression->u.index_expression.array, pOpcode);
         GenerateExpression(pExecutable, pBlock, pExpression->u.index_expression.index, pOpcode);
         GenerateCode(pOpcode, pExpression->line_number, DVM_Opcode(DVM_POP_ARRAY_INT + GetOpcodeTypeOffset(pExpression->type)));
     }
+    else
+    {
+        DBG_assert(INDEX_EXPRESSION == pExpression->kind, ("pExpression->kind..", pExpression->kind));
+
+        GeneratePopToMember(pExecutable, pBlock, pExpression, pOpcode);
+    }
+}
+
+void Generate::GeneratePopToMember(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode)
+{
+    MemberDeclaration *pMember = pExpression->u.member_expression.declaration;
+
+    if (METHOD_MEMBER == pMember->kind)
+    {
+        m_Error.CompileError(pExpression->line_number, ASSIGN_TO_METHOD_ERR,
+            STRING_MESSAGE_ARGUMENT, "member_name", pMember->u.method.function_definition->name,
+            MESSAGE_ARGUMENT_END);
+    }
+
+    GenerateExpression(pExecutable, pBlock, pExpression->u.member_expression.expression, pOpcode);
+    GenerateCode(pOpcode, pExpression->line_number, DVM_Opcode(DVM_POP_FIELD_INT + GetOpcodeTypeOffset(pMember->u.field.type)), pMember->u.field.field_index);
 }
 
 void Generate::GenerateAssignExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode, bool isTopLevel)
@@ -370,24 +408,7 @@ void Generate::GenerateBinaryExpression(DVM_Executable *pExecutable, Block *pBlo
     GenerateExpression(pExecutable, pBlock, pLeftExpression, pOpcode);
     GenerateExpression(pExecutable, pBlock, pRightExpression, pOpcode);
 
-    int offset;
-
-    if ((NULL_EXPRESSION == pLeftExpression->kind && pRightExpression->kind != NULL_EXPRESSION)
-        || (pLeftExpression->kind != NULL_EXPRESSION && NULL_EXPRESSION == pRightExpression->kind))
-    {
-        // object type
-        offset = 2;
-    }
-    else if ((DVM_EQ_INT == opCode || DVM_NE_INT == opCode) && IsString(pLeftExpression->type))
-    {
-        // string type
-        offset = 3;
-    }
-    else
-    {
-        offset = GetOpcodeTypeOffset(pExpression->u.binary_expression.left->type);
-    }
-
+    int offset = GetBinaryExpressionOffset(pLeftExpression, pRightExpression, opCode);
     GenerateCode(pOpcode, pExpression->line_number, DVM_Opcode(opCode + offset));
 }
 
@@ -417,33 +438,42 @@ void Generate::GenerateLogicalOrExpression(DVM_Executable *pExecutable, Block *p
 
 void Generate::GenerateCastExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode)
 {
-    GenerateExpression(pExecutable, pBlock, pExpression->u.cast.operand, pOpcode);
-
     switch (pExpression->u.cast.type)
     {
     case INT_TO_DOUBLE_CAST :
+        GenerateExpression(pExecutable, pBlock, pExpression->u.cast.operand, pOpcode);
         GenerateCode(pOpcode, pExpression->line_number, DVM_CAST_INT_TO_DOUBLE);
         break;
 
     case DOUBLE_TO_INT_CAST :
+        GenerateExpression(pExecutable, pBlock, pExpression->u.cast.operand, pOpcode);
         GenerateCode(pOpcode, pExpression->line_number, DVM_CAST_DOUBLE_TO_INT);
         break;
 
     case BOOLEAN_TO_STRING_CAST :
+        GenerateExpression(pExecutable, pBlock, pExpression->u.cast.operand, pOpcode);
         GenerateCode(pOpcode, pExpression->line_number, DVM_CAST_BOOLEAN_TO_STRING);
         break;
 
     case INT_TO_STRING_CAST :
+        GenerateExpression(pExecutable, pBlock, pExpression->u.cast.operand, pOpcode);
         GenerateCode(pOpcode, pExpression->line_number, DVM_CAST_INT_TO_STRING);
         break;
 
     case DOUBLE_TO_STRING_CAST :
+        GenerateExpression(pExecutable, pBlock, pExpression->u.cast.operand, pOpcode);
         GenerateCode(pOpcode, pExpression->line_number, DVM_CAST_DOUBLE_TO_STRING);
         break;
 
     default :
         DBG_assert(0, ("pExpression->u.cast.type..", pExpression->u.cast.type));
     }
+}
+
+void Generate::GenerateUpCastExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode)
+{
+    GenerateExpression(pExecutable, pBlock, pExpression->u.up_cast.operand, pOpcode);
+    GenerateCode(pOpcode, pExpression->line_number, DVM_UP_CAST, pExpression->u.up_cast.interface_definition);
 }
 
 void Generate::GenerateArrayLiteralExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode)
@@ -529,6 +559,12 @@ void Generate::GenerateArrayCreationExpression(DVM_Executable *pExecutable, Bloc
     }
 
     GenerateCode(pOpcode, pExpression->line_number, DVM_NEW_ARRAY, iDimCount, index);
+}
+
+void Generate::GenerateInstanceofExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode)
+{
+    GenerateExpression(pExecutable, pBlock, pExpression->u.instanceof.operand, pOpcode);
+    GenerateCode(pOpcode, pExpression->line_number, DVM_INSTANCEOF, pExpression->u.instanceof.type->class_ref.class_index);
 }
 
 void Generate::GenerateExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode)
@@ -1049,9 +1085,11 @@ int Generate::GetOpcodeTypeOffset(TypeSpecifier *pTypeSpecifier)
 
     switch (pTypeSpecifier->basic_type)
     {
-    case DVM_BOOLEAN_TYPE :
-        return 0;
+    case DVM_VOID_TYPE :
+        DBG_assert(0, ("basic_type is void"));
+        break;
 
+    case DVM_BOOLEAN_TYPE :
     case DVM_INT_TYPE :
         return 0;
 
@@ -1059,14 +1097,37 @@ int Generate::GetOpcodeTypeOffset(TypeSpecifier *pTypeSpecifier)
         return 1;
 
     case DVM_STRING_TYPE :
+    case DVM_CLASS_TYPE :
         return 2;
 
     case DVM_NULL_TYPE :
+    case DVM_BASE_TYPE :
     default :
         DBG_assert(0, ("basic_type..", pTypeSpecifier->basic_type));
     }
 
     return 0;
+}
+
+int Generate::GetBinaryExpressionOffset(Expression *pLeft, Expression *pRight, DVM_Opcode opCode)
+{
+    int iOffset;
+
+    if (NULL_EXPRESSION == pLeft->kind && pRight->kind != NULL_EXPRESSION
+        || pLeft->kind != NULL_EXPRESSION && NULL_EXPRESSION == pRight->kind)
+    {
+        iOffset = 2;    // object type
+    }
+    else if ((DVM_EQ_INT == opCode || DVM_NE_INT == opCode) && IsString(pLeft->type))
+    {
+        iOffset = 3;
+    }
+    else
+    {
+        iOffset = GetOpcodeTypeOffset(pLeft->type);
+    }
+
+    return iOffset;
 }
 
 int Generate::GetLabel(OpcodeBuf *pOpcode)
@@ -1318,5 +1379,20 @@ void Generate::AddClass(DVM_Executable *pExecutable, ClassDefinition *pClassDefi
             DBG_assert(FIELD_MEMBER == pos->kind, ("pos->kind..", pos->kind));
             AddField(pos, &pDest->field[iFieldCount++]);
         }
+    }
+}
+
+void Generate::AddClasses(DKC_Compiler *pCompiler, DVM_Executable *pExecutable)
+{
+    for (ClassDefinition *pos = pCompiler->class_definition_list; pos; pos = pos->next)
+    {
+        DVM_Class *pClass = SearchClass(pCompiler, pos);
+        pClass->is_implemented = DVM_TRUE;
+    }
+
+    for (int i = 0; i < pCompiler->dvm_class_count; i++)
+    {
+        ClassDefinition *pClassDefinition = m_Util.SearchClass(pCompiler->dvm_class[i].name);
+        AddClass(pExecutable, pClassDefinition, &pCompiler->dvm_class[i]);
     }
 }

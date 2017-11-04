@@ -56,23 +56,27 @@ private:
 
     void GenerateCode(OpcodeBuf *pOpcode, int iLine, DVM_Opcode code, ...);
     void GenerateBooleanExpression(DVM_Executable *pExecutable, Expression *pExpression, OpcodeBuf *pOpcode);
-    void GenerateIntExpression(DVM_Executable *pExecutable, Expression *pExpression, OpcodeBuf *pOpcode);
+    void GenerateIntExpression(DVM_Executable *pExecutable, int iLine, int value, OpcodeBuf *pOpcode);
     void GenerateDoubleExpression(DVM_Executable *pExecutable, Expression *pExpression, OpcodeBuf *pOpcode);
     void GenerateStringExpression(DVM_Executable *pExecutable, Expression *pExpression, OpcodeBuf *pOpcode);
+    void GenerateIdentifier(Declaration *pDeclaration, OpcodeBuf *pOpcode, int iLine);
     void GenerateIdentifierExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode);
     void GeneratePopToIdentifier(Declaration *pDeclaration, int iLine, OpcodeBuf *pOpcode);
     void GeneratePopToLValue(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode);
+    void GeneratePopToMember(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode);
     void GenerateAssignExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode, bool isTopLevel);
     void GenerateBinaryExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, DVM_Opcode opCode, OpcodeBuf *pOpcode);
     void GenerateLogicalAndExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode);
     void GenerateLogicalOrExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode);
     void GenerateCastExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode);
+    void GenerateUpCastExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode);
     void GenerateArrayLiteralExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode);
     void GenerateIndexExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode);
     void GenerateIncDecExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, ExpressionKind kind, OpcodeBuf *pOpcode, bool isTopLevel);
     void GenerateFunctionCallExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode);
     void GenerateNullExpression(DVM_Executable *pExecutable, Expression *pExpression, OpcodeBuf *pOpcode);
     void GenerateArrayCreationExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode);
+    void GenerateInstanceofExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode);
     void GenerateExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode);
 
     void GenerateExpressionStatement(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode);
@@ -92,6 +96,7 @@ private:
     void CopyTypeSpecifierNoAlloc(TypeSpecifier *pSrc, DVM_TypeSpecifier *pDest);
     DVM_TypeSpecifier* CopyTypeSpecifier(TypeSpecifier *pTypeSpecifier);
     int GetOpcodeTypeOffset(TypeSpecifier *pTypeSpecifier);
+    int GetBinaryExpressionOffset(Expression *pLeft, Expression *pRight, DVM_Opcode opCode);
     int GetLabel(OpcodeBuf *pOpcode);
     void SetLabel(OpcodeBuf *pOpcode, int ilabel);
     void InitOpcodeBuf(OpcodeBuf *pOpcode);
@@ -105,6 +110,7 @@ private:
     void SetClassIdentifier(ClassDefinition *pClassDefinition, DVM_ClassIdentifier *pClassIdentifier);
     DVM_Class* SearchClass(DKC_Compiler *pCompiler, ClassDefinition *pSrc);
     void AddClass(DVM_Executable *pExecutable, ClassDefinition *pClassDefinition, DVM_Class *pDest);
+    void AddClasses(DKC_Compiler *pCompiler, DVM_Executable *pExecutable);
 
     inline bool IsString(TypeSpecifier *pType) { return (DVM_STRING_TYPE == pType->basic_type && nullptr == pType->derive); }
 
