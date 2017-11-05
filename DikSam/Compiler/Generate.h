@@ -61,6 +61,7 @@ private:
     void GenerateStringExpression(DVM_Executable *pExecutable, Expression *pExpression, OpcodeBuf *pOpcode);
     void GenerateIdentifier(Declaration *pDeclaration, OpcodeBuf *pOpcode, int iLine);
     void GenerateIdentifierExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode);
+    void GeneratePushArgument(DVM_Executable *pExecutable, Block *pBlock, ArgumentList *pArgumentList, OpcodeBuf *pOpcode);
     void GeneratePopToIdentifier(Declaration *pDeclaration, int iLine, OpcodeBuf *pOpcode);
     void GeneratePopToLValue(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode);
     void GeneratePopToMember(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode);
@@ -70,6 +71,7 @@ private:
     void GenerateLogicalOrExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode);
     void GenerateCastExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode);
     void GenerateUpCastExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode);
+    void GenerateDownCastExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode);
     void GenerateArrayLiteralExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode);
     void GenerateIndexExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode);
     void GenerateIncDecExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, ExpressionKind kind, OpcodeBuf *pOpcode, bool isTopLevel);
@@ -77,6 +79,8 @@ private:
     void GenerateNullExpression(DVM_Executable *pExecutable, Expression *pExpression, OpcodeBuf *pOpcode);
     void GenerateArrayCreationExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode);
     void GenerateInstanceofExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode);
+    void GenerateMethodCallExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode);
+    void GenerateMemberExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode);
     void GenerateExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode);
 
     void GenerateExpressionStatement(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode);
@@ -111,8 +115,11 @@ private:
     DVM_Class* SearchClass(DKC_Compiler *pCompiler, ClassDefinition *pSrc);
     void AddClass(DVM_Executable *pExecutable, ClassDefinition *pClassDefinition, DVM_Class *pDest);
     void AddClasses(DKC_Compiler *pCompiler, DVM_Executable *pExecutable);
+    int GetMethodIndex(MemberExpression *pMember);
+    FunctionDefinition* GetCurrentFunction(Block *pBlock);
 
     inline bool IsString(TypeSpecifier *pType) { return (DVM_STRING_TYPE == pType->basic_type && nullptr == pType->derive); }
+    inline bool IsArray(TypeSpecifier *pType) { return pType->derive && ARRAY_DERIVE == pType->derive->tag; }
 
 private:
     Debug   &m_Debug;

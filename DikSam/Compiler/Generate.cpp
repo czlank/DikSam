@@ -310,6 +310,14 @@ void Generate::GenerateIdentifierExpression(DVM_Executable *pExecutable, Block *
     }
 }
 
+void Generate::GeneratePushArgument(DVM_Executable *pExecutable, Block *pBlock, ArgumentList *pArgumentList, OpcodeBuf *pOpcode)
+{
+    for (ArgumentList *pos = pArgumentList; pos; pos = pos->next)
+    {
+        GenerateExpression(pExecutable, pBlock, pos->expression, pOpcode);
+    }
+}
+
 void Generate::GeneratePopToIdentifier(Declaration *pDeclaration, int iLine, OpcodeBuf *pOpcode)
 {
     DVM_Opcode code = DVM_TRUE == pDeclaration->is_local ? DVM_POP_STACK_INT : DVM_POP_STATIC_INT;
@@ -476,6 +484,12 @@ void Generate::GenerateUpCastExpression(DVM_Executable *pExecutable, Block *pBlo
     GenerateCode(pOpcode, pExpression->line_number, DVM_UP_CAST, pExpression->u.up_cast.interface_definition);
 }
 
+void Generate::GenerateDownCastExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode)
+{
+    GenerateExpression(pExecutable, pBlock, pExpression->u.down_cast.operand, pOpcode);
+    GenerateCode(pOpcode, pExpression->line_number, DVM_DOWN_CAST, pExpression->u.down_cast.type->class_ref.class_index);
+}
+
 void Generate::GenerateArrayLiteralExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode)
 {
     DBG_assert(pExpression->type->derive && ARRAY_DERIVE == pExpression->type->derive->tag, ("array literal is not array."));
@@ -528,11 +542,17 @@ void Generate::GenerateFunctionCallExpression(DVM_Executable *pExecutable, Block
 {
     FunctionCallExpression *pFunctionCallExpression = &pExpression->u.function_call_expression;
 
-    for (ArgumentList *pArgList = pFunctionCallExpression->argument; pArgList; pArgList = pArgList->next)
+    if (MEMBER_EXPRESSION == pFunctionCallExpression->function->kind
+        && (IsArray(pFunctionCallExpression->function->u.member_expression.expression->type)
+            || IsString(pFunctionCallExpression->function->u.member_expression.expression->type)
+            || METHOD_MEMBER == pFunctionCallExpression->function->u.member_expression.declaration->kind))
     {
-        GenerateExpression(pExecutable, pBlock, pArgList->expression, pOpcode);
+        GenerateMethodCallExpression(pExecutable, pBlock, pExpression, pOpcode);
+        return;
     }
 
+
+    GeneratePushArgument(pExecutable, pBlock, pFunctionCallExpression->argument, pOpcode);
     GenerateExpression(pExecutable, pBlock, pFunctionCallExpression->function, pOpcode);
     GenerateCode(pOpcode, pExpression->line_number, DVM_INVOKE);
 }
@@ -565,6 +585,36 @@ void Generate::GenerateInstanceofExpression(DVM_Executable *pExecutable, Block *
 {
     GenerateExpression(pExecutable, pBlock, pExpression->u.instanceof.operand, pOpcode);
     GenerateCode(pOpcode, pExpression->line_number, DVM_INSTANCEOF, pExpression->u.instanceof.type->class_ref.class_index);
+}
+
+void Generate::GenerateMethodCallExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode)
+{
+    MemberExpression *pMember = &pExpression->u.function_call_expression.function->u.member_expression;
+    int iMethodIndex = GetMethodIndex(pMember);
+
+    GeneratePushArgument(pExecutable, pBlock, pExpression->u.function_call_expression.argument, pOpcode);
+    GenerateExpression(pExecutable, pBlock, pExpression->u.function_call_expression.function->u.member_expression.expression, pOpcode);
+
+    GenerateCode(pOpcode, pExpression->line_number, DVM_PUSH_METHOD, iMethodIndex);
+    GenerateCode(pOpcode, pExpression->line_number, DVM_INVOKE);
+}
+
+void Generate::GenerateMemberExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode)
+{
+    MemberDeclaration *pMember = pExpression->u.member_expression.declaration;
+
+    if (FIELD_MEMBER == pMember->kind)
+    {
+        GenerateExpression(pExecutable, pBlock, pExpression->u.member_expression.expression, pOpcode);
+        GenerateCode(pOpcode, pExpression->line_number, DVM_Opcode(DVM_PUSH_FIELD_INT + GetOpcodeTypeOffset(pExpression->type)), pMember->u.field.field_index);
+    }
+    else
+    {
+        DBG_assert(METHOD_MEMBER == pMember->kind, ("pMember->u.kind..", pMember->kind));
+        m_Error.CompileError(pExpression->line_number, METHOD_CAN_NOT_CALL_ERR,
+            STRING_MESSAGE_ARGUMENT, "member_name", pMember->u.method.function_definition->name,
+            MESSAGE_ARGUMENT_END);
+    }
 }
 
 void Generate::GenerateExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode)
@@ -1395,4 +1445,32 @@ void Generate::AddClasses(DKC_Compiler *pCompiler, DVM_Executable *pExecutable)
         ClassDefinition *pClassDefinition = m_Util.SearchClass(pCompiler->dvm_class[i].name);
         AddClass(pExecutable, pClassDefinition, &pCompiler->dvm_class[i]);
     }
+}
+
+int Generate::GetMethodIndex(MemberExpression *pMember)
+{
+    int iMethodIndex;
+
+    if (IsArray(pMember->expression->type) || IsString(pMember->expression->type))
+    {
+        iMethodIndex = pMember->method_index;
+    }
+    else
+    {
+        DBG_assert(METHOD_MEMBER == pMember->declaration->kind, ("pMember->declaration->kind..", pMember->declaration->kind));
+        
+        iMethodIndex = pMember->declaration->u.method.method_index;
+    }
+
+    return iMethodIndex;
+}
+
+FunctionDefinition* Generate::GetCurrentFunction(Block *pBlock)
+{
+    Block *pos = nullptr;
+
+    for (pos = pBlock; pos->type != FUNCTION_BLOCK; pos = pos->outer_block)
+        ;
+
+    return pos->parent.function.function;
 }
