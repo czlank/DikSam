@@ -111,7 +111,7 @@ private:
     void FixLabels(OpcodeBuf *pOpcode);
     DVM_Byte* FixOpcodeBuf(OpcodeBuf *pOpcode);
     int CalcNeedStackSize(DVM_Byte *pCode, int iCodeSize);
-    void CopyFunction(FunctionDefinition *pFunctionDefinition, DVM_Function *pFunction);
+    void AddFunction(DVM_Executable *pExecutable, FunctionDefinition *pFunctionDefinition, DVM_Function *pFunction, bool bInThisExe);
     int CountParameter(ParameterList *pSrc);
     void AddMethod(MemberDeclaration *pMember, DVM_Method *pDest);
     void AddField(MemberDeclaration *pMember, DVM_Field *pDest);
@@ -121,6 +121,7 @@ private:
     void AddClasses(DKC_Compiler *pCompiler, DVM_Executable *pExecutable);
     int GetMethodIndex(MemberExpression *pMember);
     FunctionDefinition* GetCurrentFunction(Block *pBlock);
+    int SearchFunction(DKC_Compiler *pCompiler, FunctionDefinition *pSrc);
 
     inline bool IsString(TypeSpecifier *pType) { return (DVM_STRING_TYPE == pType->basic_type && nullptr == pType->derive); }
     inline bool IsArray(TypeSpecifier *pType) { return pType->derive && ARRAY_DERIVE == pType->derive->tag; }

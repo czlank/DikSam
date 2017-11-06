@@ -42,6 +42,7 @@
 Generate::Generate(Debug& debug, Memory& memory, Util& util, Error& error)
     : m_Debug(debug)
     , m_Memory(memory)
+    , m_Util(util)
     , m_Error(error)
 {
 
@@ -54,9 +55,15 @@ Generate::~Generate()
 
 DVM_Executable* Generate::operator () (DKC_Compiler *pCompiler)
 {
-    DVM_Executable *pExecutable = AllocExecutable();
+    DVM_Executable *pExecutable = AllocExecutable(pCompiler->package_name);
+
+    pExecutable->function_count = pCompiler->dvm_function_count;
+    pExecutable->function = pCompiler->dvm_function;
+    pExecutable->class_count = pCompiler->dvm_class_count;
+    pExecutable->class_definition = pCompiler->dvm_class;
 
     AddGlobalVariable(pCompiler, pExecutable);
+    AddClasses(pCompiler, pExecutable);
     AddFunctions(pCompiler, pExecutable);
     AddTopLevel(pCompiler, pExecutable);
 
@@ -118,42 +125,35 @@ void Generate::AddLineNumber(OpcodeBuf *pOpcode, int iLine, int iStartPC)
 
 void Generate::AddFunctions(DKC_Compiler *pCompiler, DVM_Executable *pExecutable)
 {
-    FunctionDefinition *pFunctionDefinition = pCompiler->function_list;
-    int iCount = 0;
+    bool *pInThisExe = (bool*)MEM_malloc(sizeof(bool) * pCompiler->dvm_function_count);
 
+    for (int i = 0; i < pCompiler->dvm_function_count; i++)
+    {
+        pInThisExe[i] = false;
+    }
+
+    FunctionDefinition *pFunctionDefinition = pCompiler->function_list;
     for (; pFunctionDefinition; pFunctionDefinition = pFunctionDefinition->next)
     {
-        iCount++;
+        if (pFunctionDefinition->class_definition && nullptr == pFunctionDefinition->block)
+            continue;
+
+        int iDestIndex = SearchFunction(pCompiler, pFunctionDefinition);
+        pInThisExe[iDestIndex] = true;
+
+        AddFunction(pExecutable, pFunctionDefinition, &pCompiler->dvm_function[iDestIndex], true);
     }
 
-    pExecutable->function_count = iCount;
-    pExecutable->function = (DVM_Function*)MEM_malloc(sizeof(DVM_Function) * iCount);
-
-    pFunctionDefinition = pCompiler->function_list;
-    for (int i = 0; pFunctionDefinition; pFunctionDefinition = pFunctionDefinition->next, i++)
+    for (int i = 0; i < pCompiler->dvm_function_count; i++)
     {
-        CopyFunction(pFunctionDefinition, &pExecutable->function[i]);
+        if (pInThisExe[i])
+            continue;
 
-        if (pFunctionDefinition->block)
-        {
-            OpcodeBuf opcodeBuf;
-            DVM_Function *pFunction = pExecutable->function;
-
-            InitOpcodeBuf(&opcodeBuf);
-            GenerateStatementList(pExecutable, pFunctionDefinition->block, pFunctionDefinition->block->statement_list, &opcodeBuf);
-
-            pFunction[i].is_implemented = DVM_TRUE;
-            pFunction[i].code_size = opcodeBuf.m_iSize;
-            pFunction[i].code = FixOpcodeBuf(&opcodeBuf);
-            pFunction[i].line_number_size = opcodeBuf.m_iLineNumberSize;
-            pFunction[i].line_number = opcodeBuf.m_pLineNumber;
-            pFunction[i].need_stack_size = CalcNeedStackSize(pExecutable->function[i].code, pExecutable->function[i].code_size);
-        }
-        else
-        {
-            pExecutable->function[i].is_implemented = DVM_FALSE;
-        }
+        pFunctionDefinition = m_Util.SearchFunction(pCompiler->dvm_function[i].name);
+        AddFunction(pExecutable, pFunctionDefinition, &pCompiler->dvm_function[i], false);
     }
+
+    MEM_free(pInThisExe);
 }
 
 void Generate::AddTopLevel(DKC_Compiler *pCompiler, DVM_Executable *pExecutable)
@@ -1381,22 +1381,35 @@ int Generate::CalcNeedStackSize(DVM_Byte *pCode, int iCodeSize)
     return iStackSize;
 }
 
-void Generate::CopyFunction(FunctionDefinition *pFunctionDefinition, DVM_Function *pFunction)
+void Generate::AddFunction(DVM_Executable *pExecutable, FunctionDefinition *pFunctionDefinition, DVM_Function *pFunction, bool bInThisExe)
 {
     pFunction->type = CopyTypeSpecifier(pFunctionDefinition->type);
-    pFunction->name = MEM_strdup(pFunctionDefinition->name);
     pFunction->parameter = CopyParameterList(pFunctionDefinition->parameter, &pFunction->parameter_count);
 
-    if (pFunctionDefinition->block)
+    if (pFunctionDefinition->block && bInThisExe)
     {
+        OpcodeBuf opCode;
+
+        InitOpcodeBuf(&opCode);
+        GenerateStatementList(pExecutable, pFunctionDefinition->block, pFunctionDefinition->block->statement_list, &opCode);
+
+        pFunction->is_implemented = DVM_TRUE;
+        pFunction->code_size = opCode.m_iSize;
+        pFunction->code = FixOpcodeBuf(&opCode);
+        pFunction->line_number_size = opCode.m_iLineNumberSize;
+        pFunction->line_number = opCode.m_pLineNumber;
+        pFunction->need_stack_size = CalcNeedStackSize(pFunction->code, pFunction->code_size);
         pFunction->local_variable = CopyLocalVariables(pFunctionDefinition, pFunction->parameter_count);
         pFunction->local_variable_count = pFunctionDefinition->local_variable_count - pFunction->parameter_count;
     }
     else
     {
+        pFunction->is_implemented = DVM_FALSE;
         pFunction->local_variable = nullptr;
         pFunction->local_variable_count = 0;
     }
+
+    pFunction->is_method = pFunctionDefinition->class_definition ? DVM_TRUE : DVM_FALSE;
 }
 
 int Generate::CountParameter(ParameterList *pSrc)
@@ -1461,7 +1474,7 @@ void Generate::AddClass(DVM_Executable *pExecutable, ClassDefinition *pClassDefi
 
     if (pClassDefinition->super_class)
     {
-        pDest->super_class = (ClassDefinition*)MEM_malloc(sizeof(DVM_ClassIdentifier));
+        pDest->super_class = (DVM_ClassIdentifier*)MEM_malloc(sizeof(DVM_ClassIdentifier));
         SetClassIdentifier(pClassDefinition->super_class, pDest->super_class);
     }
     else
@@ -1562,4 +1575,39 @@ FunctionDefinition* Generate::GetCurrentFunction(Block *pBlock)
         ;
 
     return pos->parent.function.function;
+}
+
+int Generate::SearchFunction(DKC_Compiler *pCompiler, FunctionDefinition *pSrc)
+{
+    char *lpstrSrcPackageName = m_Util.PackageNameToString(pSrc->package_name);
+    char *lpstrFunctionName = nullptr;
+
+    if (pSrc->class_definition)
+    {
+        lpstrFunctionName = m_Util.CreateMethodFunctionName(pSrc->class_definition->name, pSrc->name);
+    }
+    else
+    {
+        lpstrFunctionName = pSrc->name;
+    }
+
+    for (int i = 0; i < pCompiler->dvm_function_count; i++)
+    {
+        if (m_Util.ComparePackageName(lpstrSrcPackageName, pCompiler->dvm_function[i].package_name)
+            && std::string(lpstrFunctionName) == pCompiler->dvm_function[i].name)
+        {
+            MEM_free(lpstrSrcPackageName);
+
+            if (pSrc->class_definition)
+            {
+                MEM_free(lpstrFunctionName);
+            }
+
+            return i;
+        }
+    }
+
+    DBG_assert(0, ("function ", lpstrSrcPackageName, "::", pSrc->name, " not found."));
+
+    return 0;
 }
