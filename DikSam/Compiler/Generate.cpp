@@ -617,6 +617,36 @@ void Generate::GenerateMemberExpression(DVM_Executable *pExecutable, Block *pBlo
     }
 }
 
+void Generate::GenerateThisExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode)
+{
+    FunctionDefinition *pFunctionDefinition = GetCurrentFunction(pBlock);
+    int iParameterCount = CountParameter(pFunctionDefinition->parameter);
+
+    GenerateCode(pOpcode, pExpression->line_number, DVM_PUSH_STACK_OBJECT, iParameterCount);
+}
+
+void Generate::GenerateSuperExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode)
+{
+    FunctionDefinition *pFunctionDefinition = GetCurrentFunction(pBlock);
+    int iParameterCount = CountParameter(pFunctionDefinition->parameter);
+
+    GenerateCode(pOpcode, pExpression->line_number, DVM_PUSH_STACK_OBJECT, iParameterCount);
+    GenerateCode(pOpcode, pExpression->line_number, DVM_SUPER);
+}
+
+void Generate::GenerateNewExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode)
+{
+    int iParameterCount = CountParameter(pExpression->u.new_e.method_declaration->u.method.function_definition->parameter);
+
+    GenerateCode(pOpcode, pExpression->line_number, DVM_NEW, pExpression->u.new_e.class_index);
+    GeneratePushArgument(pExecutable, pBlock, pExpression->u.new_e.argument, pOpcode);
+    GenerateCode(pOpcode, pExpression->line_number, DVM_DUPLICATE_OFFSET, iParameterCount);
+
+    GenerateCode(pOpcode, pExpression->line_number, DVM_PUSH_METHOD, pExpression->u.new_e.method_declaration->u.method.method_index);
+    GenerateCode(pOpcode, pExpression->line_number, DVM_INVOKE);
+    GenerateCode(pOpcode, pExpression->line_number, DVM_POP);
+}
+
 void Generate::GenerateExpression(DVM_Executable *pExecutable, Block *pBlock, Expression *pExpression, OpcodeBuf *pOpcode)
 {
     switch (pExpression->kind)
@@ -626,7 +656,7 @@ void Generate::GenerateExpression(DVM_Executable *pExecutable, Block *pBlock, Ex
         break;
 
     case INT_EXPRESSION :
-        GenerateIntExpression(pExecutable, pExpression, pOpcode);
+        GenerateIntExpression(pExecutable, pExpression->line_number, pExpression->u.int_value, pOpcode);
         break;
 
     case DOUBLE_EXPRESSION :
@@ -717,10 +747,23 @@ void Generate::GenerateExpression(DVM_Executable *pExecutable, Block *pBlock, Ex
         break;
 
     case MEMBER_EXPRESSION :
+        GenerateMemberExpression(pExecutable, pBlock, pExpression, pOpcode);
         break;
 
     case NULL_EXPRESSION :
         GenerateNullExpression(pExecutable, pExpression, pOpcode);
+        break;
+
+    case THIS_EXPRESSION :
+        GenerateThisExpression(pExecutable, pBlock, pExpression, pOpcode);
+        break;
+
+    case SUPER_EXPRESSION :
+        GenerateSuperExpression(pExecutable, pBlock, pExpression, pOpcode);
+        break;
+
+    case NEW_EXPRESSION :
+        GenerateNewExpression(pExecutable, pBlock, pExpression, pOpcode);
         break;
 
     case ARRAY_LITERAL_EXPRESSION :
@@ -736,8 +779,20 @@ void Generate::GenerateExpression(DVM_Executable *pExecutable, Block *pBlock, Ex
         GenerateIncDecExpression(pExecutable, pBlock, pExpression, pExpression->kind, pOpcode, false);
         break;
 
+    case INSTANCEOF_EXPRESSION :
+        GenerateInstanceofExpression(pExecutable, pBlock, pExpression, pOpcode);
+        break;
+
+    case DOWN_CAST_EXPRESSION :
+        GenerateDownCastExpression(pExecutable, pBlock, pExpression, pOpcode);
+        break;
+
     case CAST_EXPRESSION :
         GenerateCastExpression(pExecutable, pBlock, pExpression, pOpcode);
+        break;
+
+    case UP_CAST_EXPRESSION :
+        GenerateUpCastExpression(pExecutable, pBlock, pExpression, pOpcode);
         break;
 
     case ARRAY_CREATION_EXPRESSION :
@@ -822,6 +877,24 @@ void Generate::GenerateWhileStatement(DVM_Executable *pExecutable, Block *pBlock
     SetLabel(pOpcode, pWhileStatement->block->parent.statement.break_label);
 }
 
+void Generate::GenerateDoWhileStatement(DVM_Executable *pExecutable, Block *pBlock, Statement *pStatement, OpcodeBuf *pOpcode)
+{
+    DoWhileStatement *pDoWhileStatement = &pStatement->u.do_while_s;
+
+    int iLoopLabel = GetLabel(pOpcode);
+    SetLabel(pOpcode, iLoopLabel);
+
+    pDoWhileStatement->block->parent.statement.break_label = GetLabel(pOpcode);
+    pDoWhileStatement->block->parent.statement.continue_label = GetLabel(pOpcode);
+
+    GenerateStatementList(pExecutable, pDoWhileStatement->block, pDoWhileStatement->block->statement_list, pOpcode);
+
+    SetLabel(pOpcode, pDoWhileStatement->block->parent.statement.continue_label);
+    GenerateExpression(pExecutable, pBlock, pDoWhileStatement->condition, pOpcode);
+    GenerateCode(pOpcode, pStatement->line_number, DVM_JUMP_IF_TRUE, iLoopLabel);
+    SetLabel(pOpcode, pDoWhileStatement->block->parent.statement.break_label);
+}
+
 void Generate::GenerateForStatement(DVM_Executable *pExecutable, Block *pBlock, Statement *pStatement, OpcodeBuf *pOpcode)
 {
     ForStatement *pForStatement = &pStatement->u.for_s;
@@ -877,7 +950,7 @@ void Generate::GenerateBreakStatement(DVM_Executable *pExecutable, Block *pBlock
 
     for (pCurrBlock = pBlock; pCurrBlock; pCurrBlock = pCurrBlock->outer_block)
     {
-        if (pCurrBlock->type != WHILE_STATEMENT_BLOCK && pCurrBlock->type != FOR_STATEMENT_BLOCK)
+        if (pCurrBlock->type != WHILE_STATEMENT_BLOCK && pCurrBlock->type != FOR_STATEMENT_BLOCK && pCurrBlock->type != DO_WHILE_STATEMENT_BLOCK)
             continue;
 
         if (nullptr == pBreakStatement->label)
@@ -899,6 +972,14 @@ void Generate::GenerateBreakStatement(DVM_Executable *pExecutable, Block *pBlock
             if (std::string(pBreakStatement->label) == pCurrBlock->parent.statement.statement->u.for_s.label)
                 break;
         }
+        else if (DO_WHILE_STATEMENT_BLOCK == pCurrBlock->type)
+        {
+            if (nullptr == pCurrBlock->parent.statement.statement->u.do_while_s.label)
+                continue;
+
+            if (std::string(pBreakStatement->label) == pCurrBlock->parent.statement.statement->u.do_while_s.label)
+                break;
+        }
     }
 
     if (nullptr == pCurrBlock)
@@ -918,7 +999,7 @@ void Generate::GenerateContinueStatement(DVM_Executable *pExecutable, Block *pBl
 
     for (pCurrBlock = pBlock; pCurrBlock; pCurrBlock = pCurrBlock->outer_block)
     {
-        if (pCurrBlock->type != WHILE_STATEMENT_BLOCK && pCurrBlock->type != FOR_STATEMENT_BLOCK)
+        if (pCurrBlock->type != WHILE_STATEMENT_BLOCK && pCurrBlock->type != FOR_STATEMENT_BLOCK && pCurrBlock->type != DO_WHILE_STATEMENT_BLOCK)
             continue;
 
         if (nullptr == pContinueStatement->label)
@@ -938,6 +1019,14 @@ void Generate::GenerateContinueStatement(DVM_Executable *pExecutable, Block *pBl
                 continue;
 
             if (std::string(pContinueStatement->label) == pCurrBlock->parent.statement.statement->u.for_s.label)
+                break;
+        }
+        else if (DO_WHILE_STATEMENT_BLOCK == pCurrBlock->type)
+        {
+            if (nullptr == pCurrBlock->parent.statement.statement->u.do_while_s.label)
+                continue;
+
+            if (std::string(pContinueStatement->label) == pCurrBlock->parent.statement.statement->u.do_while_s.label)
                 break;
         }
     }
