@@ -161,6 +161,11 @@ void Error::InitMessageFormat()
     m_ErrorMessageFormat[EOF_IN_C_COMMENT_ERR]                      = TEXT("在C样式的注释中终止了文件。");
     m_ErrorMessageFormat[EOF_IN_STRING_LITERAL_ERR]                 = TEXT("在字符串字面量中终止了文件。");
     m_ErrorMessageFormat[TOO_LONG_CHARACTER_LITERAL_ERR]            = TEXT("字符字面量中包含了2个以上的字符。");
+    m_ErrorMessageFormat[LOAD_FILE_NOT_FOUND_ERR]                   = TEXT("没有找到要加载的文件$(file)。");
+    m_ErrorMessageFormat[LOAD_FILE_ERR]                             = TEXT("加载文件时发生错误($(status))。");
+    m_ErrorMessageFormat[CLASS_MULTIPLE_DEFINE_ERR]                 = TEXT("重复定义了类$(package)#$(name)。");
+    m_ErrorMessageFormat[CLASS_CAST_ERR]                            = TEXT("对象的类型为$(org)。");
+    m_ErrorMessageFormat[DYNAMIC_LOAD_WITHOUT_PACKAGE_ERR]          = TEXT("由于函数$(name)没有指定包，不能动态加载。");
     m_ErrorMessageFormat[DIKSAM_ERROR_COUNT_PLUS_1]                 = TEXT("dummy");
 }
 

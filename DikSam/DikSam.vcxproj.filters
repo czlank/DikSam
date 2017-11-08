@@ -87,6 +87,9 @@
     <ClInclude Include="DVM\Native.h">
       <Filter>DVM</Filter>
     </ClInclude>
+    <ClInclude Include="DVM\Load.h">
+      <Filter>DVM</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -141,6 +144,9 @@
       <Filter>DVM</Filter>
     </ClCompile>
     <ClCompile Include="DVM\Native.cpp">
+      <Filter>DVM</Filter>
+    </ClCompile>
+    <ClCompile Include="DVM\Load.cpp">
       <Filter>DVM</Filter>
     </ClCompile>
   </ItemGroup>
