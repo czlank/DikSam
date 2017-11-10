@@ -20,11 +20,19 @@ typedef enum
     DVM_TRUE = 1
 } DVM_Boolean;
 
+typedef struct DVM_VTable_tag DVM_VTable;
+
+typedef struct
+{
+    DVM_VTable  *v_table;
+    DVM_Object  *data;
+} DVM_ObjectRef;
+
 typedef union
 {
-    int          int_value;
-    double       double_value;
-    DVM_Object  *object;
+    int             int_value;
+    double          double_value;
+    DVM_ObjectRef   object;
 } DVM_Value;
 
 #ifdef __cplusplus

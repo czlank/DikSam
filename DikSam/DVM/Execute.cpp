@@ -285,42 +285,6 @@ void Execute::ConvertCode(DVM_Executable *pExecutable, DVM_Byte *pCode, int iCod
     }
 }
 
-void Execute::InitializeValue(DVM_TypeSpecifier *pTypeSpecifier, DVM_Value *pValue)
-{
-    if (pTypeSpecifier->derive_count > 0)
-    {
-        if (DVM_ARRAY_DERIVE == pTypeSpecifier->derive[0].tag)
-        {
-            pValue->object = nullptr;
-        }
-        else
-        {
-            DBG_assert(0, ("tag..", pTypeSpecifier->derive[0].tag));
-        }
-    }
-    else
-    {
-        switch (pTypeSpecifier->basic_type)
-        {
-        case DVM_BOOLEAN_TYPE:
-        case DVM_INT_TYPE:
-            pValue->int_value = 0;
-            break;
-
-        case DVM_DOUBLE_TYPE:
-            pValue->double_value = 0.0;
-            break;
-
-        case DVM_STRING_TYPE:
-            pValue->object = nullptr;
-            break;
-
-        default:
-            DBG_assert(0, ("enType..", pTypeSpecifier->basic_type));
-        }
-    }
-}
-
 void Execute::AddStaticVariables(DVM_Executable *pExecutable)
 {
     m_pVirtualMachine->static_v.variable = (DVM_Value*)MEM_malloc(sizeof(DVM_Value) * pExecutable->global_variable_count);

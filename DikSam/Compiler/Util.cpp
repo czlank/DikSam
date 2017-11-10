@@ -6,6 +6,11 @@
 #include "Storage.h"
 #include "Interface.h"
 
+#ifdef DBG_assert
+#undef DBG_assert
+#endif
+#define DBG_assert(expression, arg) ((expression) ? (void)(0) : (m_Debug.Assert(__FILE__, __LINE__, #expression, arg)))
+
 #ifdef MEM_malloc
 #undef MEM_malloc
 #endif
@@ -574,6 +579,42 @@ SearchFileStatus Util::SearchFile(const char *lpcstrSearchPath, const char *lpcs
     }
 
     DBG_assert(0, ("bad flow."));
+}
+
+void Util::InitializeValue(DVM_TypeSpecifier *pTypeSpecifier, DVM_Value *pValue)
+{
+    if (pTypeSpecifier->derive_count > 0)
+    {
+        if (DVM_ARRAY_DERIVE == pTypeSpecifier->derive[0].tag)
+        {
+            pValue->object = nullptr;
+        }
+        else
+        {
+            DBG_assert(0, ("tag..", pTypeSpecifier->derive[0].tag));
+        }
+    }
+    else
+    {
+        switch (pTypeSpecifier->basic_type)
+        {
+        case DVM_BOOLEAN_TYPE :
+        case DVM_INT_TYPE :
+            pValue->int_value = 0;
+            break;
+
+        case DVM_DOUBLE_TYPE :
+            pValue->double_value = 0.0;
+            break;
+
+        case DVM_STRING_TYPE :
+            pValue->object = nullptr;
+            break;
+
+        default :
+            DBG_assert(0, ("enType..", pTypeSpecifier->basic_type));
+        }
+    }
 }
 
 int Util::StrLen(const DVM_Char *str)

@@ -41,6 +41,7 @@ public:
     char* CreateMethodFunctionName(char *lpstrClassName, char *lpstrMethodName);
 
     SearchFileStatus SearchFile(const char *lpcstrSearchPath, const char *lpcstrSearchFile, char *lpstrFoundPath, FILE **ppFp);
+    void InitializeValue(DVM_TypeSpecifier *pTypeSpecifier, DVM_Value *pValue);
 
 private:
     int StrLen(const DVM_Char *str);

@@ -28,7 +28,6 @@ private:
     void AddFunctions(DVM_Executable *pExecutable);
     int SearchFunction(char *lpstrName);
     void ConvertCode(DVM_Executable *pExecutable, DVM_Byte *pCode, int iCodeSize, DVM_Function *pFunction);
-    void InitializeValue(DVM_TypeSpecifier *pTypeSpecifier, DVM_Value *pValue);
     void AddStaticVariables(DVM_Executable *pExecutable);
     DVM_Object* ChainString(DVM_Object *str1, DVM_Object *str2);
     void InitializeLocalVariables(DVM_Function *pFunction, int iFromSP);

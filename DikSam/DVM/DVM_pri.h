@@ -213,7 +213,7 @@ struct DVM_VirtualMachine_tag
     int                  pc;                    // 程序计数器
     Function           **function;              // 函数
     int                  function_count;        // 函数的数量
-    ExecClass          **classes                // 类
+    ExecClass          **classes;               // 类
     int                  class_count;           // 类的数量
                                             // 枚举 enums
                                             // 枚举的数量 enum_count
