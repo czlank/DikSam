@@ -320,3 +320,72 @@ void Load::AddFields(DVM_Executable *pExecutable, DVM_Class *pSrc, ExecClass *pD
 
     SetFieldTypes(pExecutable, pSrc, pDest->field_type, 0);
 }
+
+void Load::SetVTable(DVM_VirtualMachine *pVirtualMachine, DVM_Class *pClass, DVM_Method *pSrc, VTableItem *pDest, bool bSetName)
+{
+    if (bSetName)
+    {
+        pDest->name = MEM_strdup(pSrc->name);
+    }
+
+    char *lpstrFuncName = m_Util.CreateMethodFunctionName(pClass->name, pSrc->name);
+    int iFuncIndex = SearchFunction(pVirtualMachine, pClass->package_name, lpstrFuncName);
+
+    if (FUNCTION_NOT_FOUND == iFuncIndex && DVM_TRUE == pSrc->is_abstract)
+    {
+        m_Error.CompileError(NO_LINE_NUMBER_PC, FUNCTION_NOT_FOUND_ERR,
+            STRING_MESSAGE_ARGUMENT, "name", lpstrFuncName,
+            MESSAGE_ARGUMENT_END);
+    }
+
+    MEM_free(lpstrFuncName);
+    pDest->index = iFuncIndex;
+}
+
+int Load::AddMethod(DVM_VirtualMachine *pVirtualMachine, DVM_Executable *pExecutable, DVM_Class *pPos, DVM_VTable *pVTable)
+{
+    int iSuperMethodCount = 0;
+
+    if (pPos->super_class)
+    {
+        DVM_Class *pNext = SearchClassFromExecutable(pExecutable, pPos->super_class->name);
+        iSuperMethodCount = AddMethod(pVirtualMachine, pExecutable, pNext, pVTable);
+    }
+
+    int iMethodCount = iSuperMethodCount;
+
+    for (int i = 0; i < pPos->method_count; i++)
+    {
+        int j;
+        for (j = 0; j < iSuperMethodCount; j++)
+        {
+            if (std::string(pPos->method[i].name) == pVTable->table[j].name)
+            {
+                SetVTable(pVirtualMachine, pPos, &pPos->method[i], &pVTable->table[j], false);
+                break;
+            }
+        }
+
+        /* if pPos->method[i].is_override == DVM_TRUE, this method implements interface method. */
+        if (j == iSuperMethodCount && DVM_FALSE == pPos->method[i].is_override)
+        {
+            pVTable->table = (VTableItem*)MEM_realloc(pVTable->table, sizeof(VTableItem)* (iMethodCount + 1));
+            SetVTable(pVirtualMachine, pPos, &pPos->method[i], &pVTable->table[iMethodCount], true);
+
+            iMethodCount++;
+            pVTable->table_size = iMethodCount;
+        }
+    }
+
+    return iMethodCount;
+}
+
+DVM_VTable* Load::AllocVTable(ExecClass *pExecClass)
+{
+    DVM_VTable *pVTable = (DVM_VTable*)MEM_malloc(sizeof(DVM_VTable));
+
+    pVTable->exec_class = pExecClass;
+    pVTable->table = nullptr;
+
+    return pVTable;
+}
