@@ -389,3 +389,60 @@ DVM_VTable* Load::AllocVTable(ExecClass *pExecClass)
 
     return pVTable;
 }
+
+void Load::AddMethods(DVM_VirtualMachine *pVirtualMachine, DVM_Executable *pExecutable, DVM_Class *pSrc, ExecClass *pDest)
+{
+    DVM_VTable *pVTable = AllocVTable(pDest);
+    int iMethodCount = AddMethod(pVirtualMachine, pExecutable, pSrc, pVTable);
+
+    pDest->class_table = pVTable;
+    pDest->interface_count = pSrc->interface_count;
+    pDest->interface_v_table = (DVM_VTable**)MEM_malloc(sizeof(DVM_VTable*) * pSrc->interface_count);
+
+    for (int i = 0; i < pSrc->interface_count; i++)
+    {
+        pDest->interface_v_table[i] = AllocVTable(pDest);
+
+        DVM_Class *pInterface = SearchClassFromExecutable(pExecutable, pSrc->interface_[i].name);
+
+        pDest->interface_v_table[i]->table = (VTableItem*)MEM_malloc(sizeof(VTableItem) * pInterface->method_count);
+        pDest->interface_v_table[i]->table_size = pInterface->method_count;
+
+        for (int iMethodIndex = 0; iMethodIndex < pInterface->method_count; iMethodIndex++)
+        {
+            SetVTable(pVirtualMachine, pSrc, &pInterface->method[iMethodIndex], &pDest->interface_v_table[i]->table[iMethodIndex], true);
+        }
+    }
+}
+
+void Load::AddClass(DVM_VirtualMachine *pVirtualMachine, DVM_Executable *pExecutable, DVM_Class *pSrc, ExecClass *pDest)
+{
+    AddFields(pExecutable, pSrc, pDest);
+    AddMethods(pVirtualMachine, pExecutable, pSrc, pDest);
+}
+
+void Load::SetSuperClass(DVM_VirtualMachine *pVirtualMachine, DVM_Executable *pExecutable, int iOldClassCount)
+{
+    for (int iClassIndex = iOldClassCount; iClassIndex < pVirtualMachine->class_count; iClassIndex++)
+    {
+        DVM_Class *pClass = SearchClassFromExecutable(pExecutable, pVirtualMachine->classes[iClassIndex]->name);
+
+        if (nullptr == pClass->super_class)
+        {
+            pVirtualMachine->classes[iClassIndex]->super_class = nullptr;
+        }
+        else
+        {
+            int iSuperClassIndex = SearchClass(pVirtualMachine, pClass->super_class->package_name, pClass->super_class->name);
+            pVirtualMachine->classes[iClassIndex]->super_class = pVirtualMachine->classes[iSuperClassIndex];
+        }
+
+        pVirtualMachine->classes[iClassIndex]->interface_ = (ExecClass**)MEM_malloc(sizeof(ExecClass*) * pClass->interface_count);
+
+        for (int index = 0; index < pClass->interface_count; index++)
+        {
+            int iInterfaceIndex = SearchClass(pVirtualMachine, pClass->interface_[index].package_name, pClass->interface_[index].name);
+            pVirtualMachine->classes[iClassIndex]->interface_[index] = pVirtualMachine->classes[iInterfaceIndex];
+        }
+    }
+}
