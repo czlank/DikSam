@@ -14,6 +14,8 @@ public:
     Load(Debug& debug, Memory& memory, Util& util, Error& error);
     ~Load();
 
+    void SetExecutable(DVM_VirtualMachine *pVirtualMachine, DVM_ExecutableList *pList);
+
 private:
     void ImplementDikSamFunction(DVM_VirtualMachine *pVirtualMachine, int iDestIndex, ExecutableEntry *pExecuatbleEntry, int iSrcIndex);
     void AddFunctions(DVM_VirtualMachine *pVirtualMachine, ExecutableEntry *pExecutableEntry);
@@ -30,6 +32,8 @@ private:
     void AddMethods(DVM_VirtualMachine *pVirtualMachine, DVM_Executable *pExecutable, DVM_Class *pSrc, ExecClass *pDest);
     void AddClass(DVM_VirtualMachine *pVirtualMachine, DVM_Executable *pExecutable, DVM_Class *pSrc, ExecClass *pDest);
     void SetSuperClass(DVM_VirtualMachine *pVirtualMachine, DVM_Executable *pExecutable, int iOldClassCount);
+    void AddClasses(DVM_VirtualMachine *pVirtualMachine, ExecutableEntry *pExecutableEntry);
+    ExecutableEntry* AddExecutableToDvm(DVM_VirtualMachine *pVirtualMachine, DVM_Executable *pExecutable, DVM_Boolean bIsTopLevel);
 
     inline int Get2ByteInt(DVM_Byte *p) { return ((p[0] << 8) + p[1]); }
     inline void Set2ByteInt(DVM_Byte *p, int value) { p[0] = value >> 8, p[1] = value & 0xFF; }
@@ -39,4 +43,7 @@ private:
     Memory  &m_Memory;
     Util    &m_Util;
     Error   &m_Error;
+
+    static VTableItem stArrayMethodVTable[];
+    static VTableItem stStringMethodVTable[];
 };
