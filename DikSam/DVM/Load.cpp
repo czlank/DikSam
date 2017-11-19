@@ -36,7 +36,13 @@
 #endif
 #define MEM_strdup(ptr)                     (m_Memory.StrDUP(__FILE__, __LINE__, ptr))
 
-VTableItem Load::stArrayMethodVTable[] =
+DVM_ObjectRef Load::m_NullObjectRef =
+{
+    nullptr,
+    nullptr
+};
+
+VTableItem Load::m_stArrayMethodVTable[] =
 {
     { ARRAY_PREFIX ARRAY_METHOD_SIZE,   FUNCTION_NOT_FOUND },
     { ARRAY_PREFIX ARRAY_METHOD_RESIZE, FUNCTION_NOT_FOUND },
@@ -45,7 +51,7 @@ VTableItem Load::stArrayMethodVTable[] =
     { ARRAY_PREFIX ARRAY_METHOD_ADD,    FUNCTION_NOT_FOUND }
 };
 
-VTableItem Load::stStringMethodVTable[] =
+VTableItem Load::m_stStringMethodVTable[] =
 {
     { STRING_PREFIX STRING_METHOD_LENGTH, FUNCTION_NOT_FOUND },
     { STRING_PREFIX STRING_METHOD_SUBSTR, FUNCTION_NOT_FOUND }
@@ -56,12 +62,46 @@ Load::Load(Debug& debug, Memory& memory, Util& util, Error& error)
     , m_Memory(memory)
     , m_Util(util)
     , m_Error(error)
+    , m_Native(debug, memory)
     
 {
 }
 
 Load::~Load()
 {
+}
+
+DVM_VirtualMachine* Load::CreateVirtualMachine()
+{
+    DVM_VirtualMachine *pVirtualMachine = (DVM_VirtualMachine*)MEM_malloc(sizeof(DVM_VirtualMachine));
+
+    pVirtualMachine->stack.alloc_size = STACK_ALLOC_SIZE;
+    pVirtualMachine->stack.stack = (DVM_Value*)MEM_malloc(sizeof(DVM_Value) * STACK_ALLOC_SIZE);
+    pVirtualMachine->stack.pointer_flags = (DVM_Boolean*)MEM_malloc(sizeof(DVM_Boolean) * STACK_ALLOC_SIZE);
+    pVirtualMachine->stack.stack_pointer = 0;
+
+    pVirtualMachine->heap.current_heap_size = 0;
+    pVirtualMachine->heap.header = nullptr;
+    pVirtualMachine->heap.current_threshold = HEAP_THRESHOLD_SIZE;
+
+    pVirtualMachine->current_executable = nullptr;
+    pVirtualMachine->current_function = nullptr;
+    pVirtualMachine->current_exception = m_NullObjectRef;
+
+    pVirtualMachine->function = nullptr;
+    pVirtualMachine->function_count = 0;
+
+    pVirtualMachine->classes = nullptr;
+    pVirtualMachine->class_count = 0;
+
+    pVirtualMachine->executable_list = nullptr;
+    pVirtualMachine->executable_entry = nullptr;
+    pVirtualMachine->top_level = nullptr;
+
+    m_Native.AddNativeFunctions(pVirtualMachine);
+    SetBuiltInMethods(pVirtualMachine);
+
+    return pVirtualMachine;
 }
 
 void Load::SetExecutable(DVM_VirtualMachine *pVirtualMachine, DVM_ExecutableList *pList)
@@ -72,6 +112,27 @@ void Load::SetExecutable(DVM_VirtualMachine *pVirtualMachine, DVM_ExecutableList
     {
         (void)AddExecutableToDvm(pVirtualMachine, pos->executable, pos->executable == pList->top_level ? DVM_TRUE : DVM_FALSE);
     }
+}
+
+void Load::AddNativeFunction(DVM_VirtualMachine *pVirtualMachine, char *lpstrPackageName, char *lpstrFuncName, DVM_NativeFunctionProc *pProc, int iArgCount, DVM_Boolean bIsMethod, DVM_Boolean bReturnPointer)
+{
+    pVirtualMachine->function = (Function**)MEM_realloc(pVirtualMachine->function, sizeof(Function*) * (pVirtualMachine->function_count + 1));
+    pVirtualMachine->function[pVirtualMachine->function_count] = (Function*)MEM_malloc(sizeof(Function));
+    pVirtualMachine->function[pVirtualMachine->function_count]->package_name = MEM_strdup(lpstrFuncName);
+    pVirtualMachine->function[pVirtualMachine->function_count]->name = MEM_strdup(lpstrFuncName);
+    pVirtualMachine->function[pVirtualMachine->function_count]->kind = NATIVE_FUNCTION;
+    pVirtualMachine->function[pVirtualMachine->function_count]->is_implemented = DVM_TRUE;
+    pVirtualMachine->function[pVirtualMachine->function_count]->u.native_f.proc = pProc;
+    pVirtualMachine->function[pVirtualMachine->function_count]->u.native_f.arg_count = iArgCount;
+    pVirtualMachine->function[pVirtualMachine->function_count]->u.native_f.is_method = bIsMethod;
+    pVirtualMachine->function[pVirtualMachine->function_count]->u.native_f.return_pointer = bReturnPointer;
+
+    pVirtualMachine->function_count++;
+}
+
+void Load::DynamicLoad(DVM_VirtualMachine *pVirtualMachine, DVM_Executable *pCallerExecutable, Function *pCaller, int iPC, Function *pFunc)
+{
+
 }
 
 void Load::ImplementDikSamFunction(DVM_VirtualMachine *pVirtualMachine, int iDestIndex, ExecutableEntry *pExecuatbleEntry, int iSrcIndex)
@@ -608,4 +669,33 @@ ExecutableEntry* Load::AddExecutableToDvm(DVM_VirtualMachine *pVirtualMachine, D
     }
 
     return pNewEntry;
+}
+
+void Load::SetBuiltInMethods(DVM_VirtualMachine *pVirtualMachine)
+{
+    DVM_VTable *pArrayVTable = AllocVTable(nullptr);
+    
+    pArrayVTable->table_size = ARRAY_SIZE(m_stArrayMethodVTable);
+    pArrayVTable->table = (VTableItem*)MEM_malloc(sizeof(VTableItem) * pArrayVTable->table_size);
+
+    for (int i = 0; i < pArrayVTable->table_size; i++)
+    {
+        pArrayVTable->table[i] = m_stArrayMethodVTable[i];
+        pArrayVTable->table[i].index = SearchFunction(pVirtualMachine, BUILT_IN_METHOD_PACKAGE_NAME, pArrayVTable->table[i].name);
+    }
+
+    pVirtualMachine->array_v_table = pArrayVTable;
+
+    DVM_VTable *pStringVTable = AllocVTable(nullptr);
+
+    pStringVTable->table_size = ARRAY_SIZE(m_stStringMethodVTable);
+    pStringVTable->table = (VTableItem*)MEM_malloc(sizeof(VTableItem) * pStringVTable->table_size);
+
+    for (int i = 0; i < pStringVTable->table_size; i++)
+    {
+        pStringVTable->table[i] = m_stStringMethodVTable[i];
+        pStringVTable->table[i].index = SearchFunction(pVirtualMachine, BUILT_IN_METHOD_PACKAGE_NAME, pStringVTable->table[i].name);
+    }
+
+    pVirtualMachine->string_v_table = pStringVTable;
 }

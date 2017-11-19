@@ -16,7 +16,7 @@ extern "C"
 #define NULL_STRING                     (TEXT("null"))
 #define TRUE_STRING                     (TEXT("true"))
 #define FALSE_STRING                    (TEXT("false"))
-#define BUILD_IN_METHOD_PACKAGE_NAME    ("$build_in")
+#define BUILT_IN_METHOD_PACKAGE_NAME    ("$built_in")
 
 #define NO_LINE_NUMBER_PC   (-1)
 #define FUNCTION_NOT_FOUND  (-1)

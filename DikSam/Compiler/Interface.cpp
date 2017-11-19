@@ -8,6 +8,7 @@
 #include "Error.h"
 #include "StringLiteral.h"
 #include "Create.h"
+#include "Load.h"
 #include "Exception.h"
 #include "FixTree.h"
 #include "Generate.h"
@@ -138,7 +139,14 @@ void Interface::RunScript(FILE *pFile, const char *lpstrPath)
     {
         m_MemoryDump.open("./MemoryDump.dmp", std::ofstream::out | std::ofstream::trunc);
     
-        DVM_ExecutableList *pExecutableList = Compile(pFile, lpstrPath);
+        DKC_Compiler *pCompiler = CreateCompiler();
+        DVM_ExecutableList *pExecutableList = Compile(pCompiler, pFile, lpstrPath);
+        
+        Load load(m_Debug, m_Memory, m_Util, m_Error);
+        DVM_VirtualMachine *pVirtualMachine = load.CreateVirtualMachine();
+        load.SetExecutable(pVirtualMachine, pExecutableList);
+        DisposeCompiler(pCompiler);
+
         //Execute(m_Debug, m_Memory, m_Error)(pExecutable);
 
         ResetCompiler();
@@ -173,11 +181,17 @@ void Interface::RunScript(char **ppLines, const char *lpstrPath)
     {
         m_MemoryDump.open("./MemoryDump.dmp", std::ofstream::out | std::ofstream::trunc);
 
-        DVM_ExecutableList *pExecutableList = Compile(ppLines, lpstrPath);
+        DKC_Compiler *pCompiler = CreateCompiler();
+        DVM_ExecutableList *pExecutableList = Compile(pCompiler, ppLines, lpstrPath);
+
+        Load load(m_Debug, m_Memory, m_Util, m_Error);
+        DVM_VirtualMachine *pVirtualMachine = load.CreateVirtualMachine();
+        load.SetExecutable(pVirtualMachine, pExecutableList);
+        DisposeCompiler(pCompiler);
+
         //Execute(m_Debug, m_Memory, m_Error)(pExecutable);
 
         ResetCompiler();
-        m_Memory.FreeLiteralPool();
 
         m_Memory.CheckAllBlocks();
         m_Memory.DumpBlocks(m_MemoryDump);
@@ -245,11 +259,9 @@ SearchFileStatus Interface::DynamicCompile(DKC_Compiler *pCompiler, char *lpstrP
     return SEARCH_FILE_SUCCESS;
 }
 
-DVM_ExecutableList* Interface::Compile(FILE *pFile, const char *lpstrPath)
+DVM_ExecutableList* Interface::Compile(DKC_Compiler *pCompiler, FILE *pFile, const char *lpstrPath)
 {
     extern FILE *yyin;
-
-    DKC_Compiler *pCompiler = CreateCompiler();
 
     DBG_assert(nullptr == m_pCompilerList, ("m_pCompilerList != nullptr(", (int)m_pCompilerList, ")"));
 
@@ -271,10 +283,8 @@ DVM_ExecutableList* Interface::Compile(FILE *pFile, const char *lpstrPath)
     return pList;
 }
 
-DVM_ExecutableList* Interface::Compile(char **ppLines, const char *lpstrPath)
+DVM_ExecutableList* Interface::Compile(DKC_Compiler *pCompiler, char **ppLines, const char *lpstrPath)
 {
-    DKC_Compiler *pCompiler = CreateCompiler();
-
     DBG_assert(nullptr == m_pCompilerList, ("m_pCompilerList != nullptr(", (int)m_pCompilerList, ")"));
 
     SetPathToCompiler(pCompiler, lpstrPath);
@@ -395,8 +405,8 @@ DVM_Executable* Interface::DoCompile(DKC_Compiler *pCompiler, char **ppLines, DV
 
 void Interface::ResetCompiler()
 {
-    DisposeCompiler(m_pCompiler);
     m_StringLiteral.Reset();
+    m_Memory.FreeLiteralPool();
 }
 
 DKC_Compiler* Interface::CreateCompiler()

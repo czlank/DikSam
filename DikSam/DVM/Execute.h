@@ -1,7 +1,6 @@
 #pragma once
 
 #include "DikSamc.h"
-#include "Native.h"
 #include "GarbageCollect.h"
 
 class Debug;
@@ -51,7 +50,6 @@ private:
     Memory  &m_Memory;
     Error   &m_Error;
 
-    Native              m_Native;
     GarbageCollect      m_GarbageCollect;
 
     DVM_VirtualMachine  *m_pVirtualMachine;

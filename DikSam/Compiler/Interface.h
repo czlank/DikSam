@@ -41,8 +41,8 @@ private:
     } BuiltInMethod;
 
 private:
-    DVM_ExecutableList* Compile(FILE *pFile, const char *lpstrPath);
-    DVM_ExecutableList* Compile(char **ppLines, const char *lpstrPath);
+    DVM_ExecutableList* Compile(DKC_Compiler *pCompiler, FILE *pFile, const char *lpstrPath);
+    DVM_ExecutableList* Compile(DKC_Compiler *pCompiler, char **ppLines, const char *lpstrPath);
     DVM_Executable* DoCompile(DKC_Compiler *pCompiler, char **ppLines, DVM_ExecutableList *pExecutableList, const char *lpstrPath, bool isRequired);
 
     void ResetCompiler();

@@ -68,7 +68,6 @@ Execute::Execute(Debug& debug, Memory& memory, Error& error)
     : m_Debug(debug)
     , m_Memory(memory)
     , m_Error(error)
-    , m_Native(debug, memory)
     , m_GarbageCollect(debug, memory)
     , m_pVirtualMachine(nullptr)
 {
@@ -82,7 +81,6 @@ DVM_Value Execute::operator () (DVM_Executable* pExecutable)
 {
     CreateVirtualMachine();
 
-    m_Native.AddNativeFunctions(m_pVirtualMachine);
     AddExecutable(pExecutable);
 
     m_pVirtualMachine->current_executable = pExecutable;
