@@ -133,6 +133,83 @@ Interface::~Interface()
 {
 }
 
+DKC_Compiler* Interface::CreateCompiler()
+{
+    DKC_Compiler* pCompilerBackup = m_pCompiler;
+    MEM_Storage pStorage = MEM_open_sotrage(0);
+
+    m_pCompiler = (DKC_Compiler*)MEM_storage_malloc(pStorage, sizeof(struct DKC_Compiler_tag));
+
+    m_pCompiler->compile_storage = pStorage;
+    m_pCompiler->package_name = nullptr;
+    m_pCompiler->source_suffix = DKM_SOURCE;
+    m_pCompiler->require_list = nullptr;
+    m_pCompiler->rename_list = nullptr;
+    m_pCompiler->function_list = nullptr;
+    m_pCompiler->dvm_function_count = 0;
+    m_pCompiler->dvm_function = nullptr;
+    m_pCompiler->dvm_class_count = 0;
+    m_pCompiler->dvm_class = nullptr;
+    m_pCompiler->declaration_list = nullptr;
+    m_pCompiler->statement_list = nullptr;
+    m_pCompiler->class_definition_list = nullptr;
+    m_pCompiler->current_block = nullptr;
+    m_pCompiler->current_line_number = 1;
+    m_pCompiler->current_class_definition = nullptr;
+    m_pCompiler->current_catch_clause = nullptr;
+    m_pCompiler->input_mode = STRING_INPUT_MODE;
+    m_pCompiler->required_list = nullptr;
+    m_pCompiler->array_method_count = ARRAY_SIZE(m_ArrayMethod);
+    m_pCompiler->array_method = CreateBuiltInMethod(m_ArrayMethod, ARRAY_SIZE(m_ArrayMethod));
+    m_pCompiler->string_method_count = ARRAY_SIZE(m_StringMethod);
+    m_pCompiler->string_method = CreateBuiltInMethod(m_StringMethod, ARRAY_SIZE(m_StringMethod));
+
+#ifdef EUC_SOURCE
+    m_pCompiler->source_encoding = EUC_ENCODING;
+#else
+#ifdef GB2312_SOURCE
+    m_pCompiler->source_encoding = GB2312_ENCODING;
+#else
+#ifdef UTF_8_SOURCE
+    m_pCompiler->source_encoding = UTF_8_ENCODING;
+#else
+    DBG_panic(("source encoding is not defined."));
+#endif
+#endif
+#endif
+
+    DKC_Compiler *pCompilerNew = m_pCompiler;
+    m_pCompiler = pCompilerBackup;
+
+    return pCompilerNew;
+}
+
+void Interface::DisposeCompiler(DKC_Compiler *pCompiler)
+{
+    CompilerList *pList = TraversalCompiler(nullptr, pCompiler);
+
+    for (CompilerList *pos = pList; pos;)
+    {
+        for (FunctionDefinition *pFdPos = pos->compiler->function_list; pFdPos; pFdPos = pFdPos->next)
+        {
+            m_Memory.Free(pFdPos->local_variable);
+        }
+
+        CompilerList *pTemp = nullptr;
+        while (pos->compiler->required_list)
+        {
+            pTemp = pos->compiler->required_list;
+            pos->compiler->required_list = pTemp->next;
+            m_Memory.Free(pTemp);
+        }
+
+        m_Storage.Dispose(pos->compiler->compile_storage);
+        pTemp = pos->next;
+        m_Memory.Free(pos);
+        pos = pTemp;
+    }
+}
+
 void Interface::RunScript(FILE *pFile, const char *lpstrPath)
 {
     try
@@ -142,7 +219,7 @@ void Interface::RunScript(FILE *pFile, const char *lpstrPath)
         DKC_Compiler *pCompiler = CreateCompiler();
         DVM_ExecutableList *pExecutableList = Compile(pCompiler, pFile, lpstrPath);
         
-        Load load(m_Debug, m_Memory, m_Util, m_Error);
+        Load load(m_Debug, m_Memory, m_Util, m_Error, *this);
         DVM_VirtualMachine *pVirtualMachine = load.CreateVirtualMachine();
         load.SetExecutable(pVirtualMachine, pExecutableList);
         DisposeCompiler(pCompiler);
@@ -184,7 +261,7 @@ void Interface::RunScript(char **ppLines, const char *lpstrPath)
         DKC_Compiler *pCompiler = CreateCompiler();
         DVM_ExecutableList *pExecutableList = Compile(pCompiler, ppLines, lpstrPath);
 
-        Load load(m_Debug, m_Memory, m_Util, m_Error);
+        Load load(m_Debug, m_Memory, m_Util, m_Error, *this);
         DVM_VirtualMachine *pVirtualMachine = load.CreateVirtualMachine();
         load.SetExecutable(pVirtualMachine, pExecutableList);
         DisposeCompiler(pCompiler);
@@ -407,83 +484,6 @@ void Interface::ResetCompiler()
 {
     m_StringLiteral.Reset();
     m_Memory.FreeLiteralPool();
-}
-
-DKC_Compiler* Interface::CreateCompiler()
-{
-    DKC_Compiler* pCompilerBackup = m_pCompiler;
-    MEM_Storage pStorage = MEM_open_sotrage(0);
-
-    m_pCompiler = (DKC_Compiler*)MEM_storage_malloc(pStorage, sizeof(struct DKC_Compiler_tag));
-
-    m_pCompiler->compile_storage = pStorage;
-    m_pCompiler->package_name = nullptr;
-    m_pCompiler->source_suffix = DKM_SOURCE;
-    m_pCompiler->require_list = nullptr;
-    m_pCompiler->rename_list = nullptr;
-    m_pCompiler->function_list = nullptr;
-    m_pCompiler->dvm_function_count = 0;
-    m_pCompiler->dvm_function = nullptr;
-    m_pCompiler->dvm_class_count = 0;
-    m_pCompiler->dvm_class = nullptr;
-    m_pCompiler->declaration_list = nullptr;
-    m_pCompiler->statement_list = nullptr;
-    m_pCompiler->class_definition_list = nullptr;
-    m_pCompiler->current_block = nullptr;
-    m_pCompiler->current_line_number = 1;
-    m_pCompiler->current_class_definition = nullptr;
-    m_pCompiler->current_catch_clause = nullptr;
-    m_pCompiler->input_mode = STRING_INPUT_MODE;
-    m_pCompiler->required_list = nullptr;
-    m_pCompiler->array_method_count = ARRAY_SIZE(m_ArrayMethod);
-    m_pCompiler->array_method = CreateBuiltInMethod(m_ArrayMethod, ARRAY_SIZE(m_ArrayMethod));
-    m_pCompiler->string_method_count = ARRAY_SIZE(m_StringMethod);
-    m_pCompiler->string_method = CreateBuiltInMethod(m_StringMethod, ARRAY_SIZE(m_StringMethod));
-    
-#ifdef EUC_SOURCE
-    m_pCompiler->source_encoding = EUC_ENCODING;
-#else
-#ifdef GB2312_SOURCE
-    m_pCompiler->source_encoding = GB2312_ENCODING;
-#else
-#ifdef UTF_8_SOURCE
-    m_pCompiler->source_encoding = UTF_8_ENCODING;
-#else
-    DBG_panic(("source encoding is not defined."));
-#endif
-#endif
-#endif
-
-    DKC_Compiler *pCompilerNew = m_pCompiler;
-    m_pCompiler = pCompilerBackup;
-
-    return pCompilerNew;
-}
-
-void Interface::DisposeCompiler(DKC_Compiler *pCompiler)
-{
-    CompilerList *pList = TraversalCompiler(nullptr, pCompiler);
-
-    for (CompilerList *pos = pList; pos; )
-    {
-        for (FunctionDefinition *pFdPos = pos->compiler->function_list; pFdPos; pFdPos = pFdPos->next)
-        {
-            m_Memory.Free(pFdPos->local_variable);
-        }
-
-        CompilerList *pTemp = nullptr;
-        while (pos->compiler->required_list)
-        {
-            pTemp = pos->compiler->required_list;
-            pos->compiler->required_list = pTemp->next;
-            m_Memory.Free(pTemp);
-        }
-
-        m_Storage.Dispose(pos->compiler->compile_storage);
-        pTemp = pos->next;
-        m_Memory.Free(pos);
-        pos = pTemp;
-    }
 }
 
 FunctionDefinition* Interface::CreateBuiltInMethod(BuiltInMethod *pMethod, int iMethodCount)

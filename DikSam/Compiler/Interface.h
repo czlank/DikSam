@@ -18,6 +18,8 @@ public:
     Interface(Debug& debug, Memory& memory, Storage& storage, Util& util, Error& error, StringLiteral& stringliteral, Create& create, int iThreadIndex);
     ~Interface();
 
+    DKC_Compiler* CreateCompiler();
+    void DisposeCompiler(DKC_Compiler *pCompiler);
     DKC_Compiler* GetCurrentCompiler() { return m_pCompiler; }
 
     void RunScript(FILE *pFile, const char *lpstrPath);
@@ -46,8 +48,6 @@ private:
     DVM_Executable* DoCompile(DKC_Compiler *pCompiler, char **ppLines, DVM_ExecutableList *pExecutableList, const char *lpstrPath, bool isRequired);
 
     void ResetCompiler();
-    DKC_Compiler* CreateCompiler();
-    void DisposeCompiler(DKC_Compiler *pCompiler);
 
     FunctionDefinition* CreateBuiltInMethod(BuiltInMethod *pMethod, int iMethodCount);
     void SetPathToCompiler(DKC_Compiler *pCompiler, const char *lpstrPath);

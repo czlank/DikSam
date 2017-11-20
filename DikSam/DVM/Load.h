@@ -8,11 +8,12 @@ class Debug;
 class Memory;
 class Util;
 class Error;
+class Interface;
 
 class Load
 {
 public:
-    Load(Debug& debug, Memory& memory, Util& util, Error& error);
+    Load(Debug& debug, Memory& memory, Util& util, Error& error, Interface& interfaceRef);
     ~Load();
 
     DVM_VirtualMachine* CreateVirtualMachine();
@@ -44,10 +45,11 @@ private:
     inline void Set2ByteInt(DVM_Byte *p, int value) { p[0] = value >> 8, p[1] = value & 0xFF; }
 
 private:
-    Debug   &m_Debug;
-    Memory  &m_Memory;
-    Util    &m_Util;
-    Error   &m_Error;
+    Debug       &m_Debug;
+    Memory      &m_Memory;
+    Util        &m_Util;
+    Error       &m_Error;
+    Interface   &m_Interface;
 
     Native   m_Native;
 

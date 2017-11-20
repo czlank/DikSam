@@ -3,6 +3,7 @@
 #include "Memory.h"
 #include "Util.h"
 #include "Error.h"
+#include "Interface.h"
 #include "OpcodeInfo.h"
 #include "Load.h"
 
@@ -57,11 +58,12 @@ VTableItem Load::m_stStringMethodVTable[] =
     { STRING_PREFIX STRING_METHOD_SUBSTR, FUNCTION_NOT_FOUND }
 };
 
-Load::Load(Debug& debug, Memory& memory, Util& util, Error& error)
+Load::Load(Debug& debug, Memory& memory, Util& util, Error& error, Interface& interfaceRef)
     : m_Debug(debug)
     , m_Memory(memory)
     , m_Util(util)
     , m_Error(error)
+    , m_Interface(interfaceRef)
     , m_Native(debug, memory)
     
 {
@@ -132,7 +134,41 @@ void Load::AddNativeFunction(DVM_VirtualMachine *pVirtualMachine, char *lpstrPac
 
 void Load::DynamicLoad(DVM_VirtualMachine *pVirtualMachine, DVM_Executable *pCallerExecutable, Function *pCaller, int iPC, Function *pFunc)
 {
+    DKC_Compiler *pCompiler = m_Interface.CreateCompiler();
 
+    if (nullptr == pFunc->package_name)
+    {
+        m_Error.DVMError(pCallerExecutable, pCaller, iPC, DYNAMIC_LOAD_WITHOUT_PACKAGE_ERR,
+            STRING_MESSAGE_ARGUMENT, "name", pFunc->name,
+            MESSAGE_ARGUMENT_END);
+    }
+
+    DVM_ExecutableItem *pAddTop = nullptr;
+    char chSearchFile[FILENAME_MAX]{};
+    SearchFileStatus status = m_Interface.DynamicCompile(pCompiler, pFunc->package_name, pVirtualMachine->executable_list, &pAddTop, chSearchFile);
+
+    if (status != SEARCH_FILE_SUCCESS)
+    {
+        if (SEARCH_FILE_NOT_FOUND == status)
+        {
+            m_Error.DVMError(pCallerExecutable, pCaller, iPC, LOAD_FILE_NOT_FOUND_ERR,
+                STRING_MESSAGE_ARGUMENT, "file", chSearchFile,
+                MESSAGE_ARGUMENT_END);
+        }
+        else
+        {
+            m_Error.DVMError(pCallerExecutable, pCaller, iPC, LOAD_FILE_ERR,
+                INT_MESSAGE_ARGUMENT, "status", (int)status,
+                MESSAGE_ARGUMENT_END);
+        }
+    }
+
+    for (DVM_ExecutableItem *pos = pAddTop; pos; pos = pos->next)
+    {
+        (void)AddExecutableToDvm(pVirtualMachine, pos->executable, DVM_FALSE);
+    }
+
+    m_Interface.DisposeCompiler(pCompiler);
 }
 
 void Load::ImplementDikSamFunction(DVM_VirtualMachine *pVirtualMachine, int iDestIndex, ExecutableEntry *pExecuatbleEntry, int iSrcIndex)
@@ -164,7 +200,7 @@ void Load::AddFunctions(DVM_VirtualMachine *pVirtualMachine, ExecutableEntry *pE
                         lpstrPackageName = pVirtualMachine->function[iDestIndex]->package_name;
                     }
 
-                    m_Error.CompileError(NO_LINE_NUMBER_PC, FUNCTION_MULTIPLE_DEFINE_ERR,
+                    m_Error.DVMError(nullptr, nullptr, NO_LINE_NUMBER_PC, FUNCTION_MULTIPLE_DEFINE_ERR,
                         STRING_MESSAGE_ARGUMENT, "package", lpstrPackageName, STRING_MESSAGE_ARGUMENT, "name", pVirtualMachine->function[iDestIndex]->name,
                         MESSAGE_ARGUMENT_END);
                 }
@@ -241,13 +277,13 @@ int Load::SearchClass(DVM_VirtualMachine *pVirtualMachine, char *lpstrPackageNam
     for (int i = 0; i < pVirtualMachine->class_count; i++)
     {
         if (m_Util.ComparePackageName(pVirtualMachine->classes[i]->package_name, lpstrPackageName)
-            && std::string(pVirtualMachine->classes[i]->name, lpstrName))
+            && std::string(pVirtualMachine->classes[i]->name) == lpstrName)
         {
             return i;
         }
     }
 
-    m_Error.CompileError(NO_LINE_NUMBER_PC, CLASS_NOT_FOUND_ERR,
+    m_Error.DVMError(nullptr, nullptr, NO_LINE_NUMBER_PC, CLASS_NOT_FOUND_ERR,
         STRING_MESSAGE_ARGUMENT, "name", lpstrName,
         MESSAGE_ARGUMENT_END);
 
@@ -370,7 +406,7 @@ DVM_Class* Load::SearchClassFromExecutable(DVM_Executable *pExecutable, char *lp
     return nullptr;
 }
 
-int SetFieldTypes(DVM_Executable *pExecutable, DVM_Class *pPos, DVM_TypeSpecifier **ppFieldType, int iIndex)
+int Load::SetFieldTypes(DVM_Executable *pExecutable, DVM_Class *pPos, DVM_TypeSpecifier **ppFieldType, int iIndex)
 {
     if (pPos->super_class)
     {
@@ -419,7 +455,7 @@ void Load::SetVTable(DVM_VirtualMachine *pVirtualMachine, DVM_Class *pClass, DVM
 
     if (FUNCTION_NOT_FOUND == iFuncIndex && DVM_TRUE == pSrc->is_abstract)
     {
-        m_Error.CompileError(NO_LINE_NUMBER_PC, FUNCTION_NOT_FOUND_ERR,
+        m_Error.DVMError(nullptr, nullptr, NO_LINE_NUMBER_PC, FUNCTION_NOT_FOUND_ERR,
             STRING_MESSAGE_ARGUMENT, "name", lpstrFuncName,
             MESSAGE_ARGUMENT_END);
     }
@@ -563,7 +599,7 @@ void Load::AddClasses(DVM_VirtualMachine *pVirtualMachine, ExecutableEntry *pExe
                         lpstrPackageName = pVirtualMachine->classes[iDestIndex]->package_name;
                     }
 
-                    m_Error.CompileError(NO_LINE_NUMBER_PC, CLASS_MULTIPLE_DEFINE_ERR,
+                    m_Error.DVMError(nullptr, nullptr, NO_LINE_NUMBER_PC, CLASS_MULTIPLE_DEFINE_ERR,
                         STRING_MESSAGE_ARGUMENT, "package", lpstrPackageName,
                         STRING_MESSAGE_ARGUMENT, "name", pVirtualMachine->classes[iDestIndex]->name,
                         MESSAGE_ARGUMENT_END);
