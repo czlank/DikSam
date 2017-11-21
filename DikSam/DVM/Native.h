@@ -15,8 +15,6 @@ public:
     void AddNativeFunctions(DVM_VirtualMachine *pVirtualMachine);
 
 private:
-    void AddNativeFunction(DVM_VirtualMachine *pVirtualMachine, const char *lpcstrFuncName, DVM_NativeFunctionProc *pProc, int iArgCount);
-
     static DVM_Value PrintProc(Native *pThis, DVM_VirtualMachine *pVirtualMachine, int iArgCount, DVM_Value *pArgs);
     static DVM_Value SleepProc(Native *pThis, DVM_VirtualMachine *pVirtualMachine, int iArgCount, DVM_Value *pArgs);
 

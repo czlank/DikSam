@@ -36,17 +36,6 @@ void Native::AddNativeFunctions(DVM_VirtualMachine *pVirtualMachine)
     AddNativeFunction(pVirtualMachine, "sleep", &Native::SleepProc, 1);
 }
 
-void Native::AddNativeFunction(DVM_VirtualMachine *pVirtualMachine, const char *lpcstrFuncName, DVM_NativeFunctionProc *pProc, int iArgCount)
-{
-    pVirtualMachine->function = (Function*)MEM_realloc(pVirtualMachine->function, sizeof(Function) * (pVirtualMachine->function_count + 1));
-    pVirtualMachine->function[pVirtualMachine->function_count].name = MEM_strdup(lpcstrFuncName);
-    pVirtualMachine->function[pVirtualMachine->function_count].kind = NATIVE_FUNCTION;
-    pVirtualMachine->function[pVirtualMachine->function_count].u.native_f.proc = pProc;
-    pVirtualMachine->function[pVirtualMachine->function_count].u.native_f.pThis = this;
-    pVirtualMachine->function[pVirtualMachine->function_count].u.native_f.arg_count = iArgCount;
-    pVirtualMachine->function_count++;
-}
-
 DVM_Value Native::PrintProc(Native *pThis, DVM_VirtualMachine *pVirtualMachine, int iArgCount, DVM_Value *pArgs)
 {
     return pThis->Print(pVirtualMachine, iArgCount, pArgs);

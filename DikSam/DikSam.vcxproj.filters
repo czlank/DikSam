@@ -110,9 +110,6 @@
     <ClCompile Include="Share\Error.cpp">
       <Filter>Share</Filter>
     </ClCompile>
-    <ClCompile Include="Compiler\Util.cpp">
-      <Filter>Compiler</Filter>
-    </ClCompile>
     <ClCompile Include="Compiler\DikSam.cpp">
       <Filter>Compiler</Filter>
     </ClCompile>
@@ -148,6 +145,9 @@
     </ClCompile>
     <ClCompile Include="DVM\Load.cpp">
       <Filter>DVM</Filter>
+    </ClCompile>
+    <ClCompile Include="Compiler\Util.cpp">
+      <Filter>Compiler</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

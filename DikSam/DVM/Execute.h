@@ -24,9 +24,6 @@ private:
     void ArraySetObject(DVM_Object* pArray, int iIndex, DVM_Object *value);
     void CheckArray(DVM_Object *pArray, int iIndex, DVM_Executable *pExecutable, Function *pFunction, int iPC);
     void AddExecutable(DVM_Executable *pExecutable);
-    void AddFunctions(DVM_Executable *pExecutable);
-    int SearchFunction(char *lpstrName);
-    void ConvertCode(DVM_Executable *pExecutable, DVM_Byte *pCode, int iCodeSize, DVM_Function *pFunction);
     void AddStaticVariables(DVM_Executable *pExecutable);
     DVM_Object* ChainString(DVM_Object *str1, DVM_Object *str2);
     void InitializeLocalVariables(DVM_Function *pFunction, int iFromSP);
@@ -42,7 +39,6 @@ private:
     void RestorePC(DVM_Executable *pExecutable, Function *pFunction, int iPC);
     DVM_Value ExecuteCode(Function *pFunction, DVM_Byte *pCode, int iCodeSize);
 
-    void CreateVirtualMachine();
     void DisposeVirtualMachine();
 
 private:
