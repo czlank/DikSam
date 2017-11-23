@@ -23,12 +23,10 @@ private:
     void ArraySetDouble(DVM_Object* pArray, int iIndex, double value);
     void ArraySetObject(DVM_Object* pArray, int iIndex, DVM_Object *value);
     void CheckArray(DVM_Object *pArray, int iIndex, DVM_Executable *pExecutable, Function *pFunction, int iPC);
-    void AddExecutable(DVM_Executable *pExecutable);
-    void AddStaticVariables(DVM_Executable *pExecutable);
-    DVM_Object* ChainString(DVM_Object *str1, DVM_Object *str2);
+    DVM_ObjectRef ChainString(DVM_VirtualMachine *pVirtualMachine, DVM_ObjectRef str1, DVM_ObjectRef str2);
     void InitializeLocalVariables(DVM_Function *pFunction, int iFromSP);
     void ExpandStack(int iNeedStackSize);
-    void InvokeNativeFunction(Function *pFunction, int *pSP);
+    void InvokeNativeFunction(DVM_VirtualMachine *pVirtualMachine, Function *pCaller, Function *pCallee, int iPC, int *pSP, int iBase);
     void InvokeDikSamFunction(Function **ppCaller, Function *pCallee, DVM_Byte **ppCode, int *pCodeSize, int *pPC, int *pSP, int *pBase, DVM_Executable **ppExe);
     void ReturnFunction(Function **ppFunction, DVM_Byte **ppCode, int *pCodeSize, int *pPC, int *pSP, int *pBase, DVM_Executable **ppExe);
     DVM_Object* CreateArraySub(int iDim, int iDimIndex, DVM_TypeSpecifier *pType);
@@ -47,6 +45,4 @@ private:
     Error   &m_Error;
 
     GarbageCollect      m_GarbageCollect;
-
-    DVM_VirtualMachine  *m_pVirtualMachine;
 };

@@ -587,7 +587,7 @@ void Util::InitializeValue(DVM_TypeSpecifier *pTypeSpecifier, DVM_Value *pValue)
     {
         if (DVM_ARRAY_DERIVE == pTypeSpecifier->derive[0].tag)
         {
-            pValue->object = nullptr;
+            pValue->object = { nullptr, nullptr };
         }
         else
         {
@@ -598,6 +598,7 @@ void Util::InitializeValue(DVM_TypeSpecifier *pTypeSpecifier, DVM_Value *pValue)
     {
         switch (pTypeSpecifier->basic_type)
         {
+        case DVM_VOID_TYPE :
         case DVM_BOOLEAN_TYPE :
         case DVM_INT_TYPE :
             pValue->int_value = 0;
@@ -608,9 +609,12 @@ void Util::InitializeValue(DVM_TypeSpecifier *pTypeSpecifier, DVM_Value *pValue)
             break;
 
         case DVM_STRING_TYPE :
-            pValue->object = nullptr;
+        case DVM_CLASS_TYPE :
+            pValue->object = { nullptr, nullptr };
             break;
 
+        case DVM_NULL_TYPE :
+        case DVM_BASE_TYPE :
         default :
             DBG_assert(0, ("enType..", pTypeSpecifier->basic_type));
         }

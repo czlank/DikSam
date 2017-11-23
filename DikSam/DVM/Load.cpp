@@ -37,12 +37,6 @@
 #endif
 #define MEM_strdup(ptr)                     (m_Memory.StrDUP(__FILE__, __LINE__, ptr))
 
-DVM_ObjectRef Load::m_NullObjectRef =
-{
-    nullptr,
-    nullptr
-};
-
 VTableItem Load::m_stArrayMethodVTable[] =
 {
     { ARRAY_PREFIX ARRAY_METHOD_SIZE,   FUNCTION_NOT_FOUND },
@@ -88,7 +82,7 @@ DVM_VirtualMachine* Load::CreateVirtualMachine()
 
     pVirtualMachine->current_executable = nullptr;
     pVirtualMachine->current_function = nullptr;
-    pVirtualMachine->current_exception = m_NullObjectRef;
+    pVirtualMachine->current_exception = { nullptr, nullptr };
 
     pVirtualMachine->function = nullptr;
     pVirtualMachine->function_count = 0;

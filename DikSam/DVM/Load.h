@@ -53,7 +53,6 @@ private:
 
     Native   m_Native;
 
-    static DVM_ObjectRef    m_NullObjectRef;
     static VTableItem       m_stArrayMethodVTable[];
     static VTableItem       m_stStringMethodVTable[];
 };

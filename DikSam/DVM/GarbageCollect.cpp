@@ -47,17 +47,20 @@ DVM_Object* GarbageCollect::LiteralToString(DVM_VirtualMachine *pVirtualMachine,
     return pObj;
 }
 
-DVM_Object* GarbageCollect::CreateString(DVM_VirtualMachine *pVirtualMachine, DVM_Char *str)
+DVM_ObjectRef GarbageCollect::CreateString(DVM_VirtualMachine *pVirtualMachine, DVM_Char *str)
 {
-    DVM_Object *pObj = AllocObject(pVirtualMachine, STRING_OBJECT);
+    DVM_ObjectRef obj = AllocObject(pVirtualMachine, STRING_OBJECT);
 
-    pObj->u.string.string = str;
+    obj.v_table = pVirtualMachine->string_v_table;
+    obj.data->u.string.string = str;
 
-    int iLen = str == nullptr ? 0 : std::basic_string<DVM_Char>(str).length();
+    int iLen = nullptr == str ? 0 : std::basic_string<DVM_Char>(str).length();
     pVirtualMachine->heap.current_heap_size += sizeof(DVM_Char) * (iLen + 1);
-    pObj->u.string.is_literal = DVM_FALSE;
+    
+    obj.data->u.string.is_literal = DVM_FALSE;
+    obj.data->u.string.length = iLen;
 
-    return pObj;
+    return obj;
 }
 
 DVM_Object* GarbageCollect::CreateArrayIntI(DVM_VirtualMachine *pVirtualMachine, int iSize)
@@ -135,26 +138,29 @@ void GarbageCollect::CheckGC(DVM_VirtualMachine *pVirtualMachine)
     }
 }
 
-DVM_Object* GarbageCollect::AllocObject(DVM_VirtualMachine *pVirtualMachine, ObjectType enType)
+DVM_ObjectRef GarbageCollect::AllocObject(DVM_VirtualMachine *pVirtualMachine, ObjectType enType)
 {
+    DVM_ObjectRef obj;
+
     CheckGC(pVirtualMachine);
 
-    DVM_Object *pObj = (DVM_Object*)MEM_malloc(sizeof(DVM_Object));
+    obj.v_table = nullptr;
+    obj.data = (DVM_Object*)MEM_malloc(sizeof(DVM_Object));
 
     pVirtualMachine->heap.current_heap_size += sizeof(DVM_Object);
     
-    pObj->type = enType;
-    pObj->marked = DVM_FALSE;
+    obj.data->type = enType;
+    obj.data->marked = DVM_FALSE;
     
-    pObj->prev = nullptr;
-    pObj->next = pVirtualMachine->heap.header;
-    pVirtualMachine->heap.header = pObj;
-    if (pObj->next)
+    obj.data->prev = nullptr;
+    obj.data->next = pVirtualMachine->heap.header;
+    pVirtualMachine->heap.header = obj.data;
+    if (obj.data->next)
     {
-        pObj->next->prev = pObj;
+        obj.data->next->prev = obj.data;
     }
 
-    return pObj;
+    return obj;
 }
 
 DVM_Object* GarbageCollect::AllocArray(DVM_VirtualMachine *pVirtualMachine, ArrayType enType, int iSize)
