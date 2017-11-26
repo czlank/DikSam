@@ -2,7 +2,10 @@
 #include "Execute.h"
 #include "Debug.h"
 #include "Memory.h"
+#include "Util.h"
 #include "Error.h"
+#include "Interface.h"
+#include "Load.h"
 #include "DVM_pri.h"
 #include "Dispose.h"
 #include "OpcodeInfo.h"
@@ -64,12 +67,13 @@
     ((m_pVirtualMachine)->stack.stack[(sp)].object = r, \
     (m_pVirtualMachine)->stack.pointer_flags[(sp)] = DVM_TRUE)
 
-Execute::Execute(Debug& debug, Memory& memory, Error& error)
+Execute::Execute(Debug& debug, Memory& memory, Util& util, Error& error, Interface& interfaceRef)
     : m_Debug(debug)
     , m_Memory(memory)
+    , m_Util(util)
     , m_Error(error)
+    , m_Interface(interfaceRef)
     , m_GarbageCollect(debug, memory)
-    , m_pVirtualMachine(nullptr)
 {
 }
 
@@ -186,36 +190,36 @@ DVM_ObjectRef Execute::ChainString(DVM_VirtualMachine *pVirtualMachine, DVM_Obje
     return ret;
 }
 
-void Execute::InitializeLocalVariables(DVM_Function *pFunction, int iFromSP)
+void Execute::InitializeLocalVariables(DVM_VirtualMachine *pVirtualMachine, DVM_Function *pFunction, int iFromSP)
 {
     for (int i = 0, idx = iFromSP; i < pFunction->local_variable_count; i++, idx++)
     {
-        m_pVirtualMachine->stack.pointer_flags[i] = DVM_FALSE;
+        pVirtualMachine->stack.pointer_flags[idx] = DVM_FALSE;
     }
 
     for (int i = 0, idx = iFromSP; i < pFunction->local_variable_count; i++, idx++)
     {
-        InitializeValue(pFunction->local_variable[i].type, &m_pVirtualMachine->stack.stack[idx]);
+        m_Util.InitializeValue(pFunction->local_variable[i].type, &pVirtualMachine->stack.stack[idx]);
 
-        if (DVM_STRING_TYPE == pFunction->local_variable[i].type->basic_type)
+        if (IsPointerType(pFunction->local_variable[i].type))
         {
-            m_pVirtualMachine->stack.pointer_flags[i] = DVM_TRUE;
+            pVirtualMachine->stack.pointer_flags[idx] = DVM_TRUE;
         }
     }
 }
 
-void Execute::ExpandStack(int iNeedStackSize)
+void Execute::ExpandStack(DVM_VirtualMachine *pVirtualMachine, int iNeedStackSize)
 {
-    int iRest = m_pVirtualMachine->stack.alloc_size - m_pVirtualMachine->stack.stack_pointer;
+    int iRest = pVirtualMachine->stack.alloc_size - pVirtualMachine->stack.stack_pointer;
 
     if (iRest > iNeedStackSize)
         return;
 
     int iRevalueUp = ((iRest / STACK_ALLOC_SIZE) + 1) * STACK_ALLOC_SIZE;
 
-    m_pVirtualMachine->stack.alloc_size += iRevalueUp;
-    m_pVirtualMachine->stack.stack = (DVM_Value*)MEM_realloc(m_pVirtualMachine->stack.stack, sizeof(DVM_Value) * m_pVirtualMachine->stack.alloc_size);
-    m_pVirtualMachine->stack.pointer_flags = (DVM_Boolean*)MEM_realloc(m_pVirtualMachine->stack.pointer_flags, sizeof(DVM_Boolean) * m_pVirtualMachine->stack.alloc_size);
+    pVirtualMachine->stack.alloc_size += iRevalueUp;
+    pVirtualMachine->stack.stack = (DVM_Value*)MEM_realloc(pVirtualMachine->stack.stack, sizeof(DVM_Value) * pVirtualMachine->stack.alloc_size);
+    pVirtualMachine->stack.pointer_flags = (DVM_Boolean*)MEM_realloc(pVirtualMachine->stack.pointer_flags, sizeof(DVM_Boolean) * pVirtualMachine->stack.alloc_size);
 }
 
 void Execute::InvokeNativeFunction(DVM_VirtualMachine *pVirtualMachine, Function *pCaller, Function *pCallee, int iPC, int *pSP, int iBase)
@@ -260,8 +264,14 @@ void Execute::InvokeNativeFunction(DVM_VirtualMachine *pVirtualMachine, Function
     (*pSP)++;
 }
 
-void Execute::InvokeDikSamFunction(Function **ppCaller, Function *pCallee, DVM_Byte **ppCode, int *pCodeSize, int *pPC, int *pSP, int *pBase, DVM_Executable **ppExe)
+void Execute::InvokeDikSamFunction(DVM_VirtualMachine *pVirtualMachine, Function **ppCaller, Function *pCallee, DVM_Byte **ppCode, int *pCodeSize, int *pPC, int *pSP, int *pBase, ExecutableEntry **ppExeEntry, DVM_Executable **ppExe)
 {
+    if (DVM_FALSE == pCallee->is_implemented)
+    {
+        Load load(m_Debug, m_Memory, m_Util, m_Error, m_Interface);
+        load.DynamicLoad(pVirtualMachine, *ppExe, *ppCaller, *pPC, pCallee);
+    }
+
     *ppExe = pCallee->u.diksam_f.executable;
     DVM_Function *pCalleeFunction = &(*ppExe)->function[pCallee->u.diksam_f.index];
 
@@ -1106,4 +1116,12 @@ void Execute::DisposeVirtualMachine()
     MEM_free(m_pVirtualMachine);
 
     m_pVirtualMachine = nullptr;
+}
+
+inline bool Execute::IsPointerType(DVM_TypeSpecifier *pType)
+{
+    return (DVM_STRING_TYPE == pType->basic_type
+        || DVM_CLASS_TYPE == pType->basic_type
+        || DVM_NULL_TYPE == pType->basic_type
+        || (pType->derive_count > 0 && DVM_ARRAY_DERIVE == pType->derive[0].tag));
 }

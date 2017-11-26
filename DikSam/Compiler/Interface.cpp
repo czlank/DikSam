@@ -224,7 +224,7 @@ void Interface::RunScript(FILE *pFile, const char *lpstrPath)
         load.SetExecutable(pVirtualMachine, pExecutableList);
         DisposeCompiler(pCompiler);
 
-        //Execute(m_Debug, m_Memory, m_Error)(pExecutable);
+        //Execute(m_Debug, m_Memory, m_Util, m_Error, *this)(pExecutable);
 
         ResetCompiler();
 
@@ -266,7 +266,7 @@ void Interface::RunScript(char **ppLines, const char *lpstrPath)
         load.SetExecutable(pVirtualMachine, pExecutableList);
         DisposeCompiler(pCompiler);
 
-        //Execute(m_Debug, m_Memory, m_Error)(pExecutable);
+        //Execute(m_Debug, m_Memory, m_Util, m_Error, *this)(pExecutable);
 
         ResetCompiler();
 
