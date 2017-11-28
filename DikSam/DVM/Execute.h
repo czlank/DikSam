@@ -30,13 +30,14 @@ private:
     void ExpandStack(DVM_VirtualMachine *pVirtualMachine, int iNeedStackSize);
     void InvokeNativeFunction(DVM_VirtualMachine *pVirtualMachine, Function *pCaller, Function *pCallee, int iPC, int *pSP, int iBase);
     void InvokeDikSamFunction(DVM_VirtualMachine *pVirtualMachine, Function **ppCaller, Function *pCallee, DVM_Byte **ppCode, int *pCodeSize, int *pPC, int *pSP, int *pBase, ExecutableEntry **ppExeEntry, DVM_Executable **ppExe);
-    void ReturnFunction(Function **ppFunction, DVM_Byte **ppCode, int *pCodeSize, int *pPC, int *pSP, int *pBase, DVM_Executable **ppExe);
-    DVM_Object* CreateArraySub(int iDim, int iDimIndex, DVM_TypeSpecifier *pType);
-    DVM_Object* CreateArray(int iDim, DVM_TypeSpecifier *pType);
-    DVM_Object* CreateArrayLiteralInt(int iSize);
-    DVM_Object* CreateArrayLiteralDouble(int iSize);
-    DVM_Object* CreateArrayLiteralObject(int iSize);
-    void RestorePC(DVM_Executable *pExecutable, Function *pFunction, int iPC);
+    DVM_Boolean DoReturn(DVM_VirtualMachine *pVirtualMachine, Function **ppFunction, DVM_Byte **ppCode, int *pCodeSize, int *pPC, int *pBase, ExecutableEntry **ppExeEntry, DVM_Executable **ppExe);
+    DVM_Boolean ReturnFunction(DVM_VirtualMachine *pVirtualMachine, Function **ppFunction, DVM_Byte **ppCode, int *pCodeSize, int *pPC, int *pBase, ExecutableEntry **ppExeEntry, DVM_Executable **ppExe);
+    DVM_ObjectRef CreateArraySub(DVM_VirtualMachine *pVirtualMachine, int iDim, int iDimIndex, DVM_TypeSpecifier *pType);
+    DVM_ObjectRef CreateArray(DVM_VirtualMachine *pVirtualMachine, int iDim, DVM_TypeSpecifier *pType);
+    DVM_ObjectRef CreateArrayLiteralInt(DVM_VirtualMachine *pVirtualMachine, int iSize);
+    DVM_ObjectRef CreateArrayLiteralDouble(DVM_VirtualMachine *pVirtualMachine, int iSize);
+    DVM_ObjectRef CreateArrayLiteralObject(DVM_VirtualMachine *pVirtualMachine, int iSize);
+    void RestorePC(DVM_VirtualMachine *pVirtualMachine, ExecutableEntry *pExecutableEntry, Function *pFunction, int iPC);
     DVM_Value ExecuteCode(Function *pFunction, DVM_Byte *pCode, int iCodeSize);
 
     void DisposeVirtualMachine();

@@ -63,14 +63,19 @@ DVM_ObjectRef GarbageCollect::CreateString(DVM_VirtualMachine *pVirtualMachine, 
     return obj;
 }
 
-DVM_Object* GarbageCollect::CreateArrayIntI(DVM_VirtualMachine *pVirtualMachine, int iSize)
+DVM_ObjectRef GarbageCollect::CreateArrayIntI(DVM_VirtualMachine *pVirtualMachine, int iSize)
 {
-    DVM_Object *pObject = AllocArray(pVirtualMachine, INT_ARRAY, iSize);
+    DVM_ObjectRef object = AllocArray(pVirtualMachine, INT_ARRAY, iSize);
 
-    pObject->u.array.u.int_array = (int *)MEM_malloc(sizeof(int) * iSize);
+    object.data->u.array.u.int_array = (int *)MEM_malloc(sizeof(int) * iSize);
     pVirtualMachine->heap.current_heap_size += sizeof(int) * iSize;
 
-    return pObject;
+    for (int i = 0; i < iSize; i++)
+    {
+        object.data->u.array.u.int_array[i] = 0;
+    }
+
+    return object;
 }
 
 DVM_Object* GarbageCollect::CreateArrayInt(DVM_VirtualMachine *pVirtualMachine, int iSize)
@@ -85,14 +90,19 @@ DVM_Object* GarbageCollect::CreateArrayInt(DVM_VirtualMachine *pVirtualMachine, 
     return pObject;
 }
 
-DVM_Object* GarbageCollect::CreateArrayDoubleI(DVM_VirtualMachine *pVirtualMachine, int iSize)
+DVM_ObjectRef GarbageCollect::CreateArrayDoubleI(DVM_VirtualMachine *pVirtualMachine, int iSize)
 {
-    DVM_Object *pObject = AllocArray(pVirtualMachine, DOUBLE_ARRAY, iSize);
+    DVM_ObjectRef object = AllocArray(pVirtualMachine, DOUBLE_ARRAY, iSize);
 
-    pObject->u.array.u.double_array = (double *)MEM_malloc(sizeof(double) * iSize);
+    object.data->u.array.u.double_array = (double *)MEM_malloc(sizeof(double) * iSize);
     pVirtualMachine->heap.current_heap_size += sizeof(double) * iSize;
 
-    return pObject;
+    for (int i = 0; i < iSize; i++)
+    {
+        object.data->u.array.u.double_array[i] = 0.0;
+    }
+
+    return object;
 }
 
 DVM_Object* GarbageCollect::CreateArrayDouble(DVM_VirtualMachine *pVirtualMachine, int iSize)
@@ -107,14 +117,19 @@ DVM_Object* GarbageCollect::CreateArrayDouble(DVM_VirtualMachine *pVirtualMachin
     return pObject;
 }
 
-DVM_Object* GarbageCollect::CreateArrayObjectI(DVM_VirtualMachine *pVirtualMachine, int iSize)
+DVM_ObjectRef GarbageCollect::CreateArrayObjectI(DVM_VirtualMachine *pVirtualMachine, int iSize)
 {
-    DVM_Object *pObject = AllocArray(pVirtualMachine, OBJECT_ARRAY, iSize);
+    DVM_ObjectRef object = AllocArray(pVirtualMachine, OBJECT_ARRAY, iSize);
 
-    pObject->u.array.u.object = (DVM_Object **)MEM_malloc(sizeof(DVM_Object*) * iSize);
-    pVirtualMachine->heap.current_heap_size += sizeof(DVM_Object*) * iSize;
+    object.data->u.array.u.object = (DVM_ObjectRef*)MEM_malloc(sizeof(DVM_ObjectRef) * iSize);
+    pVirtualMachine->heap.current_heap_size += sizeof(DVM_ObjectRef) * iSize;
 
-    return pObject;
+    for (int i = 0; i < iSize; i++)
+    {
+        object.data->u.array.u.object[i] = { nullptr, nullptr };
+    }
+
+    return object;
 }
 
 DVM_Object* GarbageCollect::CreateArrayObject(DVM_VirtualMachine *pVirtualMachine, int iSize)
@@ -163,15 +178,16 @@ DVM_ObjectRef GarbageCollect::AllocObject(DVM_VirtualMachine *pVirtualMachine, O
     return obj;
 }
 
-DVM_Object* GarbageCollect::AllocArray(DVM_VirtualMachine *pVirtualMachine, ArrayType enType, int iSize)
+DVM_ObjectRef GarbageCollect::AllocArray(DVM_VirtualMachine *pVirtualMachine, ArrayType enType, int iSize)
 {
-    DVM_Object *pObject = AllocObject(pVirtualMachine, ARRAY_OBJECT);
+    DVM_ObjectRef object = AllocObject(pVirtualMachine, ARRAY_OBJECT);
 
-    pObject->u.array.type = enType;
-    pObject->u.array.size = iSize;
-    pObject->u.array.alloc_size = iSize;
+    object.data->u.array.type = enType;
+    object.data->u.array.size = iSize;
+    object.data->u.array.alloc_size = iSize;
+    object.v_table = pVirtualMachine->array_v_table;
 
-    return pObject;
+    return object;
 }
 
 void GarbageCollect::MarkObjects(DVM_VirtualMachine *pVirtualMachine)

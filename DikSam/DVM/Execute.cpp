@@ -15,6 +15,11 @@
 #endif
 #define DBG_assert(expression, arg) ((expression) ? (void)(0) : (m_Debug.Assert(__FILE__, __LINE__, #expression, arg)))
 
+#ifdef DBG_panic
+#undef DBG_panic
+#endif
+#define DBG_panic(arg)                      (m_Debug.Panic(__FILE__, __LINE__, arg))
+
 #ifdef MEM_malloc
 #undef MEM_malloc
 #endif
@@ -39,33 +44,33 @@
 #define GET_2BYTE_INT(p)            (((p)[0] << 8) + (p)[1])
 #define SET_2BYTE_INT(p, value)     (((p)[0] = (value) >> 8), ((p)[1] = value & 0xff))
 
-#define STI(sp)     ((m_pVirtualMachine)->stack.stack[(m_pVirtualMachine)->stack.stack_pointer + (sp)].int_value)
-#define STD(sp)     ((m_pVirtualMachine)->stack.stack[(m_pVirtualMachine)->stack.stack_pointer + (sp)].double_value)
-#define STO(sp)     ((m_pVirtualMachine)->stack.stack[(m_pVirtualMachine)->stack.stack_pointer + (sp)].object)
+#define STI(sp)     ((pVirtualMachine)->stack.stack[(pVirtualMachine)->stack.stack_pointer + (sp)].int_value)
+#define STD(sp)     ((pVirtualMachine)->stack.stack[(pVirtualMachine)->stack.stack_pointer + (sp)].double_value)
+#define STO(sp)     ((pVirtualMachine)->stack.stack[(pVirtualMachine)->stack.stack_pointer + (sp)].object)
 
-#define STI_I(sp)   ((m_pVirtualMachine)->stack.stack[(sp)].int_value)
-#define STD_I(sp)   ((m_pVirtualMachine)->stack.stack[(sp)].double_value)
-#define STO_I(sp)   ((m_pVirtualMachine)->stack.stack[(sp)].object)
+#define STI_I(sp)   ((pVirtualMachine)->stack.stack[(sp)].int_value)
+#define STD_I(sp)   ((pVirtualMachine)->stack.stack[(sp)].double_value)
+#define STO_I(sp)   ((pVirtualMachine)->stack.stack[(sp)].object)
 
 #define STI_WRITE(sp, r) \
-    ((m_pVirtualMachine)->stack.stack[(m_pVirtualMachine)->stack.stack_pointer + (sp)].int_value = r, \
-    (m_pVirtualMachine)->stack.pointer_flags[(m_pVirtualMachine)->stack.stack_pointer + (sp)] = DVM_FALSE)
+    ((pVirtualMachine)->stack.stack[(pVirtualMachine)->stack.stack_pointer + (sp)].int_value = r, \
+    (pVirtualMachine)->stack.pointer_flags[(pVirtualMachine)->stack.stack_pointer + (sp)] = DVM_FALSE)
 #define STD_WRITE(sp, r) \
-    ((m_pVirtualMachine)->stack.stack[(m_pVirtualMachine)->stack.stack_pointer + (sp)].double_value = r, \
-    (m_pVirtualMachine)->stack.pointer_flags[(m_pVirtualMachine)->stack.stack_pointer + (sp)] = DVM_FALSE)
+    ((pVirtualMachine)->stack.stack[(pVirtualMachine)->stack.stack_pointer + (sp)].double_value = r, \
+    (pVirtualMachine)->stack.pointer_flags[(pVirtualMachine)->stack.stack_pointer + (sp)] = DVM_FALSE)
 #define STO_WRITE(sp, r) \
-    ((m_pVirtualMachine)->stack.stack[(m_pVirtualMachine)->stack.stack_pointer + (sp)].object = r, \
-    (m_pVirtualMachine)->stack.pointer_flags[(m_pVirtualMachine)->stack.stack_pointer + (sp)] = DVM_TRUE)
+    ((pVirtualMachine)->stack.stack[(pVirtualMachine)->stack.stack_pointer + (sp)].object = r, \
+    (pVirtualMachine)->stack.pointer_flags[(pVirtualMachine)->stack.stack_pointer + (sp)] = DVM_TRUE)
 
 #define STI_WRITE_I(sp, r) \
-    ((m_pVirtualMachine)->stack.stack[(sp)].int_value = r, \
-    (m_pVirtualMachine)->stack.pointer_flags[(sp)] = DVM_FALSE)
+    ((pVirtualMachine)->stack.stack[(sp)].int_value = r, \
+    (pVirtualMachine)->stack.pointer_flags[(sp)] = DVM_FALSE)
 #define STD_WRITE_I(sp, r) \
-    ((m_pVirtualMachine)->stack.stack[(sp)].double_value = r, \
-    (m_pVirtualMachine)->stack.pointer_flags[(sp)] = DVM_FALSE)
+    ((pVirtualMachine)->stack.stack[(sp)].double_value = r, \
+    (pVirtualMachine)->stack.pointer_flags[(sp)] = DVM_FALSE)
 #define STO_WRITE_I(sp, r) \
-    ((m_pVirtualMachine)->stack.stack[(sp)].object = r, \
-    (m_pVirtualMachine)->stack.pointer_flags[(sp)] = DVM_TRUE)
+    ((pVirtualMachine)->stack.stack[(sp)].object = r, \
+    (pVirtualMachine)->stack.pointer_flags[(sp)] = DVM_TRUE)
 
 Execute::Execute(Debug& debug, Memory& memory, Util& util, Error& error, Interface& interfaceRef)
     : m_Debug(debug)
@@ -272,25 +277,35 @@ void Execute::InvokeDikSamFunction(DVM_VirtualMachine *pVirtualMachine, Function
         load.DynamicLoad(pVirtualMachine, *ppExe, *ppCaller, *pPC, pCallee);
     }
 
-    *ppExe = pCallee->u.diksam_f.executable;
+    *ppExeEntry = pCallee->u.diksam_f.executable;
+    *ppExe = (*ppExeEntry)->executable;
+
     DVM_Function *pCalleeFunction = &(*ppExe)->function[pCallee->u.diksam_f.index];
 
-    ExpandStack(CALL_INFO_ALIGN_SIZE + pCalleeFunction->local_variable_count + (*ppExe)->function[pCallee->u.diksam_f.index].need_stack_size);
+    ExpandStack(pVirtualMachine, CALL_INFO_ALIGN_SIZE + pCalleeFunction->local_variable_count + (*ppExe)->function[pCallee->u.diksam_f.index].need_stack_size);
 
-    CallInfo *pCallInfo = (CallInfo*)&m_pVirtualMachine->stack.stack[(*pSP - 1)];
+    CallInfo *pCallInfo = (CallInfo*)&pVirtualMachine->stack.stack[(*pSP - 1)];
+
     pCallInfo->caller = *ppCaller;
     pCallInfo->caller_address = *pPC;
     pCallInfo->base = *pBase;
 
     for (int i = 0; i < CALL_INFO_ALIGN_SIZE; i++)
     {
-        m_pVirtualMachine->stack.pointer_flags[(*pSP - 1) + i] = DVM_FALSE;
+        pVirtualMachine->stack.pointer_flags[(*pSP - 1) + i] = DVM_FALSE;
     }
 
     *pBase = (*pSP - 1) - pCalleeFunction->parameter_count;
+
+    if (DVM_TRUE == pCalleeFunction->is_method)
+    {
+        // for this
+        (*pBase)--;
+    }
+
     *ppCaller = pCallee;
 
-    InitializeLocalVariables(pCalleeFunction, (*pSP - 1) + CALL_INFO_ALIGN_SIZE);
+    InitializeLocalVariables(pVirtualMachine, pCalleeFunction, (*pSP - 1) + CALL_INFO_ALIGN_SIZE);
 
     *pSP = (*pSP - 1);
     *pSP += CALL_INFO_ALIGN_SIZE + pCalleeFunction->local_variable_count;
@@ -300,133 +315,168 @@ void Execute::InvokeDikSamFunction(DVM_VirtualMachine *pVirtualMachine, Function
     *pCodeSize = (*ppExe)->function[pCallee->u.diksam_f.index].code_size;
 }
 
-void Execute::ReturnFunction(Function **ppFunction, DVM_Byte **ppCode, int *pCodeSize, int *pPC, int *pSP, int *pBase, DVM_Executable **ppExe)
+DVM_Boolean Execute::DoReturn(DVM_VirtualMachine *pVirtualMachine, Function **ppFunction, DVM_Byte **ppCode, int *pCodeSize, int *pPC, int *pBase, ExecutableEntry **ppExeEntry, DVM_Executable **ppExe)
 {
-    DVM_Value returnValue = m_pVirtualMachine->stack.stack[(*pSP - 1)];
     DVM_Function *pCallee = &(*ppExe)->function[(*ppFunction)->u.diksam_f.index];
-    CallInfo *pCallInfo = (CallInfo*)&m_pVirtualMachine->stack.stack[(*pSP - 1) - pCallee->local_variable_count - CALL_INFO_ALIGN_SIZE];
+    
+    int iArgCount = pCallee->parameter_count;
+    if (DVM_TRUE == pCallee->is_method)
+    {
+        // fot this
+        iArgCount++;
+    }
+
+    CallInfo *pCallInfo = (CallInfo*)&pVirtualMachine->stack.stack[*pBase + iArgCount];
 
     if (pCallInfo->caller)
     {
-        *ppExe = pCallInfo->caller->u.diksam_f.executable;
+        *ppExeEntry = pCallInfo->caller->u.diksam_f.executable;
+        *ppExe = (*ppExeEntry)->executable;
 
-        DVM_Function *pCaller = &(*ppExe)->function[pCallInfo->caller->u.diksam_f.index];
-        *ppCode = pCaller->code;
-        *pCodeSize = pCaller->code_size;
+        if (DIKSAM_FUNCTION == pCallInfo->caller->kind)
+        {
+            DVM_Function *pCaller = &(*ppExe)->function[pCallInfo->caller->u.diksam_f.index];
+
+            *ppCode = pCaller->code;
+            *pCodeSize = pCaller->code_size;
+        }
     }
     else
     {
-        *ppExe = m_pVirtualMachine->executable;
-        *ppCode = m_pVirtualMachine->executable->code;
-        *pCodeSize = m_pVirtualMachine->executable->code_size;
+        *ppExeEntry = pVirtualMachine->top_level;
+        *ppExe = pVirtualMachine->top_level->executable;
+        *ppCode = pVirtualMachine->top_level->executable->code;
+        *pCodeSize = pVirtualMachine->top_level->executable->code_size;
     }
 
     *ppFunction = pCallInfo->caller;
+
+    pVirtualMachine->stack.stack_pointer = *pBase;
     *pPC = pCallInfo->caller_address + 1;
     *pBase = pCallInfo->base;
-    *pSP -= pCallee->local_variable_count + CALL_INFO_ALIGN_SIZE + pCallee->parameter_count;
 
-    m_pVirtualMachine->stack.stack[*pSP - 1] = returnValue;
+    return (CALL_FROM_NATIVE == pCallInfo->caller_address ? DVM_TRUE : DVM_FALSE);
 }
 
-DVM_Object* Execute::CreateArraySub(int iDim, int iDimIndex, DVM_TypeSpecifier *pType)
+DVM_Boolean Execute::ReturnFunction(DVM_VirtualMachine *pVirtualMachine, Function **ppFunction, DVM_Byte **ppCode, int *pCodeSize, int *pPC, int *pBase, ExecutableEntry **ppExeEntry, DVM_Executable **ppExe)
 {
-    DVM_Object *ret = nullptr;
+    DVM_Value returnValue = pVirtualMachine->stack.stack[pVirtualMachine->stack.stack_pointer - 1];
+    pVirtualMachine->stack.stack_pointer--;
+
+    DVM_Function *pCallee = &(*ppExe)->function[(*ppFunction)->u.diksam_f.index];
+    DVM_Boolean ret = DoReturn(pVirtualMachine, ppFunction, ppCode, pCodeSize, pPC, pBase, ppExeEntry, ppExe);
+    
+    pVirtualMachine->stack.stack[pVirtualMachine->stack.stack_pointer] = returnValue;
+    pVirtualMachine->stack.pointer_flags[pVirtualMachine->stack.stack_pointer] = IsPointerType(pCallee->type) ? DVM_TRUE : DVM_FALSE;
+    pVirtualMachine->stack.stack_pointer++;
+
+    return ret;
+}
+
+DVM_ObjectRef Execute::CreateArraySub(DVM_VirtualMachine *pVirtualMachine, int iDim, int iDimIndex, DVM_TypeSpecifier *pType)
+{
+    DVM_ObjectRef ret{ nullptr, nullptr };
     int size = STI(-iDim);
 
     if (iDimIndex == pType->derive_count - 1)
     {
         switch (pType->basic_type)
         {
+        case DVM_VOID_TYPE :
+            DBG_panic(("create void array"));
+            break;
+
         case DVM_BOOLEAN_TYPE :
         case DVM_INT_TYPE :
-            ret = m_GarbageCollect.CreateArrayInt(m_pVirtualMachine, size);
+            ret = m_GarbageCollect.CreateArrayIntI(pVirtualMachine, size);
             break;
 
         case DVM_DOUBLE_TYPE :
-            ret = m_GarbageCollect.CreateArrayDouble(m_pVirtualMachine, size);
+            ret = m_GarbageCollect.CreateArrayDoubleI(pVirtualMachine, size);
             break;
 
         case DVM_STRING_TYPE :
-            ret = m_GarbageCollect.CreateArrayObject(m_pVirtualMachine, size);
+        case DVM_CLASS_TYPE :
+            ret = m_GarbageCollect.CreateArrayObjectI(pVirtualMachine, size);
             break;
 
         case DVM_NULL_TYPE :
+        case DVM_BASE_TYPE :
         default :
             DBG_assert(0, ("pType->basic_type..", pType->basic_type));
         }
     }
     else if (DVM_FUNCTION_DERIVE == pType->derive[iDimIndex].tag)
     {
-        ret = nullptr;
+        DBG_panic(("Function type in array literal."));
     }
     else
     {
-        ret = m_GarbageCollect.CreateArrayObject(m_pVirtualMachine, size);
+        ret = m_GarbageCollect.CreateArrayObjectI(pVirtualMachine, size);
 
         if (iDimIndex < iDim - 1)
         {
             STO_WRITE(0, ret);
-            m_pVirtualMachine->stack.stack_pointer++;
+            pVirtualMachine->stack.stack_pointer++;
 
             for (int i = 0; i < size; i++) {
-                DVM_Object *child = CreateArraySub(iDim, iDimIndex + 1, pType);
-                ArraySetObject(ret, i, child);
+                DVM_ObjectRef child = CreateArraySub(pVirtualMachine, iDim, iDimIndex + 1, pType);
+                ArraySetObject(pVirtualMachine, ret, i, child);
             }
 
-            m_pVirtualMachine->stack.stack_pointer--;
+            pVirtualMachine->stack.stack_pointer--;
         }
     }
 
     return ret;
 }
 
-DVM_Object* Execute::CreateArray(int iDim, DVM_TypeSpecifier *pType)
+DVM_ObjectRef Execute::CreateArray(DVM_VirtualMachine *pVirtualMachine, int iDim, DVM_TypeSpecifier *pType)
 {
-    return CreateArraySub(iDim, 0, pType);
+    return CreateArraySub(pVirtualMachine, iDim, 0, pType);
 }
 
-DVM_Object* Execute::CreateArrayLiteralInt(int iSize)
+DVM_ObjectRef Execute::CreateArrayLiteralInt(DVM_VirtualMachine *pVirtualMachine, int iSize)
 {
-    DVM_Object *pArray = m_GarbageCollect.CreateArrayIntI(m_pVirtualMachine, iSize);
+    DVM_ObjectRef array = m_GarbageCollect.CreateArrayIntI(pVirtualMachine, iSize);
 
     for (int i = 0; i < iSize; i++)
     {
-        pArray->u.array.u.int_array[i] = STI(-iSize + i);
+        array.data->u.array.u.int_array[i] = STI(-iSize + i);
     }
 
-    return pArray;
+    return array;
 }
 
-DVM_Object* Execute::CreateArrayLiteralDouble(int iSize)
+DVM_ObjectRef Execute::CreateArrayLiteralDouble(DVM_VirtualMachine *pVirtualMachine, int iSize)
 {
-    DVM_Object *pArray = m_GarbageCollect.CreateArrayDoubleI(m_pVirtualMachine, iSize);
+    DVM_ObjectRef array = m_GarbageCollect.CreateArrayDoubleI(pVirtualMachine, iSize);
 
     for (int i = 0; i < iSize; i++)
     {
-        pArray->u.array.u.double_array[i] = STD(-iSize + i);
+        array.data->u.array.u.double_array[i] = STD(-iSize + i);
     }
 
-    return pArray;
+    return array;
 }
 
-DVM_Object* Execute::CreateArrayLiteralObject(int iSize)
+DVM_ObjectRef Execute::CreateArrayLiteralObject(DVM_VirtualMachine *pVirtualMachine, int iSize)
 {
-    DVM_Object *pArray = m_GarbageCollect.CreateArrayObjectI(m_pVirtualMachine, iSize);
+    DVM_ObjectRef array = m_GarbageCollect.CreateArrayObjectI(pVirtualMachine, iSize);
 
     for (int i = 0; i < iSize; i++)
     {
-        pArray->u.array.u.object[i] = STO(-iSize + i);
+        array.data->u.array.u.object[i] = STO(-iSize + i);
     }
 
-    return pArray;
+    return array;
 }
 
-void Execute::RestorePC(DVM_Executable *pExecutable, Function *pFunction, int iPC)
+void Execute::RestorePC(DVM_VirtualMachine *pVirtualMachine, ExecutableEntry *pExecutableEntry, Function *pFunction, int iPC)
 {
-    m_pVirtualMachine->current_executable = pExecutable;
-    m_pVirtualMachine->current_function = pFunction;
-    m_pVirtualMachine->pc = iPC;
+    pVirtualMachine->current_executable = pExecutableEntry;
+    pVirtualMachine->current_function = pFunction;
+    pVirtualMachine->pc = iPC;
 }
 
 DVM_Value Execute::ExecuteCode(Function *pFunction, DVM_Byte *pCode, int iCodeSize)
