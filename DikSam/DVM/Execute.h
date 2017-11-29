@@ -39,6 +39,9 @@ private:
     DVM_ObjectRef CreateArrayLiteralObject(DVM_VirtualMachine *pVirtualMachine, int iSize);
     void RestorePC(DVM_VirtualMachine *pVirtualMachine, ExecutableEntry *pExecutableEntry, Function *pFunction, int iPC);
     DVM_Value ExecuteCode(Function *pFunction, DVM_Byte *pCode, int iCodeSize);
+    void CheckNullPointer(DVM_Executable *pExecutable, Function *pFunction, int iPC, DVM_ObjectRef *pObj);
+    DVM_Boolean CheckInstanceOf(DVM_VirtualMachine *pVirtualMachine, DVM_ObjectRef *pObj, int iTargetIdx, DVM_Boolean *pIsInterface = nullptr, int *pInterfaceIdx = nullptr);
+    void CheckDownCast(DVM_VirtualMachine *pVirtualMachine, DVM_Executable *pExecutable, Function *pFunction, int iPC, DVM_ObjectRef *pObject, int iTargetIdx, DVM_Boolean *pIsSameClass, DVM_Boolean *pIsInterface, int *pInterfaceIndex);
 
     void DisposeVirtualMachine();
 

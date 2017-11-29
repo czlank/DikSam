@@ -1144,6 +1144,63 @@ DVM_Value Execute::ExecuteCode(Function *pFunction, DVM_Byte *pCode, int iCodeSi
     return {};
 }
 
+void Execute::CheckNullPointer(DVM_Executable *pExecutable, Function *pFunction, int iPC, DVM_ObjectRef *pObj)
+{
+    if (nullptr == pObj->data)
+    {
+        m_Error.DVMError(pExecutable, pFunction, iPC, NULL_POINTER_ERR, MESSAGE_ARGUMENT_END);
+    }
+}
+
+DVM_Boolean Execute::CheckInstanceOf(DVM_VirtualMachine *pVirtualMachine, DVM_ObjectRef *pObj, int iTargetIdx, DVM_Boolean *pIsInterface, int *pInterfaceIdx)
+{
+    for (ExecClass *pos = pObj->v_table->exec_class->super_class; pos; pos = pos->super_class)
+    {
+        if (pos->class_index == iTargetIdx)
+        {
+            if (pIsInterface != nullptr)
+                *pIsInterface = DVM_FALSE;
+
+            return DVM_TRUE;
+        }
+    }
+
+    for (int i = 0; i < pObj->v_table->exec_class->interface_count; i++)
+    {
+        if (pObj->v_table->exec_class->interface_[i]->class_index == iTargetIdx)
+        {
+            if (pIsInterface)
+                *pIsInterface = DVM_TRUE;
+
+            if (pInterfaceIdx)
+                *pInterfaceIdx = i;
+
+            return DVM_TRUE;
+        }
+    }
+
+    return DVM_FALSE;
+}
+
+void Execute::CheckDownCast(DVM_VirtualMachine *pVirtualMachine, DVM_Executable *pExecutable, Function *pFunction, int iPC, DVM_ObjectRef *pObject, int iTargetIdx, DVM_Boolean *pIsSameClass, DVM_Boolean *pIsInterface, int *pInterfaceIndex)
+{
+    if (pObject->v_table->exec_class->class_index == iTargetIdx)
+    {
+        *pIsSameClass = DVM_TRUE;
+        return;
+    }
+
+    *pIsSameClass = DVM_FALSE;
+
+    if (DVM_FALSE == CheckInstanceOf(pVirtualMachine, pObject, iTargetIdx, pIsInterface, pInterfaceIndex))
+    {
+        m_Error.DVMError(pExecutable, pFunction, iPC, CLASS_CAST_ERR,
+            STRING_MESSAGE_ARGUMENT, "org", pObject->v_table->exec_class->name,
+            STRING_MESSAGE_ARGUMENT, "target", pVirtualMachine->classes[iTargetIdx]->name,
+            MESSAGE_ARGUMENT_END);
+    }
+}
+
 void Execute::DisposeVirtualMachine()
 {
     m_pVirtualMachine->static_v.variable_count = 0;
