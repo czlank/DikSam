@@ -2,6 +2,7 @@
 #include "GarbageCollect.h"
 #include "Debug.h"
 #include "Memory.h"
+#include "Util.h"
 #include "DVM_pri.h"
 
 #ifdef DBG_assert
@@ -19,9 +20,10 @@
 #endif
 #define MEM_free(ptr)                       (m_Memory.Free(ptr))
 
-GarbageCollect::GarbageCollect(Debug& debug, Memory& memory)
+GarbageCollect::GarbageCollect(Debug& debug, Memory& memory, Util& util)
     : m_Debug(debug)
     , m_Memory(memory)
+    , m_Util(util)
 {
 
 }
@@ -37,14 +39,16 @@ void GarbageCollect::GC(DVM_VirtualMachine *pVirtualMachine)
     SweepObjects(pVirtualMachine);
 }
 
-DVM_Object* GarbageCollect::LiteralToString(DVM_VirtualMachine *pVirtualMachine, DVM_Char *str)
+DVM_ObjectRef GarbageCollect::LiteralToStringI(DVM_VirtualMachine *pVirtualMachine, DVM_Char *str)
 {
-    DVM_Object *pObj = AllocObject(pVirtualMachine, STRING_OBJECT);
+    DVM_ObjectRef obj = AllocObject(pVirtualMachine, STRING_OBJECT);
 
-    pObj->u.string.string = str;
-    pObj->u.string.is_literal = DVM_TRUE;
+    obj.v_table = pVirtualMachine->string_v_table;
+    obj.data->u.string.string = str;
+    obj.data->u.string.length = std::basic_string<DVM_Char>(str).length();
+    obj.data->u.string.is_literal = DVM_TRUE;
 
-    return pObj;
+    return obj;
 }
 
 DVM_ObjectRef GarbageCollect::CreateString(DVM_VirtualMachine *pVirtualMachine, DVM_Char *str)
@@ -142,6 +146,23 @@ DVM_Object* GarbageCollect::CreateArrayObject(DVM_VirtualMachine *pVirtualMachin
     }
 
     return pObject;
+}
+
+DVM_ObjectRef GarbageCollect::CreateClassObjectI(DVM_VirtualMachine *pVirtualMachine, int iIndex)
+{
+    DVM_ObjectRef obj = AllocObject(pVirtualMachine, CLASS_OBJECT);
+    ExecClass *pExecClass = pVirtualMachine->classes[iIndex];
+
+    obj.v_table = pExecClass->class_table;
+    obj.data->u.class_object.field_count = pExecClass->field_count;
+    obj.data->u.class_object.field = (DVM_Value*)MEM_malloc(sizeof(DVM_Value) * pExecClass->field_count);
+
+    for (int i = 0; i < pExecClass->field_count; i++)
+    {
+        m_Util.InitializeValue(pExecClass->field_type[i], &obj.data->u.class_object.field[i]);
+    }
+
+    return obj;
 }
 
 void GarbageCollect::CheckGC(DVM_VirtualMachine *pVirtualMachine)

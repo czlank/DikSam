@@ -5,16 +5,17 @@
 
 class Debug;
 class Memory;
+class Util;
 
 class GarbageCollect
 {
 public:
-    GarbageCollect(Debug& debug, Memory& memory);
+    GarbageCollect(Debug& debug, Memory& memory, Util& util);
     ~GarbageCollect();
 
     void GC(DVM_VirtualMachine *pVirtualMachine);
 
-    DVM_Object* LiteralToString(DVM_VirtualMachine *pVirtualMachine, DVM_Char *str);
+    DVM_ObjectRef LiteralToStringI(DVM_VirtualMachine *pVirtualMachine, DVM_Char *str);
     DVM_ObjectRef CreateString(DVM_VirtualMachine *pVirtualMachine, DVM_Char *str);
     DVM_ObjectRef CreateArrayIntI(DVM_VirtualMachine *pVirtualMachine, int iSize);
     DVM_Object* CreateArrayInt(DVM_VirtualMachine *pVirtualMachine, int iSize);
@@ -22,6 +23,7 @@ public:
     DVM_Object* CreateArrayDouble(DVM_VirtualMachine *pVirtualMachine, int iSize);
     DVM_ObjectRef CreateArrayObjectI(DVM_VirtualMachine *pVirtualMachine, int iSize);
     DVM_Object* CreateArrayObject(DVM_VirtualMachine *pVirtualMachine, int iSize);
+    DVM_ObjectRef CreateClassObjectI(DVM_VirtualMachine *pVirtualMachine, int iIndex);
 
 private:
     void CheckGC(DVM_VirtualMachine *pVirtualMachine);
@@ -36,4 +38,5 @@ private:
 private:
     Debug   &m_Debug;
     Memory  &m_Memory;
+    Util    &m_Util;
 };

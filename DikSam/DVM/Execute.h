@@ -18,13 +18,13 @@ public:
     DVM_Value operator () (DVM_Executable* pExecutable);
 
 private:
-    int ArrayGetInt(DVM_Object *pArray, int iIndex);
-    double ArrayGetDouble(DVM_Object *pArray, int iIndex);
-    DVM_Object* ArrayGetObject(DVM_Object *pArray, int iIndex);
-    void ArraySetInt(DVM_Object* pArray, int iIndex, int value);
-    void ArraySetDouble(DVM_Object* pArray, int iIndex, double value);
-    void ArraySetObject(DVM_Object* pArray, int iIndex, DVM_Object *value);
-    void CheckArray(DVM_Object *pArray, int iIndex, DVM_Executable *pExecutable, Function *pFunction, int iPC);
+    int ArrayGetInt(DVM_VirtualMachine *pVirtualMachine, DVM_ObjectRef array, int iIndex);
+    double ArrayGetDouble(DVM_VirtualMachine *pVirtualMachine, DVM_ObjectRef array, int iIndex);
+    DVM_ObjectRef ArrayGetObject(DVM_VirtualMachine *pVirtualMachine, DVM_ObjectRef array, int iIndex);
+    void ArraySetInt(DVM_VirtualMachine *pVirtualMachine, DVM_ObjectRef array, int iIndex, int value);
+    void ArraySetDouble(DVM_VirtualMachine *pVirtualMachine, DVM_ObjectRef array, int iIndex, double value);
+    void ArraySetObject(DVM_VirtualMachine *pVirtualMachine, DVM_ObjectRef array, int iIndex, DVM_ObjectRef value);
+    void CheckArray(DVM_ObjectRef array, int iIndex, DVM_Executable *pExecutable, Function *pFunction, int iPC);
     DVM_ObjectRef ChainString(DVM_VirtualMachine *pVirtualMachine, DVM_ObjectRef str1, DVM_ObjectRef str2);
     void InitializeLocalVariables(DVM_VirtualMachine *pVirtualMachine, DVM_Function *pFunction, int iFromSP);
     void ExpandStack(DVM_VirtualMachine *pVirtualMachine, int iNeedStackSize);
@@ -38,7 +38,7 @@ private:
     DVM_ObjectRef CreateArrayLiteralDouble(DVM_VirtualMachine *pVirtualMachine, int iSize);
     DVM_ObjectRef CreateArrayLiteralObject(DVM_VirtualMachine *pVirtualMachine, int iSize);
     void RestorePC(DVM_VirtualMachine *pVirtualMachine, ExecutableEntry *pExecutableEntry, Function *pFunction, int iPC);
-    DVM_Value ExecuteCode(Function *pFunction, DVM_Byte *pCode, int iCodeSize);
+    DVM_Value ExecuteCode(DVM_VirtualMachine *pVirtualMachine, Function *pFunction, DVM_Byte *pCode, int iCodeSize, int iBase);
     void CheckNullPointer(DVM_Executable *pExecutable, Function *pFunction, int iPC, DVM_ObjectRef *pObj);
     DVM_Boolean CheckInstanceOf(DVM_VirtualMachine *pVirtualMachine, DVM_ObjectRef *pObj, int iTargetIdx, DVM_Boolean *pIsInterface = nullptr, int *pInterfaceIdx = nullptr);
     void CheckDownCast(DVM_VirtualMachine *pVirtualMachine, DVM_Executable *pExecutable, Function *pFunction, int iPC, DVM_ObjectRef *pObject, int iTargetIdx, DVM_Boolean *pIsSameClass, DVM_Boolean *pIsInterface, int *pInterfaceIndex);
