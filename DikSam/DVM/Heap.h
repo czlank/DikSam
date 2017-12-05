@@ -7,13 +7,13 @@ class Debug;
 class Memory;
 class Util;
 
-class GarbageCollect
+class CHeap
 {
 public:
-    GarbageCollect(Debug& debug, Memory& memory, Util& util);
-    ~GarbageCollect();
+    CHeap(Debug& debug, Memory& memory, Util& util);
+    ~CHeap();
 
-    void GC(DVM_VirtualMachine *pVirtualMachine);
+    void GarbageCollect(DVM_VirtualMachine *pVirtualMachine);
 
     DVM_ObjectRef LiteralToStringI(DVM_VirtualMachine *pVirtualMachine, DVM_Char *str);
     DVM_ObjectRef CreateString(DVM_VirtualMachine *pVirtualMachine, DVM_Char *str);

@@ -78,7 +78,7 @@ Execute::Execute(Debug& debug, Memory& memory, Util& util, Error& error, Interfa
     , m_Util(util)
     , m_Error(error)
     , m_Interface(interfaceRef)
-    , m_GarbageCollect(debug, memory, util)
+    , m_Heap(debug, memory, util)
 {
 }
 
@@ -86,22 +86,84 @@ Execute::~Execute()
 {
 }
 
-DVM_Value Execute::operator () (DVM_Executable* pExecutable)
+DVM_Value Execute::operator () (DVM_VirtualMachine *pVirtualMachine)
 {
-    CreateVirtualMachine();
+    pVirtualMachine->current_executable = pVirtualMachine->top_level;
+    pVirtualMachine->current_function = nullptr;
+    pVirtualMachine->pc = 0;
 
-    AddExecutable(pExecutable);
-
-    m_pVirtualMachine->current_executable = pExecutable;
-    m_pVirtualMachine->current_function = nullptr;
-    m_pVirtualMachine->pc = 0;
-
-    ExpandStack(m_pVirtualMachine->executable->need_stack_size);
-    DVM_Value ret = ExecuteCode(nullptr, m_pVirtualMachine->executable->code, m_pVirtualMachine->executable->code_size);
-
-    DisposeVirtualMachine();
+    ExpandStack(pVirtualMachine, pVirtualMachine->top_level->executable->need_stack_size);
+    DVM_Value ret = ExecuteCode(pVirtualMachine, nullptr, pVirtualMachine->top_level->executable->code, pVirtualMachine->top_level->executable->code_size, 0);
 
     return ret;
+}
+
+void Execute::DisposeExecutableList(DVM_ExecutableList *pList)
+{
+    while (pList->list)
+    {
+        DVM_ExecutableItem *pTemp = pList->list;
+
+        pList->list = pTemp->next;
+        Dispose(m_Debug, m_Memory)(pTemp->executable);
+        MEM_free(pTemp);
+    }
+
+    MEM_free(pList);
+}
+
+void Execute::DisposeVirtualMachine(DVM_VirtualMachine *pVirtualMachine)
+{
+    while (pVirtualMachine->executable_entry)
+    {
+        ExecutableEntry *pTemp = pVirtualMachine->executable_entry;
+        pVirtualMachine->executable_entry = pTemp->next;
+
+        MEM_free(pTemp->static_v.variable);
+        MEM_free(pTemp);
+    }
+
+    m_Heap.GarbageCollect(pVirtualMachine);
+
+    MEM_free(pVirtualMachine->stack.stack);
+    MEM_free(pVirtualMachine->stack.pointer_flags);
+
+    for (int i = 0; i < pVirtualMachine->function_count; i++)
+    {
+        MEM_free(pVirtualMachine->function[i]->name);
+        MEM_free(pVirtualMachine->function[i]->package_name);
+        MEM_free(pVirtualMachine->function[i]);
+    }
+
+    MEM_free(pVirtualMachine->function);
+
+    for (int i = 0; i < pVirtualMachine->class_count; i++)
+    {
+        MEM_free(pVirtualMachine->classes[i]->package_name);
+        MEM_free(pVirtualMachine->classes[i]->name);
+
+        DisposeVTable(pVirtualMachine->classes[i]->class_table);
+
+        for (int j = 0; j < pVirtualMachine->classes[i]->interface_count; j++)
+        {
+            DisposeVTable(pVirtualMachine->classes[i]->interface_v_table[j]);
+        }
+
+        MEM_free(pVirtualMachine->classes[i]->interface_v_table);
+        MEM_free(pVirtualMachine->classes[i]->interface_);
+        MEM_free(pVirtualMachine->classes[i]->field_type);
+        MEM_free(pVirtualMachine->classes[i]);
+    }
+
+    MEM_free(pVirtualMachine->array_v_table->table);
+    MEM_free(pVirtualMachine->array_v_table);
+
+    MEM_free(pVirtualMachine->string_v_table->table);
+    MEM_free(pVirtualMachine->string_v_table);
+
+    MEM_free(pVirtualMachine->classes);
+
+    MEM_free(pVirtualMachine);
 }
 
 int Execute::ArrayGetInt(DVM_VirtualMachine *pVirtualMachine, DVM_ObjectRef array, int iIndex)
@@ -190,7 +252,7 @@ DVM_ObjectRef Execute::ChainString(DVM_VirtualMachine *pVirtualMachine, DVM_Obje
 
     str[i] = 0;
 
-    DVM_ObjectRef ret = m_GarbageCollect.CreateString(pVirtualMachine, str);
+    DVM_ObjectRef ret = m_Heap.CreateString(pVirtualMachine, str);
 
     return ret;
 }
@@ -388,16 +450,16 @@ DVM_ObjectRef Execute::CreateArraySub(DVM_VirtualMachine *pVirtualMachine, int i
 
         case DVM_BOOLEAN_TYPE :
         case DVM_INT_TYPE :
-            ret = m_GarbageCollect.CreateArrayIntI(pVirtualMachine, size);
+            ret = m_Heap.CreateArrayIntI(pVirtualMachine, size);
             break;
 
         case DVM_DOUBLE_TYPE :
-            ret = m_GarbageCollect.CreateArrayDoubleI(pVirtualMachine, size);
+            ret = m_Heap.CreateArrayDoubleI(pVirtualMachine, size);
             break;
 
         case DVM_STRING_TYPE :
         case DVM_CLASS_TYPE :
-            ret = m_GarbageCollect.CreateArrayObjectI(pVirtualMachine, size);
+            ret = m_Heap.CreateArrayObjectI(pVirtualMachine, size);
             break;
 
         case DVM_NULL_TYPE :
@@ -412,7 +474,7 @@ DVM_ObjectRef Execute::CreateArraySub(DVM_VirtualMachine *pVirtualMachine, int i
     }
     else
     {
-        ret = m_GarbageCollect.CreateArrayObjectI(pVirtualMachine, size);
+        ret = m_Heap.CreateArrayObjectI(pVirtualMachine, size);
 
         if (iDimIndex < iDim - 1)
         {
@@ -438,7 +500,7 @@ DVM_ObjectRef Execute::CreateArray(DVM_VirtualMachine *pVirtualMachine, int iDim
 
 DVM_ObjectRef Execute::CreateArrayLiteralInt(DVM_VirtualMachine *pVirtualMachine, int iSize)
 {
-    DVM_ObjectRef array = m_GarbageCollect.CreateArrayIntI(pVirtualMachine, iSize);
+    DVM_ObjectRef array = m_Heap.CreateArrayIntI(pVirtualMachine, iSize);
 
     for (int i = 0; i < iSize; i++)
     {
@@ -450,7 +512,7 @@ DVM_ObjectRef Execute::CreateArrayLiteralInt(DVM_VirtualMachine *pVirtualMachine
 
 DVM_ObjectRef Execute::CreateArrayLiteralDouble(DVM_VirtualMachine *pVirtualMachine, int iSize)
 {
-    DVM_ObjectRef array = m_GarbageCollect.CreateArrayDoubleI(pVirtualMachine, iSize);
+    DVM_ObjectRef array = m_Heap.CreateArrayDoubleI(pVirtualMachine, iSize);
 
     for (int i = 0; i < iSize; i++)
     {
@@ -462,7 +524,7 @@ DVM_ObjectRef Execute::CreateArrayLiteralDouble(DVM_VirtualMachine *pVirtualMach
 
 DVM_ObjectRef Execute::CreateArrayLiteralObject(DVM_VirtualMachine *pVirtualMachine, int iSize)
 {
-    DVM_ObjectRef array = m_GarbageCollect.CreateArrayObjectI(pVirtualMachine, iSize);
+    DVM_ObjectRef array = m_Heap.CreateArrayObjectI(pVirtualMachine, iSize);
 
     for (int i = 0; i < iSize; i++)
     {
@@ -528,7 +590,7 @@ DVM_Value Execute::ExecuteCode(DVM_VirtualMachine *pVirtualMachine, Function *pF
             break;
 
         case DVM_PUSH_STRING :
-            STO_WRITE(0, m_GarbageCollect.LiteralToStringI(pVirtualMachine, exe->constant_pool[GET_2BYTE_INT(&pCode[pc + 1])].u.c_string));
+            STO_WRITE(0, m_Heap.LiteralToStringI(pVirtualMachine, exe->constant_pool[GET_2BYTE_INT(&pCode[pc + 1])].u.c_string));
             pVirtualMachine->stack.stack_pointer++;
             pc += 3;
             break;
@@ -878,11 +940,11 @@ DVM_Value Execute::ExecuteCode(DVM_VirtualMachine *pVirtualMachine, Function *pF
         case DVM_CAST_BOOLEAN_TO_STRING :
             if (DVM_TRUE == STI(-1))
             {
-                STO_WRITE(-1, m_GarbageCollect.LiteralToStringI(pVirtualMachine, TRUE_STRING));
+                STO_WRITE(-1, m_Heap.LiteralToStringI(pVirtualMachine, TRUE_STRING));
             }
             else
             {
-                STO_WRITE(-1, m_GarbageCollect.LiteralToStringI(pVirtualMachine, FALSE_STRING));
+                STO_WRITE(-1, m_Heap.LiteralToStringI(pVirtualMachine, FALSE_STRING));
             }
             pc++;
             break;
@@ -903,7 +965,7 @@ DVM_Value Execute::ExecuteCode(DVM_VirtualMachine *pVirtualMachine, Function *pF
 
                 str[wstr.length()] = 0;
 
-                STO_WRITE(-1, m_GarbageCollect.CreateString(pVirtualMachine, str));
+                STO_WRITE(-1, m_Heap.CreateString(pVirtualMachine, str));
                 pc++;
             }
             break;
@@ -924,7 +986,7 @@ DVM_Value Execute::ExecuteCode(DVM_VirtualMachine *pVirtualMachine, Function *pF
 
                 str[wstr.length()] = 0;
 
-                STO_WRITE(-1, m_GarbageCollect.CreateString(pVirtualMachine, str));
+                STO_WRITE(-1, m_Heap.CreateString(pVirtualMachine, str));
                 pc++;
             }
             break;
@@ -1241,7 +1303,7 @@ DVM_Value Execute::ExecuteCode(DVM_VirtualMachine *pVirtualMachine, Function *pF
             {
                 int index = GET_2BYTE_INT(&pCode[pc + 1]);
 
-                STO_WRITE(0, m_GarbageCollect.CreateClassObjectI(pVirtualMachine, index));
+                STO_WRITE(0, m_Heap.CreateClassObjectI(pVirtualMachine, index));
                 pVirtualMachine->stack.stack_pointer++;
 
                 pc += 3;
@@ -1399,28 +1461,31 @@ void Execute::CheckDownCast(DVM_VirtualMachine *pVirtualMachine, DVM_Executable 
     }
 }
 
-void Execute::DisposeVirtualMachine()
+void Execute::PushObject(DVM_VirtualMachine *pVirtualMachine, DVM_Value value)
 {
-    m_pVirtualMachine->static_v.variable_count = 0;
-    m_GarbageCollect.GC(m_pVirtualMachine);
+    STO_WRITE(0, value.object);
+    pVirtualMachine->stack.stack_pointer++;
+}
 
-    MEM_free(m_pVirtualMachine->stack.stack);
-    MEM_free(m_pVirtualMachine->stack.pointer_flags);
+DVM_Value Execute::PopObject(DVM_VirtualMachine *pVirtualMachine)
+{
+    DVM_Value value;
 
-    MEM_free(m_pVirtualMachine->static_v.variable);
+    value.object = STO(-1);
+    pVirtualMachine->stack.stack_pointer--;
 
-    for (int i = 0; i < m_pVirtualMachine->function_count; i++)
+    return value;
+}
+
+void Execute::DisposeVTable(DVM_VTable *pVTable)
+{
+    for (int i = 0; i < pVTable->table_size; i++)
     {
-        MEM_free(m_pVirtualMachine->function[i].name);
+        MEM_free(pVTable->table[i].name);
     }
 
-    MEM_free(m_pVirtualMachine->function);
-
-    Dispose(m_Debug, m_Memory)(m_pVirtualMachine->executable);
-
-    MEM_free(m_pVirtualMachine);
-
-    m_pVirtualMachine = nullptr;
+    MEM_free(pVTable->table);
+    MEM_free(pVTable);
 }
 
 inline bool Execute::IsPointerType(DVM_TypeSpecifier *pType)

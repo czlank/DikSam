@@ -1,5 +1,5 @@
 #include "StdAfx.h"
-#include "GarbageCollect.h"
+#include "Heap.h"
 #include "Debug.h"
 #include "Memory.h"
 #include "Util.h"
@@ -20,7 +20,7 @@
 #endif
 #define MEM_free(ptr)                       (m_Memory.Free(ptr))
 
-GarbageCollect::GarbageCollect(Debug& debug, Memory& memory, Util& util)
+CHeap::CHeap(Debug& debug, Memory& memory, Util& util)
     : m_Debug(debug)
     , m_Memory(memory)
     , m_Util(util)
@@ -28,18 +28,18 @@ GarbageCollect::GarbageCollect(Debug& debug, Memory& memory, Util& util)
 
 }
 
-GarbageCollect::~GarbageCollect()
+CHeap::~CHeap()
 {
 
 }
 
-void GarbageCollect::GC(DVM_VirtualMachine *pVirtualMachine)
+void CHeap::GarbageCollect(DVM_VirtualMachine *pVirtualMachine)
 {
     MarkObjects(pVirtualMachine);
     SweepObjects(pVirtualMachine);
 }
 
-DVM_ObjectRef GarbageCollect::LiteralToStringI(DVM_VirtualMachine *pVirtualMachine, DVM_Char *str)
+DVM_ObjectRef CHeap::LiteralToStringI(DVM_VirtualMachine *pVirtualMachine, DVM_Char *str)
 {
     DVM_ObjectRef obj = AllocObject(pVirtualMachine, STRING_OBJECT);
 
@@ -51,7 +51,7 @@ DVM_ObjectRef GarbageCollect::LiteralToStringI(DVM_VirtualMachine *pVirtualMachi
     return obj;
 }
 
-DVM_ObjectRef GarbageCollect::CreateString(DVM_VirtualMachine *pVirtualMachine, DVM_Char *str)
+DVM_ObjectRef CHeap::CreateString(DVM_VirtualMachine *pVirtualMachine, DVM_Char *str)
 {
     DVM_ObjectRef obj = AllocObject(pVirtualMachine, STRING_OBJECT);
 
@@ -67,7 +67,7 @@ DVM_ObjectRef GarbageCollect::CreateString(DVM_VirtualMachine *pVirtualMachine, 
     return obj;
 }
 
-DVM_ObjectRef GarbageCollect::CreateArrayIntI(DVM_VirtualMachine *pVirtualMachine, int iSize)
+DVM_ObjectRef CHeap::CreateArrayIntI(DVM_VirtualMachine *pVirtualMachine, int iSize)
 {
     DVM_ObjectRef object = AllocArray(pVirtualMachine, INT_ARRAY, iSize);
 
@@ -82,7 +82,7 @@ DVM_ObjectRef GarbageCollect::CreateArrayIntI(DVM_VirtualMachine *pVirtualMachin
     return object;
 }
 
-DVM_Object* GarbageCollect::CreateArrayInt(DVM_VirtualMachine *pVirtualMachine, int iSize)
+DVM_Object* CHeap::CreateArrayInt(DVM_VirtualMachine *pVirtualMachine, int iSize)
 {
     DVM_Object *pObject = CreateArrayIntI(pVirtualMachine, iSize);
 
@@ -94,7 +94,7 @@ DVM_Object* GarbageCollect::CreateArrayInt(DVM_VirtualMachine *pVirtualMachine, 
     return pObject;
 }
 
-DVM_ObjectRef GarbageCollect::CreateArrayDoubleI(DVM_VirtualMachine *pVirtualMachine, int iSize)
+DVM_ObjectRef CHeap::CreateArrayDoubleI(DVM_VirtualMachine *pVirtualMachine, int iSize)
 {
     DVM_ObjectRef object = AllocArray(pVirtualMachine, DOUBLE_ARRAY, iSize);
 
@@ -109,7 +109,7 @@ DVM_ObjectRef GarbageCollect::CreateArrayDoubleI(DVM_VirtualMachine *pVirtualMac
     return object;
 }
 
-DVM_Object* GarbageCollect::CreateArrayDouble(DVM_VirtualMachine *pVirtualMachine, int iSize)
+DVM_Object* CHeap::CreateArrayDouble(DVM_VirtualMachine *pVirtualMachine, int iSize)
 {
     DVM_Object *pObject = CreateArrayDoubleI(pVirtualMachine, iSize);
 
@@ -121,7 +121,7 @@ DVM_Object* GarbageCollect::CreateArrayDouble(DVM_VirtualMachine *pVirtualMachin
     return pObject;
 }
 
-DVM_ObjectRef GarbageCollect::CreateArrayObjectI(DVM_VirtualMachine *pVirtualMachine, int iSize)
+DVM_ObjectRef CHeap::CreateArrayObjectI(DVM_VirtualMachine *pVirtualMachine, int iSize)
 {
     DVM_ObjectRef object = AllocArray(pVirtualMachine, OBJECT_ARRAY, iSize);
 
@@ -136,7 +136,7 @@ DVM_ObjectRef GarbageCollect::CreateArrayObjectI(DVM_VirtualMachine *pVirtualMac
     return object;
 }
 
-DVM_Object* GarbageCollect::CreateArrayObject(DVM_VirtualMachine *pVirtualMachine, int iSize)
+DVM_Object* CHeap::CreateArrayObject(DVM_VirtualMachine *pVirtualMachine, int iSize)
 {
     DVM_Object *pObject = CreateArrayObjectI(pVirtualMachine, iSize);
 
@@ -148,7 +148,7 @@ DVM_Object* GarbageCollect::CreateArrayObject(DVM_VirtualMachine *pVirtualMachin
     return pObject;
 }
 
-DVM_ObjectRef GarbageCollect::CreateClassObjectI(DVM_VirtualMachine *pVirtualMachine, int iIndex)
+DVM_ObjectRef CHeap::CreateClassObjectI(DVM_VirtualMachine *pVirtualMachine, int iIndex)
 {
     DVM_ObjectRef obj = AllocObject(pVirtualMachine, CLASS_OBJECT);
     ExecClass *pExecClass = pVirtualMachine->classes[iIndex];
@@ -165,7 +165,7 @@ DVM_ObjectRef GarbageCollect::CreateClassObjectI(DVM_VirtualMachine *pVirtualMac
     return obj;
 }
 
-void GarbageCollect::CheckGC(DVM_VirtualMachine *pVirtualMachine)
+void CHeap::CheckGC(DVM_VirtualMachine *pVirtualMachine)
 {
     if (pVirtualMachine->heap.current_heap_size > pVirtualMachine->heap.current_threshold)
     {
@@ -174,7 +174,7 @@ void GarbageCollect::CheckGC(DVM_VirtualMachine *pVirtualMachine)
     }
 }
 
-DVM_ObjectRef GarbageCollect::AllocObject(DVM_VirtualMachine *pVirtualMachine, ObjectType enType)
+DVM_ObjectRef CHeap::AllocObject(DVM_VirtualMachine *pVirtualMachine, ObjectType enType)
 {
     DVM_ObjectRef obj;
 
@@ -191,6 +191,7 @@ DVM_ObjectRef GarbageCollect::AllocObject(DVM_VirtualMachine *pVirtualMachine, O
     obj.data->prev = nullptr;
     obj.data->next = pVirtualMachine->heap.header;
     pVirtualMachine->heap.header = obj.data;
+
     if (obj.data->next)
     {
         obj.data->next->prev = obj.data;
@@ -199,7 +200,7 @@ DVM_ObjectRef GarbageCollect::AllocObject(DVM_VirtualMachine *pVirtualMachine, O
     return obj;
 }
 
-DVM_ObjectRef GarbageCollect::AllocArray(DVM_VirtualMachine *pVirtualMachine, ArrayType enType, int iSize)
+DVM_ObjectRef CHeap::AllocArray(DVM_VirtualMachine *pVirtualMachine, ArrayType enType, int iSize)
 {
     DVM_ObjectRef object = AllocObject(pVirtualMachine, ARRAY_OBJECT);
 
@@ -211,7 +212,7 @@ DVM_ObjectRef GarbageCollect::AllocArray(DVM_VirtualMachine *pVirtualMachine, Ar
     return object;
 }
 
-void GarbageCollect::MarkObjects(DVM_VirtualMachine *pVirtualMachine)
+void CHeap::MarkObjects(DVM_VirtualMachine *pVirtualMachine)
 {
     for (DVM_Object *pObj = pVirtualMachine->heap.header; pObj; pObj = pObj->next)
     {
@@ -237,7 +238,7 @@ void GarbageCollect::MarkObjects(DVM_VirtualMachine *pVirtualMachine)
     }
 }
 
-void GarbageCollect::SweepObjects(DVM_VirtualMachine *pVirtualMachine)
+void CHeap::SweepObjects(DVM_VirtualMachine *pVirtualMachine)
 {
     for (DVM_Object *pObj = pVirtualMachine->heap.header; pObj;)
     {
@@ -268,12 +269,12 @@ void GarbageCollect::SweepObjects(DVM_VirtualMachine *pVirtualMachine)
     }
 }
 
-void GarbageCollect::ResetMark(DVM_Object *pObj)
+void CHeap::ResetMark(DVM_Object *pObj)
 {
     pObj->marked = DVM_FALSE;
 }
 
-void GarbageCollect::Mark(DVM_Object *pObj)
+void CHeap::Mark(DVM_Object *pObj)
 {
     if (nullptr == pObj)
         return;
@@ -292,7 +293,7 @@ void GarbageCollect::Mark(DVM_Object *pObj)
     }
 }
 
-void GarbageCollect::DisposeObject(DVM_VirtualMachine *pVirtualMachine, DVM_Object *pObj)
+void CHeap::DisposeObject(DVM_VirtualMachine *pVirtualMachine, DVM_Object *pObj)
 {
     switch (pObj->type)
     {

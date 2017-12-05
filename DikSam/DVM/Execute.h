@@ -1,7 +1,7 @@
 #pragma once
 
 #include "DikSamc.h"
-#include "GarbageCollect.h"
+#include "Heap.h"
 
 class Debug;
 class Memory;
@@ -15,7 +15,9 @@ public:
     Execute(Debug& debug, Memory& memory, Util& uitl, Error& error, Interface& interfaceRef);
     ~Execute();
 
-    DVM_Value operator () (DVM_Executable* pExecutable);
+    DVM_Value operator () (DVM_VirtualMachine *pVirtualMachine);
+    void DisposeExecutableList(DVM_ExecutableList *pList);
+    void DisposeVirtualMachine(DVM_VirtualMachine *pVirtualMachine);
 
 private:
     int ArrayGetInt(DVM_VirtualMachine *pVirtualMachine, DVM_ObjectRef array, int iIndex);
@@ -42,8 +44,9 @@ private:
     void CheckNullPointer(DVM_Executable *pExecutable, Function *pFunction, int iPC, DVM_ObjectRef *pObj);
     DVM_Boolean CheckInstanceOf(DVM_VirtualMachine *pVirtualMachine, DVM_ObjectRef *pObj, int iTargetIdx, DVM_Boolean *pIsInterface = nullptr, int *pInterfaceIdx = nullptr);
     void CheckDownCast(DVM_VirtualMachine *pVirtualMachine, DVM_Executable *pExecutable, Function *pFunction, int iPC, DVM_ObjectRef *pObject, int iTargetIdx, DVM_Boolean *pIsSameClass, DVM_Boolean *pIsInterface, int *pInterfaceIndex);
-
-    void DisposeVirtualMachine();
+    void PushObject(DVM_VirtualMachine *pVirtualMachine, DVM_Value value);
+    DVM_Value PopObject(DVM_VirtualMachine *pVirtualMachine);
+    void DisposeVTable(DVM_VTable *pVTable);
 
     inline bool IsPointerType(DVM_TypeSpecifier *pType);
 
@@ -54,5 +57,5 @@ private:
     Error       &m_Error;
     Interface   &m_Interface;
 
-    GarbageCollect      m_GarbageCollect;
+    CHeap       m_Heap;
 };
