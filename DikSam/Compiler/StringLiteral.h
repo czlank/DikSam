@@ -6,11 +6,12 @@ class Memory;
 class Util;
 class Storage;
 class Error;
+class Interface;
 
 class StringLiteral
 {
 public:
-    StringLiteral(Memory& memory, Storage& storage, Util& util, Error& error);
+    StringLiteral(Memory& memory, Storage& storage, Util& util, Error& error, Interface& interfaceRef);
     ~StringLiteral();
 
     void Open();
@@ -21,11 +22,13 @@ public:
     char* CreateIdentifier(const char *lpcstrStr);
 
 private:
-    int         m_iIndex;
-    int         m_iBufferSize;
-    char        *m_pBuffer;
     Memory      &m_Memory;
     Storage     &m_Storage;
     Util        &m_Util;
     Error       &m_Error;
+    Interface   &m_Interface;
+
+    int         m_iIndex;
+    int         m_iBufferSize;
+    char        *m_pBuffer;
 };

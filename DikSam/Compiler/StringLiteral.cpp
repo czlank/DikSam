@@ -5,6 +5,7 @@
 #include "Storage.h"
 #include "Util.h"
 #include "Error.h"
+#include "Interface.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -59,14 +60,15 @@ char* dkc_create_identifier(char *str)
 #endif
 #define dkc_malloc(size)                    (m_Util.Malloc(__FILE__, __LINE__, size))
 
-StringLiteral::StringLiteral(Memory& memory, Storage& storage, Util& util, Error& error)
-    : m_iIndex(0)
-    , m_iBufferSize(0)
-    , m_pBuffer(nullptr)
-    , m_Memory(memory)
+StringLiteral::StringLiteral(Memory& memory, Storage& storage, Util& util, Error& error, Interface& interfaceRef)
+    : m_Memory(memory)
     , m_Storage(storage)
     , m_Util(util)
     , m_Error(error)
+    , m_Interface(interfaceRef)
+    , m_iIndex(0)
+    , m_iBufferSize(0)
+    , m_pBuffer(nullptr)
 {
     Reset();
 }
@@ -118,7 +120,37 @@ DVM_Char* StringLiteral::CloseString()
 
 int StringLiteral::CloseCharacter()
 {
-    // ´ýÊµÏÖ
+    DVM_Char buf[16]{};
+
+    Add('\0');
+
+    size_t _Dsize = m_iIndex;
+    wchar_t *_Dest = new wchar_t[_Dsize]();
+    size_t iCount;
+    errno_t err = mbstowcs_s(&iCount, _Dest, _Dsize, m_pBuffer, _Dsize);
+
+    std::wstring str(_Dest);
+    delete[] _Dest;
+
+    if (!err)
+    {
+        m_Error.CompileError(m_Interface.GetCurrentCompiler()->current_line_number,
+            BAD_MULTIBYTE_CHARACTER_ERR, MESSAGE_ARGUMENT_END);
+    }
+    else if (iCount > 1)
+    {
+        m_Error.CompileError(m_Interface.GetCurrentCompiler()->current_line_number,
+            TOO_LONG_CHARACTER_LITERAL_ERR, MESSAGE_ARGUMENT_END);
+    }
+
+    if (!str.empty())
+    {
+        buf[0] = str[0];
+    }
+
+    Reset();
+
+    return buf[0];
 }
 
 void StringLiteral::Reset()

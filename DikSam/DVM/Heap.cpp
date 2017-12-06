@@ -33,13 +33,27 @@ CHeap::~CHeap()
 
 }
 
-void CHeap::GarbageCollect(DVM_VirtualMachine *pVirtualMachine)
+void CHeap::CheckGC(DVM_VirtualMachine *pVirtualMachine)
 {
-    MarkObjects(pVirtualMachine);
-    SweepObjects(pVirtualMachine);
+    if (pVirtualMachine->heap.current_heap_size > pVirtualMachine->heap.current_threshold)
+    {
+        GarbageCollect(pVirtualMachine);
+        pVirtualMachine->heap.current_threshold = pVirtualMachine->heap.current_heap_size + HEAP_THRESHOLD_SIZE;
+    }
 }
 
-DVM_ObjectRef CHeap::LiteralToStringI(DVM_VirtualMachine *pVirtualMachine, DVM_Char *str)
+void CHeap::GarbageCollect(DVM_VirtualMachine *pVirtualMachine)
+{
+    bool bCallFinalizer;
+
+    do 
+    {
+        MarkObjects(pVirtualMachine);
+        bCallFinalizer = SweepObjects(pVirtualMachine);
+    } while (bCallFinalizer);
+}
+
+DVM_ObjectRef CHeap::LiteralToString(DVM_VirtualMachine *pVirtualMachine, DVM_Char *str)
 {
     DVM_ObjectRef obj = AllocObject(pVirtualMachine, STRING_OBJECT);
 
@@ -67,7 +81,7 @@ DVM_ObjectRef CHeap::CreateString(DVM_VirtualMachine *pVirtualMachine, DVM_Char 
     return obj;
 }
 
-DVM_ObjectRef CHeap::CreateArrayIntI(DVM_VirtualMachine *pVirtualMachine, int iSize)
+DVM_ObjectRef CHeap::CreateArrayInt(DVM_VirtualMachine *pVirtualMachine, int iSize)
 {
     DVM_ObjectRef object = AllocArray(pVirtualMachine, INT_ARRAY, iSize);
 
@@ -82,19 +96,7 @@ DVM_ObjectRef CHeap::CreateArrayIntI(DVM_VirtualMachine *pVirtualMachine, int iS
     return object;
 }
 
-DVM_Object* CHeap::CreateArrayInt(DVM_VirtualMachine *pVirtualMachine, int iSize)
-{
-    DVM_Object *pObject = CreateArrayIntI(pVirtualMachine, iSize);
-
-    for (int i = 0; i < iSize; i++)
-    {
-        pObject->u.array.u.int_array[i] = 0;
-    }
-
-    return pObject;
-}
-
-DVM_ObjectRef CHeap::CreateArrayDoubleI(DVM_VirtualMachine *pVirtualMachine, int iSize)
+DVM_ObjectRef CHeap::CreateArrayDouble(DVM_VirtualMachine *pVirtualMachine, int iSize)
 {
     DVM_ObjectRef object = AllocArray(pVirtualMachine, DOUBLE_ARRAY, iSize);
 
@@ -109,19 +111,7 @@ DVM_ObjectRef CHeap::CreateArrayDoubleI(DVM_VirtualMachine *pVirtualMachine, int
     return object;
 }
 
-DVM_Object* CHeap::CreateArrayDouble(DVM_VirtualMachine *pVirtualMachine, int iSize)
-{
-    DVM_Object *pObject = CreateArrayDoubleI(pVirtualMachine, iSize);
-
-    for (int i = 0; i < iSize; i++)
-    {
-        pObject->u.array.u.double_array[i] = 0.0;
-    }
-
-    return pObject;
-}
-
-DVM_ObjectRef CHeap::CreateArrayObjectI(DVM_VirtualMachine *pVirtualMachine, int iSize)
+DVM_ObjectRef CHeap::CreateArrayObject(DVM_VirtualMachine *pVirtualMachine, int iSize)
 {
     DVM_ObjectRef object = AllocArray(pVirtualMachine, OBJECT_ARRAY, iSize);
 
@@ -136,19 +126,7 @@ DVM_ObjectRef CHeap::CreateArrayObjectI(DVM_VirtualMachine *pVirtualMachine, int
     return object;
 }
 
-DVM_Object* CHeap::CreateArrayObject(DVM_VirtualMachine *pVirtualMachine, int iSize)
-{
-    DVM_Object *pObject = CreateArrayObjectI(pVirtualMachine, iSize);
-
-    for (int i = 0; i < iSize; i++)
-    {
-        pObject->u.array.u.object[i] = nullptr;
-    }
-
-    return pObject;
-}
-
-DVM_ObjectRef CHeap::CreateClassObjectI(DVM_VirtualMachine *pVirtualMachine, int iIndex)
+DVM_ObjectRef CHeap::CreateClassObject(DVM_VirtualMachine *pVirtualMachine, int iIndex)
 {
     DVM_ObjectRef obj = AllocObject(pVirtualMachine, CLASS_OBJECT);
     ExecClass *pExecClass = pVirtualMachine->classes[iIndex];
@@ -165,13 +143,13 @@ DVM_ObjectRef CHeap::CreateClassObjectI(DVM_VirtualMachine *pVirtualMachine, int
     return obj;
 }
 
-void CHeap::CheckGC(DVM_VirtualMachine *pVirtualMachine)
+bool CHeap::IsReferenceType(DVM_TypeSpecifier *pType)
 {
-    if (pVirtualMachine->heap.current_heap_size > pVirtualMachine->heap.current_threshold)
-    {
-        GC(pVirtualMachine);
-        pVirtualMachine->heap.current_threshold = pVirtualMachine->heap.current_heap_size + HEAP_THRESHOLD_SIZE;
-    }
+    if ((DVM_STRING_TYPE == pType->basic_type || DVM_CLASS_TYPE == pType->basic_type) && 0 == pType->derive_count
+        || pType->derive_count > 0 && DVM_ARRAY_DERIVE == pType->derive[0].tag)
+        return true;
+
+    return false;
 }
 
 DVM_ObjectRef CHeap::AllocObject(DVM_VirtualMachine *pVirtualMachine, ObjectType enType)
@@ -219,13 +197,14 @@ void CHeap::MarkObjects(DVM_VirtualMachine *pVirtualMachine)
         ResetMark(pObj);
     }
 
-    for (int i = 0; i < pVirtualMachine->static_v.variable_count; i++)
+    for (ExecutableEntry *pos = pVirtualMachine->executable_entry; pos; pos = pos->next)
     {
-        if (DVM_STRING_TYPE == pVirtualMachine->executable->global_variable[i].type->basic_type
-            || (pVirtualMachine->executable->global_variable[i].type->derive != nullptr
-                && DVM_ARRAY_DERIVE == pVirtualMachine->executable->global_variable[i].type->derive[0].tag))
+        for (int i = 0; i < pos->static_v.variable_count; i++)
         {
-            Mark(pVirtualMachine->static_v.variable[i].object);
+            if (IsReferenceType(pos->executable->global_variable[i].type))
+            {
+                Mark(&pos->static_v.variable[i].object);
+            }
         }
     }
 
@@ -233,13 +212,17 @@ void CHeap::MarkObjects(DVM_VirtualMachine *pVirtualMachine)
     {
         if (DVM_TRUE == pVirtualMachine->stack.pointer_flags[i])
         {
-            Mark(pVirtualMachine->stack.stack[i].object);
+            Mark(&pVirtualMachine->stack.stack[i].object);
         }
     }
+
+    Mark(&pVirtualMachine->current_exception);
 }
 
-void CHeap::SweepObjects(DVM_VirtualMachine *pVirtualMachine)
+bool CHeap::SweepObjects(DVM_VirtualMachine *pVirtualMachine)
 {
+    bool bCallFinalizer = false;
+
     for (DVM_Object *pObj = pVirtualMachine->heap.header; pObj;)
     {
         if (DVM_FALSE == pObj->marked)
@@ -259,7 +242,10 @@ void CHeap::SweepObjects(DVM_VirtualMachine *pVirtualMachine)
             }
 
             DVM_Object *tmp = pObj->next;
-            DisposeObject(pVirtualMachine, pObj);
+            if (DisposeObject(pVirtualMachine, pObj))
+            {
+                bCallFinalizer = true;
+            }
             pObj = tmp;
         }
         else
@@ -267,6 +253,8 @@ void CHeap::SweepObjects(DVM_VirtualMachine *pVirtualMachine)
             pObj = pObj->next;
         }
     }
+
+    return bCallFinalizer;
 }
 
 void CHeap::ResetMark(DVM_Object *pObj)
@@ -274,27 +262,41 @@ void CHeap::ResetMark(DVM_Object *pObj)
     pObj->marked = DVM_FALSE;
 }
 
-void CHeap::Mark(DVM_Object *pObj)
+void CHeap::Mark(DVM_ObjectRef *pRef)
 {
-    if (nullptr == pObj)
+    if (nullptr == pRef->data)
         return;
 
-    if (pObj->marked)
+    if (DVM_TRUE == pRef->data->marked)
         return;
 
-    pObj->marked = DVM_TRUE;
+    pRef->data->marked = DVM_TRUE;
 
-    if (ARRAY_OBJECT == pObj->type && OBJECT_ARRAY == pObj->u.array.type)
+    if (ARRAY_OBJECT == pRef->data->type && OBJECT_ARRAY == pRef->data->u.array.type)
     {
-        for (int i = 0; i < pObj->u.array.size; i++)
+        for (int i = 0; i < pRef->data->u.array.size; i++)
         {
-            Mark(pObj->u.array.u.object[i]);
+            Mark(&pRef->data->u.array.u.object[i]);
+        }
+    }
+    else if (CLASS_OBJECT == pRef->data->type)
+    {
+        ExecClass *pEC = pRef->v_table->exec_class;
+
+        for (int i = 0; i < pEC->field_count; i++)
+        {
+            if (IsReferenceType(pEC->field_type[i]))
+            {
+                Mark(&pRef->data->u.class_object.field[i].object);
+            }
         }
     }
 }
 
-void CHeap::DisposeObject(DVM_VirtualMachine *pVirtualMachine, DVM_Object *pObj)
+bool CHeap::DisposeObject(DVM_VirtualMachine *pVirtualMachine, DVM_Object *pObj)
 {
+    bool bCallFinalizer = false;
+
     switch (pObj->type)
     {
     case STRING_OBJECT :
@@ -324,9 +326,19 @@ void CHeap::DisposeObject(DVM_VirtualMachine *pVirtualMachine, DVM_Object *pObj)
             MEM_free(pObj->u.array.u.object);
             break;
 
+        case FUNCTION_INDEX_ARRAY :
+            pVirtualMachine->heap.current_heap_size -= sizeof(int)* pObj->u.array.alloc_size;
+            MEM_free(pObj->u.array.u.function_index);
+            break;
+
         default :
             DBG_assert(0, ("array.type..", pObj->u.array.type));
         }
+        break;
+
+    case CLASS_OBJECT :
+        pVirtualMachine->heap.current_heap_size -= sizeof(DVM_Value)* pObj->u.class_object.field_count;
+        MEM_free(pObj->u.class_object.field);
         break;
 
     default :
@@ -335,4 +347,6 @@ void CHeap::DisposeObject(DVM_VirtualMachine *pVirtualMachine, DVM_Object *pObj)
 
     pVirtualMachine->heap.current_heap_size -= sizeof(DVM_Object);
     MEM_free(pObj);
+
+    return bCallFinalizer;
 }
