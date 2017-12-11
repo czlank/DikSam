@@ -450,16 +450,16 @@ DVM_ObjectRef Execute::CreateArraySub(DVM_VirtualMachine *pVirtualMachine, int i
 
         case DVM_BOOLEAN_TYPE :
         case DVM_INT_TYPE :
-            ret = m_Heap.CreateArrayIntI(pVirtualMachine, size);
+            ret = m_Heap.CreateArrayInt(pVirtualMachine, size);
             break;
 
         case DVM_DOUBLE_TYPE :
-            ret = m_Heap.CreateArrayDoubleI(pVirtualMachine, size);
+            ret = m_Heap.CreateArrayDouble(pVirtualMachine, size);
             break;
 
         case DVM_STRING_TYPE :
         case DVM_CLASS_TYPE :
-            ret = m_Heap.CreateArrayObjectI(pVirtualMachine, size);
+            ret = m_Heap.CreateArrayObject(pVirtualMachine, size);
             break;
 
         case DVM_NULL_TYPE :
@@ -474,7 +474,7 @@ DVM_ObjectRef Execute::CreateArraySub(DVM_VirtualMachine *pVirtualMachine, int i
     }
     else
     {
-        ret = m_Heap.CreateArrayObjectI(pVirtualMachine, size);
+        ret = m_Heap.CreateArrayObject(pVirtualMachine, size);
 
         if (iDimIndex < iDim - 1)
         {
@@ -500,7 +500,7 @@ DVM_ObjectRef Execute::CreateArray(DVM_VirtualMachine *pVirtualMachine, int iDim
 
 DVM_ObjectRef Execute::CreateArrayLiteralInt(DVM_VirtualMachine *pVirtualMachine, int iSize)
 {
-    DVM_ObjectRef array = m_Heap.CreateArrayIntI(pVirtualMachine, iSize);
+    DVM_ObjectRef array = m_Heap.CreateArrayInt(pVirtualMachine, iSize);
 
     for (int i = 0; i < iSize; i++)
     {
@@ -512,7 +512,7 @@ DVM_ObjectRef Execute::CreateArrayLiteralInt(DVM_VirtualMachine *pVirtualMachine
 
 DVM_ObjectRef Execute::CreateArrayLiteralDouble(DVM_VirtualMachine *pVirtualMachine, int iSize)
 {
-    DVM_ObjectRef array = m_Heap.CreateArrayDoubleI(pVirtualMachine, iSize);
+    DVM_ObjectRef array = m_Heap.CreateArrayDouble(pVirtualMachine, iSize);
 
     for (int i = 0; i < iSize; i++)
     {
@@ -524,7 +524,7 @@ DVM_ObjectRef Execute::CreateArrayLiteralDouble(DVM_VirtualMachine *pVirtualMach
 
 DVM_ObjectRef Execute::CreateArrayLiteralObject(DVM_VirtualMachine *pVirtualMachine, int iSize)
 {
-    DVM_ObjectRef array = m_Heap.CreateArrayObjectI(pVirtualMachine, iSize);
+    DVM_ObjectRef array = m_Heap.CreateArrayObject(pVirtualMachine, iSize);
 
     for (int i = 0; i < iSize; i++)
     {
@@ -590,7 +590,7 @@ DVM_Value Execute::ExecuteCode(DVM_VirtualMachine *pVirtualMachine, Function *pF
             break;
 
         case DVM_PUSH_STRING :
-            STO_WRITE(0, m_Heap.LiteralToStringI(pVirtualMachine, exe->constant_pool[GET_2BYTE_INT(&pCode[pc + 1])].u.c_string));
+            STO_WRITE(0, m_Heap.LiteralToString(pVirtualMachine, exe->constant_pool[GET_2BYTE_INT(&pCode[pc + 1])].u.c_string));
             pVirtualMachine->stack.stack_pointer++;
             pc += 3;
             break;
@@ -940,11 +940,11 @@ DVM_Value Execute::ExecuteCode(DVM_VirtualMachine *pVirtualMachine, Function *pF
         case DVM_CAST_BOOLEAN_TO_STRING :
             if (DVM_TRUE == STI(-1))
             {
-                STO_WRITE(-1, m_Heap.LiteralToStringI(pVirtualMachine, TRUE_STRING));
+                STO_WRITE(-1, m_Heap.LiteralToString(pVirtualMachine, TRUE_STRING));
             }
             else
             {
-                STO_WRITE(-1, m_Heap.LiteralToStringI(pVirtualMachine, FALSE_STRING));
+                STO_WRITE(-1, m_Heap.LiteralToString(pVirtualMachine, FALSE_STRING));
             }
             pc++;
             break;
@@ -1303,7 +1303,7 @@ DVM_Value Execute::ExecuteCode(DVM_VirtualMachine *pVirtualMachine, Function *pF
             {
                 int index = GET_2BYTE_INT(&pCode[pc + 1]);
 
-                STO_WRITE(0, m_Heap.CreateClassObjectI(pVirtualMachine, index));
+                STO_WRITE(0, m_Heap.CreateClassObject(pVirtualMachine, index));
                 pVirtualMachine->stack.stack_pointer++;
 
                 pc += 3;
@@ -1486,6 +1486,38 @@ void Execute::DisposeVTable(DVM_VTable *pVTable)
 
     MEM_free(pVTable->table);
     MEM_free(pVTable);
+}
+
+int Execute::GetFieldIndexSub(ExecClass *pExecClass, char *lpstrFieldName, int *pSuperCount)
+{
+    if (pExecClass->super_class)
+    {
+        int index = GetFieldIndexSub(pExecClass->super_class, lpstrFieldName, pSuperCount);
+        
+        if (index != FIELD_NOT_FOUND)
+        {
+            return index;
+        }
+    }
+
+    for (int i = 0; i < pExecClass->dvm_class->field_count; i++)
+    {
+        if (std::string(pExecClass->dvm_class->field[i].name) == lpstrFieldName)
+        {
+            return i + *pSuperCount;
+        }
+    }
+
+    *pSuperCount += pExecClass->dvm_class->field_count;
+
+    return FIELD_NOT_FOUND;
+}
+
+int Execute::GetFieldIndex(DVM_VirtualMachine *pVirtualMachine, DVM_ObjectRef obj, char *lpstrFieldName)
+{
+    int iSuperCount = 0;
+
+    return GetFieldIndexSub(obj.v_table->exec_class, lpstrFieldName, &iSuperCount);
 }
 
 inline bool Execute::IsPointerType(DVM_TypeSpecifier *pType)

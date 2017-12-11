@@ -47,6 +47,8 @@ private:
     void PushObject(DVM_VirtualMachine *pVirtualMachine, DVM_Value value);
     DVM_Value PopObject(DVM_VirtualMachine *pVirtualMachine);
     void DisposeVTable(DVM_VTable *pVTable);
+    int GetFieldIndexSub(ExecClass *pExecClass, char *lpstrFieldName, int *pSuperCount);
+    int GetFieldIndex(DVM_VirtualMachine *pVirtualMachine, DVM_ObjectRef obj, char *lpstrFieldName);
 
     inline bool IsPointerType(DVM_TypeSpecifier *pType);
 
