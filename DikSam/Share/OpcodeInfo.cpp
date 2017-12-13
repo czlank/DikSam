@@ -34,6 +34,13 @@ DVMOpcodeInfo::DVMOpcodeInfo()
     m_OpcodeInfo[DVM_POP_ARRAY_DOUBLE]          = {"pop_array_double",          "",   -1};
     m_OpcodeInfo[DVM_POP_ARRAY_OBJECT]          = {"pop_array_object",          "",   -1};
     /**********/
+    m_OpcodeInfo[DVM_PUSH_FIELD_INT]            = {"push_field_int",            "s",   1};
+    m_OpcodeInfo[DVM_PUSH_FIELD_DOUBLE]         = {"push_field_double",         "s",   1};
+    m_OpcodeInfo[DVM_PUSH_FIELD_OBJECT]         = {"push_field_object",         "s",   1};
+    m_OpcodeInfo[DVM_POP_FIELD_INT]             = {"pop_field_int",             "s",  -1};
+    m_OpcodeInfo[DVM_POP_FIELD_DOUBLE]          = {"pop_field_double",          "s",  -1};
+    m_OpcodeInfo[DVM_POP_FIELD_OBJECT]          = {"pop_field_object",          "s",  -1};
+    /**********/
     m_OpcodeInfo[DVM_ADD_INT]                   = {"add_int",                   "",   -1};
     m_OpcodeInfo[DVM_ADD_DOUBLE]                = {"add_double",                "",   -1};
     m_OpcodeInfo[DVM_ADD_STRING]                = {"add_string",                "",   -1};
@@ -54,6 +61,8 @@ DVMOpcodeInfo::DVMOpcodeInfo()
     m_OpcodeInfo[DVM_CAST_BOOLEAN_TO_STRING]    = {"cast_boolean_to_string",    "",    0};
     m_OpcodeInfo[DVM_CAST_INT_TO_STRING]        = {"cast_int_to_string",        "",    0};
     m_OpcodeInfo[DVM_CAST_DOUBLE_TO_STRING]     = {"cast_double_to_string",     "",    0};
+    m_OpcodeInfo[DVM_UP_CAST]                   = {"up_cast",                   "s",   0};
+    m_OpcodeInfo[DVM_DOWN_CAST]                 = {"down_cast",                 "s",   0};
     m_OpcodeInfo[DVM_EQ_INT]                    = {"eq_int",                    "",   -1};
     m_OpcodeInfo[DVM_EQ_DOUBLE]                 = {"eq_double",                 "",   -1};
     m_OpcodeInfo[DVM_EQ_OBJECT]                 = {"eq_object",                 "",   -1};
@@ -79,18 +88,23 @@ DVMOpcodeInfo::DVMOpcodeInfo()
     m_OpcodeInfo[DVM_LOGICAL_NOT]               = {"logical_not",               "",    0};
     m_OpcodeInfo[DVM_POP]                       = {"pop",                       "",   -1};
     m_OpcodeInfo[DVM_DUPLICATE]                 = {"duplicate",                 "",    1};
+    m_OpcodeInfo[DVM_DUPLICATE_OFFSET]          = {"duplicate_offset",          "s",   1};
     m_OpcodeInfo[DVM_JUMP]                      = {"jump",                      "s",   0};
     m_OpcodeInfo[DVM_JUMP_IF_TRUE]              = {"jump_if_true",              "s",  -1};
     m_OpcodeInfo[DVM_JUMP_IF_FALSE]             = {"jump_if_false",             "s",  -1};
     /**********/
-    m_OpcodeInfo[DVM_PUSH_FUNCTION]             = {"push_function",             "s",   0};
+    m_OpcodeInfo[DVM_PUSH_FUNCTION]             = {"push_function",             "s",   1};
+    m_OpcodeInfo[DVM_PUSH_METHOD]               = {"push_method",               "s",   1};
     m_OpcodeInfo[DVM_INVOKE]                    = {"invoke",                    "",   -1};
     m_OpcodeInfo[DVM_RETURN]                    = {"return",                    "",   -1};
     /**********/
+    m_OpcodeInfo[DVM_NEW]                       = {"new",                       "s",   1};
     m_OpcodeInfo[DVM_NEW_ARRAY]                 = {"new_array",                 "bs",  0};
     m_OpcodeInfo[DVM_NEW_ARRAY_LITERAL_INT]     = {"new_array_literal_int",     "s",   1};
     m_OpcodeInfo[DVM_NEW_ARRAY_LITERAL_DOUBLE]  = {"new_array_literal_double",  "s",   1};
     m_OpcodeInfo[DVM_NEW_ARRAY_LITERAL_OBJECT]  = {"new_array_literal_object",  "s",   1};
+    m_OpcodeInfo[DVM_SUPER]                     = {"super",                     "",    0};
+    m_OpcodeInfo[DVM_INSTANCEOF]                = {"instanceof",                "s",   0};
 }
 
 DVMOpcodeInfo::~DVMOpcodeInfo()
