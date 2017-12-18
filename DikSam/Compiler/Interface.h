@@ -2,6 +2,7 @@
 
 #include "DikSamc.h"
 #include "DVM_dev.h"
+#include "Heap.h"
 
 class Debug;
 class Memory;
@@ -71,6 +72,8 @@ private:
     Error                          &m_Error;
     StringLiteral                  &m_StringLiteral;
     Create                         &m_Create;
+
+    CHeap                           m_Heap;
     
     DKC_Compiler                   *m_pCompiler;
     CompilerList                   *m_pCompilerList;

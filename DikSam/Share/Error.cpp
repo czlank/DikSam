@@ -166,6 +166,10 @@ void Error::InitMessageFormat()
     m_ErrorMessageFormat[CLASS_MULTIPLE_DEFINE_ERR]                 = TEXT("重复定义了类$(package)#$(name)。");
     m_ErrorMessageFormat[CLASS_CAST_ERR]                            = TEXT("对象的类型为$(org)。");
     m_ErrorMessageFormat[DYNAMIC_LOAD_WITHOUT_PACKAGE_ERR]          = TEXT("由于函数$(name)没有指定包，不能动态加载。");
+    m_ErrorMessageFormat[INSERT_INDEX_OUT_OF_BOUNDS_ERR]            = TEXT("数组下标越界。尝试为大小为$(size)的数组insert元素到$(pos)。");
+    m_ErrorMessageFormat[REMOVE_INDEX_OUT_OF_BOUNDS_ERR]            = TEXT("数组下标越界。尝试为大小为$(size)的数组remove元素$(pos)。");
+    m_ErrorMessageFormat[STRING_POS_OUT_OF_BOUNDS_ERR]              = TEXT("指定的位置超出字符串长度。");
+    m_ErrorMessageFormat[STRING_SUBSTR_LEN_ERR]                     = TEXT("为长度为$(len)的字符串指定了$(pos)。");
     m_ErrorMessageFormat[DIKSAM_ERROR_COUNT_PLUS_1]                 = TEXT("dummy");
 }
 

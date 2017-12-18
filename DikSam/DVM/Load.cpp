@@ -4,6 +4,7 @@
 #include "Util.h"
 #include "Error.h"
 #include "Interface.h"
+#include "Heap.h"
 #include "OpcodeInfo.h"
 #include "Load.h"
 
@@ -52,14 +53,13 @@ VTableItem Load::m_stStringMethodVTable[] =
     { STRING_PREFIX STRING_METHOD_SUBSTR, FUNCTION_NOT_FOUND }
 };
 
-Load::Load(Debug& debug, Memory& memory, Util& util, Error& error, Interface& interfaceRef)
+Load::Load(Debug& debug, Memory& memory, Util& util, Error& error, Interface& interfaceRef, CHeap& heap)
     : m_Debug(debug)
     , m_Memory(memory)
     , m_Util(util)
     , m_Error(error)
     , m_Interface(interfaceRef)
-    , m_Native(debug, memory)
-    
+    , m_Native(debug, memory, error, heap, *this)
 {
 }
 

@@ -335,7 +335,7 @@ void Execute::InvokeDikSamFunction(DVM_VirtualMachine *pVirtualMachine, Function
 {
     if (DVM_FALSE == pCallee->is_implemented)
     {
-        Load load(m_Debug, m_Memory, m_Util, m_Error, m_Interface);
+        Load load(m_Debug, m_Memory, m_Util, m_Error, m_Interface, m_Heap);
         load.DynamicLoad(pVirtualMachine, *ppExe, *ppCaller, *pPC, pCallee);
     }
 

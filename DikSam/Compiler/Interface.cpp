@@ -123,6 +123,7 @@ Interface::Interface(Debug& debug, Memory& memory, Storage& storage, Util& util,
     , m_Error(error)
     , m_StringLiteral(stringliteral)
     , m_Create(create)
+    , m_Heap(debug, memory, util)
     , m_pCompiler(nullptr)
     , m_pCompilerList(nullptr)
     , m_iThreadIndex(iThreadIndex)
@@ -219,7 +220,7 @@ void Interface::RunScript(FILE *pFile, const char *lpstrPath)
         DKC_Compiler *pCompiler = CreateCompiler();
         DVM_ExecutableList *pExecutableList = Compile(pCompiler, pFile, lpstrPath);
         
-        Load load(m_Debug, m_Memory, m_Util, m_Error, *this);
+        Load load(m_Debug, m_Memory, m_Util, m_Error, *this, m_Heap);
         DVM_VirtualMachine *pVirtualMachine = load.CreateVirtualMachine();
         load.SetExecutable(pVirtualMachine, pExecutableList);
         DisposeCompiler(pCompiler);
@@ -264,7 +265,7 @@ void Interface::RunScript(char **ppLines, const char *lpstrPath)
         DKC_Compiler *pCompiler = CreateCompiler();
         DVM_ExecutableList *pExecutableList = Compile(pCompiler, ppLines, lpstrPath);
 
-        Load load(m_Debug, m_Memory, m_Util, m_Error, *this);
+        Load load(m_Debug, m_Memory, m_Util, m_Error, *this, m_Heap);
         DVM_VirtualMachine *pVirtualMachine = load.CreateVirtualMachine();
         load.SetExecutable(pVirtualMachine, pExecutableList);
         DisposeCompiler(pCompiler);

@@ -9,11 +9,12 @@ class Memory;
 class Util;
 class Error;
 class Interface;
+class CHeap;
 
 class Load
 {
 public:
-    Load(Debug& debug, Memory& memory, Util& util, Error& error, Interface& interfaceRef);
+    Load(Debug& debug, Memory& memory, Util& util, Error& error, Interface& interfaceRef, CHeap& heap);
     ~Load();
 
     DVM_VirtualMachine* CreateVirtualMachine();
@@ -51,7 +52,7 @@ private:
     Error       &m_Error;
     Interface   &m_Interface;
 
-    Native   m_Native;
+    Native       m_Native;
 
     static VTableItem       m_stArrayMethodVTable[];
     static VTableItem       m_stStringMethodVTable[];
