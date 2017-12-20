@@ -647,6 +647,9 @@ static int st_current_char_index;
 
 static DVM_Boolean st_character_literal_state;
 
+static const int error_message_buf_len = 100;
+static char error_message_buf[error_message_buf_len];
+
 void dkc_set_source_string(char **source)
 {
     st_source_string = source;
@@ -717,7 +720,7 @@ int yywrap(void)
     return 1;
 }
 
-#line 721 "lex.yy.c"
+#line 724 "lex.yy.c"
 
 #define INITIAL 0
 #define C_COMMENT 1
@@ -908,9 +911,9 @@ YY_DECL
 	register char *yy_cp, *yy_bp;
 	register int yy_act;
     
-#line 110 "DikSam.l"
+#line 113 "DikSam.l"
 
-#line 914 "lex.yy.c"
+#line 917 "lex.yy.c"
 
 	if ( !(yy_init) )
 		{
@@ -995,347 +998,347 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 111 "DikSam.l"
+#line 114 "DikSam.l"
 return IF;
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 112 "DikSam.l"
+#line 115 "DikSam.l"
 return ELSE;
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 113 "DikSam.l"
+#line 116 "DikSam.l"
 return WHILE;
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 114 "DikSam.l"
+#line 117 "DikSam.l"
 return DO_T;
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 115 "DikSam.l"
+#line 118 "DikSam.l"
 return FOR;
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 116 "DikSam.l"
+#line 119 "DikSam.l"
 return RETURN_T;
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 117 "DikSam.l"
+#line 120 "DikSam.l"
 return BREAK;
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 118 "DikSam.l"
+#line 121 "DikSam.l"
 return CONTINUE;
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 119 "DikSam.l"
+#line 122 "DikSam.l"
 return NULL_T;
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 120 "DikSam.l"
+#line 123 "DikSam.l"
 return TRUE_T;
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 121 "DikSam.l"
+#line 124 "DikSam.l"
 return FALSE_T;
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 122 "DikSam.l"
+#line 125 "DikSam.l"
 return TRY;
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 123 "DikSam.l"
+#line 126 "DikSam.l"
 return CATCH;
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 124 "DikSam.l"
+#line 127 "DikSam.l"
 return FINALLY;
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 125 "DikSam.l"
+#line 128 "DikSam.l"
 return THROW;
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 126 "DikSam.l"
+#line 129 "DikSam.l"
 return BOOLEAN_T;
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 127 "DikSam.l"
+#line 130 "DikSam.l"
 return VOID_T;
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 128 "DikSam.l"
+#line 131 "DikSam.l"
 return INT_T;
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 129 "DikSam.l"
+#line 132 "DikSam.l"
 return DOUBLE_T;
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 130 "DikSam.l"
+#line 133 "DikSam.l"
 return STRING_T;
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 131 "DikSam.l"
+#line 134 "DikSam.l"
 return NEW;
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 132 "DikSam.l"
+#line 135 "DikSam.l"
 return REQUIRE;
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 133 "DikSam.l"
+#line 136 "DikSam.l"
 return RENAME;
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 134 "DikSam.l"
+#line 137 "DikSam.l"
 return CLASS_T;
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 135 "DikSam.l"
+#line 138 "DikSam.l"
 return INTERFACE_T;
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 136 "DikSam.l"
+#line 139 "DikSam.l"
 return PUBLIC_T;
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 137 "DikSam.l"
+#line 140 "DikSam.l"
 return PRIVATE_T;
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 138 "DikSam.l"
+#line 141 "DikSam.l"
 return VIRTUAL_T;
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 139 "DikSam.l"
+#line 142 "DikSam.l"
 return OVERRIDE_T;
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 140 "DikSam.l"
+#line 143 "DikSam.l"
 return ABSTRACT_T;
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 141 "DikSam.l"
+#line 144 "DikSam.l"
 return THIS_T;
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 142 "DikSam.l"
+#line 145 "DikSam.l"
 return SUPER_T;
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 143 "DikSam.l"
+#line 146 "DikSam.l"
 return CONSTRUCTOR;
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 144 "DikSam.l"
+#line 147 "DikSam.l"
 return INSTANCEOF;
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 145 "DikSam.l"
+#line 148 "DikSam.l"
 return LEFTP;
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 146 "DikSam.l"
+#line 149 "DikSam.l"
 return RIGHTP;
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 147 "DikSam.l"
+#line 150 "DikSam.l"
 return LC;
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 148 "DikSam.l"
+#line 151 "DikSam.l"
 return RC;
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 149 "DikSam.l"
+#line 152 "DikSam.l"
 return LB;
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 150 "DikSam.l"
+#line 153 "DikSam.l"
 return RB;
 	YY_BREAK
 case 41:
 YY_RULE_SETUP
-#line 151 "DikSam.l"
+#line 154 "DikSam.l"
 return SEMICOLON;
 	YY_BREAK
 case 42:
 YY_RULE_SETUP
-#line 152 "DikSam.l"
+#line 155 "DikSam.l"
 return COLON;
 	YY_BREAK
 case 43:
 YY_RULE_SETUP
-#line 153 "DikSam.l"
+#line 156 "DikSam.l"
 return COMMA;
 	YY_BREAK
 case 44:
 YY_RULE_SETUP
-#line 154 "DikSam.l"
+#line 157 "DikSam.l"
 return LOGICAL_AND;
 	YY_BREAK
 case 45:
 YY_RULE_SETUP
-#line 155 "DikSam.l"
+#line 158 "DikSam.l"
 return LOGICAL_OR;
 	YY_BREAK
 case 46:
 YY_RULE_SETUP
-#line 156 "DikSam.l"
+#line 159 "DikSam.l"
 return ASSIGN_T;
 	YY_BREAK
 case 47:
 YY_RULE_SETUP
-#line 157 "DikSam.l"
+#line 160 "DikSam.l"
 return EQ;
 	YY_BREAK
 case 48:
 YY_RULE_SETUP
-#line 158 "DikSam.l"
+#line 161 "DikSam.l"
 return NE;
 	YY_BREAK
 case 49:
 YY_RULE_SETUP
-#line 159 "DikSam.l"
+#line 162 "DikSam.l"
 return GT;
 	YY_BREAK
 case 50:
 YY_RULE_SETUP
-#line 160 "DikSam.l"
+#line 163 "DikSam.l"
 return GE;
 	YY_BREAK
 case 51:
 YY_RULE_SETUP
-#line 161 "DikSam.l"
+#line 164 "DikSam.l"
 return LT;
 	YY_BREAK
 case 52:
 YY_RULE_SETUP
-#line 162 "DikSam.l"
+#line 165 "DikSam.l"
 return LE;
 	YY_BREAK
 case 53:
 YY_RULE_SETUP
-#line 163 "DikSam.l"
+#line 166 "DikSam.l"
 return ADD;
 	YY_BREAK
 case 54:
 YY_RULE_SETUP
-#line 164 "DikSam.l"
+#line 167 "DikSam.l"
 return SUB;
 	YY_BREAK
 case 55:
 YY_RULE_SETUP
-#line 165 "DikSam.l"
+#line 168 "DikSam.l"
 return MUL;
 	YY_BREAK
 case 56:
 YY_RULE_SETUP
-#line 166 "DikSam.l"
+#line 169 "DikSam.l"
 return DIV;
 	YY_BREAK
 case 57:
 YY_RULE_SETUP
-#line 167 "DikSam.l"
+#line 170 "DikSam.l"
 return MOD;
 	YY_BREAK
 case 58:
 YY_RULE_SETUP
-#line 168 "DikSam.l"
+#line 171 "DikSam.l"
 return ADD_ASSIGN_T;
 	YY_BREAK
 case 59:
 YY_RULE_SETUP
-#line 169 "DikSam.l"
+#line 172 "DikSam.l"
 return SUB_ASSIGN_T;
 	YY_BREAK
 case 60:
 YY_RULE_SETUP
-#line 170 "DikSam.l"
+#line 173 "DikSam.l"
 return MUL_ASSIGN_T;
 	YY_BREAK
 case 61:
 YY_RULE_SETUP
-#line 171 "DikSam.l"
+#line 174 "DikSam.l"
 return DIV_ASSIGN_T;
 	YY_BREAK
 case 62:
 YY_RULE_SETUP
-#line 172 "DikSam.l"
+#line 175 "DikSam.l"
 return MOD_ASSIGN_T;
 	YY_BREAK
 case 63:
 YY_RULE_SETUP
-#line 173 "DikSam.l"
+#line 176 "DikSam.l"
 return INCREMENT;
 	YY_BREAK
 case 64:
 YY_RULE_SETUP
-#line 174 "DikSam.l"
+#line 177 "DikSam.l"
 return DECREMENT;
 	YY_BREAK
 case 65:
 YY_RULE_SETUP
-#line 175 "DikSam.l"
+#line 178 "DikSam.l"
 return EXCLAMATION;
 	YY_BREAK
 case 66:
 YY_RULE_SETUP
-#line 176 "DikSam.l"
+#line 179 "DikSam.l"
 return DOT;
 	YY_BREAK
 case 67:
 YY_RULE_SETUP
-#line 177 "DikSam.l"
+#line 180 "DikSam.l"
 return DOWN_CAST_BEGIN;
 	YY_BREAK
 case 68:
 YY_RULE_SETUP
-#line 178 "DikSam.l"
+#line 181 "DikSam.l"
 return DOWN_CAST_END;
 	YY_BREAK
 case 69:
 YY_RULE_SETUP
-#line 180 "DikSam.l"
+#line 183 "DikSam.l"
 {
     yylval.identifier = dkc_create_identifier(yytext);
     return IDENTIFIER;
@@ -1343,7 +1346,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 70:
 YY_RULE_SETUP
-#line 185 "DikSam.l"
+#line 188 "DikSam.l"
 {
     Expression *expression = dkc_alloc_expression(INT_EXPRESSION);
     sscanf_s(yytext, "%d", &expression->u.int_value);
@@ -1353,7 +1356,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 71:
 YY_RULE_SETUP
-#line 192 "DikSam.l"
+#line 195 "DikSam.l"
 {
     Expression *expression = dkc_alloc_expression(INT_EXPRESSION);
     sscanf_s(yytext, "%x", &expression->u.int_value);
@@ -1363,7 +1366,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 72:
 YY_RULE_SETUP
-#line 199 "DikSam.l"
+#line 202 "DikSam.l"
 {
     Expression *expression = dkc_alloc_expression(INT_EXPRESSION);
     expression->u.int_value=0;
@@ -1373,7 +1376,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 73:
 YY_RULE_SETUP
-#line 206 "DikSam.l"
+#line 209 "DikSam.l"
 {
     Expression *expression = dkc_alloc_expression(DOUBLE_EXPRESSION);
     sscanf_s(yytext, "%lf", &expression->u.double_value);
@@ -1383,7 +1386,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 74:
 YY_RULE_SETUP
-#line 213 "DikSam.l"
+#line 216 "DikSam.l"
 {
     dkc_open_string_literal();
     st_character_literal_state = DVM_FALSE;
@@ -1392,7 +1395,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 75:
 YY_RULE_SETUP
-#line 219 "DikSam.l"
+#line 222 "DikSam.l"
 {
     dkc_open_string_literal();
     st_character_literal_state = DVM_TRUE;
@@ -1401,79 +1404,79 @@ YY_RULE_SETUP
 	YY_BREAK
 case 76:
 YY_RULE_SETUP
-#line 225 "DikSam.l"
+#line 228 "DikSam.l"
 ;
 	YY_BREAK
 case 77:
 /* rule 77 can match eol */
 YY_RULE_SETUP
-#line 226 "DikSam.l"
+#line 229 "DikSam.l"
 { increment_line_number(); }
 	YY_BREAK
 case 78:
 YY_RULE_SETUP
-#line 227 "DikSam.l"
+#line 230 "DikSam.l"
 BEGIN C_COMMENT;
 	YY_BREAK
 case 79:
 YY_RULE_SETUP
-#line 228 "DikSam.l"
+#line 231 "DikSam.l"
 BEGIN CC_COMMENT;
 	YY_BREAK
 case 80:
 YY_RULE_SETUP
-#line 229 "DikSam.l"
+#line 232 "DikSam.l"
 {
-    dkc_compile_error(dkc_get_current_compiler()->current_line_number,
-                      CHARACTER_INVALID_ERR,
-                      (CHARACTER_MESSAGE_ARGUMENT, "bad_char", yytext[0], MESSAGE_ARGUMENT_END));
+    memset(error_message_buf, 0, error_message_buf_len);
+    sprintf_s(error_message_buf, 100, "incorrect character(%c).", &yytext[0]);
+    dkc_compile_error(dkc_get_current_compiler()->current_line_number, error_message_buf);
 }
 	YY_BREAK
 case 81:
 /* rule 81 can match eol */
 YY_RULE_SETUP
-#line 235 "DikSam.l"
+#line 238 "DikSam.l"
 increment_line_number();
 	YY_BREAK
 case 82:
 YY_RULE_SETUP
-#line 236 "DikSam.l"
+#line 239 "DikSam.l"
 BEGIN INITIAL;
 	YY_BREAK
 case YY_STATE_EOF(C_COMMENT):
-#line 237 "DikSam.l"
+#line 240 "DikSam.l"
 {
-    dkc_compile_error(dkc_get_current_compiler()->current_line_number,
-                      EOF_IN_C_COMMENT_ERR,
-                      (MESSAGE_ARGUMENT_END));
+    memset(error_message_buf, 0, error_message_buf_len);
+    sprintf_s(error_message_buf, 100, "end of file in C style comment");
+    dkc_compile_error(dkc_get_current_compiler()->current_line_number, error_message_buf);
 }
 	YY_BREAK
 case 83:
 YY_RULE_SETUP
-#line 242 "DikSam.l"
+#line 245 "DikSam.l"
 ;
 	YY_BREAK
 case 84:
 /* rule 84 can match eol */
 YY_RULE_SETUP
-#line 244 "DikSam.l"
+#line 247 "DikSam.l"
 {
     increment_line_number();
     BEGIN INITIAL;
 }
 	YY_BREAK
 case YY_STATE_EOF(CC_COMMENT):
-#line 248 "DikSam.l"
+#line 251 "DikSam.l"
 BEGIN INITIAL;
 	YY_BREAK
 case 85:
 YY_RULE_SETUP
-#line 249 "DikSam.l"
+#line 252 "DikSam.l"
 ;
 	YY_BREAK
 case 86:
 YY_RULE_SETUP
-#line 251 "DikSam.l"
+#line 254 "DikSam.l"
 {
     if (DVM_TRUE == st_character_literal_state) {
         dkc_add_string_literal('\"');
@@ -1488,7 +1491,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 87:
 YY_RULE_SETUP
-#line 263 "DikSam.l"
+#line 266 "DikSam.l"
 {
     if (DVM_TRUE == st_character_literal_state) {
         Expression *expression = dkc_alloc_expression(INT_EXPRESSION);
@@ -1504,7 +1507,7 @@ YY_RULE_SETUP
 case 88:
 /* rule 88 can match eol */
 YY_RULE_SETUP
-#line 275 "DikSam.l"
+#line 278 "DikSam.l"
 {
     dkc_add_string_literal('\n');
     increment_line_number();
@@ -1512,32 +1515,32 @@ YY_RULE_SETUP
 	YY_BREAK
 case 89:
 YY_RULE_SETUP
-#line 280 "DikSam.l"
+#line 283 "DikSam.l"
 dkc_add_string_literal('"');
 	YY_BREAK
 case 90:
 YY_RULE_SETUP
-#line 281 "DikSam.l"
+#line 284 "DikSam.l"
 dkc_add_string_literal('\r');
 	YY_BREAK
 case 91:
 YY_RULE_SETUP
-#line 282 "DikSam.l"
+#line 285 "DikSam.l"
 dkc_add_string_literal('\n');
 	YY_BREAK
 case 92:
 YY_RULE_SETUP
-#line 283 "DikSam.l"
+#line 286 "DikSam.l"
 dkc_add_string_literal('\t');
 	YY_BREAK
 case 93:
 YY_RULE_SETUP
-#line 284 "DikSam.l"
+#line 287 "DikSam.l"
 dkc_add_string_literal('\\');
 	YY_BREAK
 case 94:
 YY_RULE_SETUP
-#line 286 "DikSam.l"
+#line 289 "DikSam.l"
 {
     Encoding enc = dkc_get_current_compiler()->source_encoding;
     dkc_add_string_literal(yytext[0]);
@@ -1549,16 +1552,16 @@ YY_RULE_SETUP
 }
 	YY_BREAK
 case YY_STATE_EOF(STRING_LITERAL_STATE):
-#line 296 "DikSam.l"
+#line 299 "DikSam.l"
 {
-    dkc_compile_error(dkc_get_current_compiler()->current_line_number,
-                       EOF_IN_STRING_LITERAL_ERR,
-                       (MESSAGE_ARGUMENT_END));
+    memset(error_message_buf, 0, error_message_buf_len);
+    sprintf_s(error_message_buf, 100, "end of file in string literal");
+    dkc_compile_error(dkc_get_current_compiler()->current_line_number, error_message_buf);
 }
 	YY_BREAK
 case 95:
 YY_RULE_SETUP
-#line 302 "DikSam.l"
+#line 305 "DikSam.l"
 {
     dkc_add_string_literal(yytext[0]);
     BEGIN STRING_LITERAL_STATE;
@@ -1566,10 +1569,10 @@ YY_RULE_SETUP
 	YY_BREAK
 case 96:
 YY_RULE_SETUP
-#line 307 "DikSam.l"
+#line 310 "DikSam.l"
 ECHO;
 	YY_BREAK
-#line 1573 "lex.yy.c"
+#line 1576 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(GB2312_2ND_CHAR):
 	yyterminate();
@@ -2568,6 +2571,6 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 307 "DikSam.l"
+#line 310 "DikSam.l"
 
 

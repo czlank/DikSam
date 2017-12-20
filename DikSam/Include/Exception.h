@@ -57,6 +57,11 @@ private:
 class ErrorException : public std::exception
 {
 public:
+    ErrorException(const char *lpstrWhat)
+    {
+        m_strWhat = lpstrWhat ? lpstrWhat : "";
+    }
+
     ErrorException(const wchar_t *lpcwstrWhat)
     {
         assert(lpcwstrWhat);

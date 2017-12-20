@@ -34,6 +34,9 @@ static int st_current_char_index;
 
 static DVM_Boolean st_character_literal_state;
 
+static const int error_message_buf_len = 100;
+static char error_message_buf[error_message_buf_len];
+
 void dkc_set_source_string(char **source)
 {
     st_source_string = source;
@@ -227,17 +230,17 @@ int yywrap(void)
 <INITIAL>"/*"      BEGIN C_COMMENT;
 <INITIAL>"//"      BEGIN CC_COMMENT;
 <INITIAL>. {
-    dkc_compile_error(dkc_get_current_compiler()->current_line_number,
-                      CHARACTER_INVALID_ERR,
-                      (CHARACTER_MESSAGE_ARGUMENT, "bad_char", yytext[0], MESSAGE_ARGUMENT_END));
+    memset(error_message_buf, 0, error_message_buf_len);
+    sprintf_s(error_message_buf, 100, "incorrect character(%c).", &yytext[0]);
+    dkc_compile_error(dkc_get_current_compiler()->current_line_number, error_message_buf);
 }
 
 <C_COMMENT>\n   increment_line_number();
 <C_COMMENT>"*/" BEGIN INITIAL;
 <C_COMMENT><<EOF>> {
-    dkc_compile_error(dkc_get_current_compiler()->current_line_number,
-                      EOF_IN_C_COMMENT_ERR,
-                      (MESSAGE_ARGUMENT_END));
+    memset(error_message_buf, 0, error_message_buf_len);
+    sprintf_s(error_message_buf, 100, "end of file in C style comment");
+    dkc_compile_error(dkc_get_current_compiler()->current_line_number, error_message_buf);
 }
 <C_COMMENT>.    ;
 
@@ -294,9 +297,9 @@ int yywrap(void)
 }
 
 <STRING_LITERAL_STATE><<EOF>> {
-    dkc_compile_error(dkc_get_current_compiler()->current_line_number,
-                       EOF_IN_STRING_LITERAL_ERR,
-                       (MESSAGE_ARGUMENT_END));
+    memset(error_message_buf, 0, error_message_buf_len);
+    sprintf_s(error_message_buf, 100, "end of file in string literal");
+    dkc_compile_error(dkc_get_current_compiler()->current_line_number, error_message_buf);
 }
 
 <GB2312_2ND_CHAR>. {

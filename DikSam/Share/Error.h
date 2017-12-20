@@ -12,6 +12,7 @@ public:
     Error(Debug& debug, Util& util);
     ~Error();
 
+    void FlexError(int iLine, char *lpstrErrorMessage);
     void CompileError(int iLine, DikSamError id, ...);
     void DVMError(DVM_Executable *pExe, Function *pFunc, int pc, DikSamError id, ...);
 

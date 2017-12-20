@@ -21,6 +21,15 @@ Error::~Error()
 
 }
 
+void Error::FlexError(int iLine, char *lpstrErrorMessage)
+{
+    std::stringstream ss;
+
+    ss << "ÐÐ" << iLine << "£º" << lpstrErrorMessage ? lpstrErrorMessage : "";
+    
+    throw ErrorException(ss.str().c_str());
+}
+
 void Error::CompileError(int iLine, DikSamError id, ...)
 {
     va_list ap;

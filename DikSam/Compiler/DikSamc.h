@@ -10,7 +10,7 @@ extern "C"
 
 void ResetLex(void);
 
-#define dkc_compile_error(line_number, id, arg)  DikSam::GetClassObject(g_iCurrentThreadIndex)->GetError()->CompileError(line_number, id, arg)
+#define dkc_compile_error(line_number, error_message)  DikSam::GetClassObject(g_iCurrentThreadIndex)->GetError()->FlexError(line_number, error_message)
 
 #define DEFAULT_CONSTRUCTOR_NAME    ("initialize")
 
